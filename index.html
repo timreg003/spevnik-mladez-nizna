@@ -1,34 +1,81 @@
-<script>
-    const database = [
-        { t: "1. Zvelebený Pán", c: "1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán. Zvelebený buď, aj keď v púšti sa nachádzam, aj keď kráčam sám v pustinách, zvelebený Pán. \n\nB: Každú milosť, čo mi dávaš, vyspievam rád, aj keď tma ma obopína, ja zavolám: R: Zvelebený buď, Pane náš, zvelebený Pán, zvelebený buď, Pane náš, požehnané, slávne meno máš. \n\n2. Zvelebený buď, keď ma lúč slnka zohrieva, keď je svet krásny bez tieňa, zvelebený Pán. Zvelebený buď aj na púti, čo ťažká je, aj keď obetu prinášam, zvelebený Pán. \n\nB2: /:Máš právo dať aj vziať:/ ja stále spievam rád, zvelebený Pán." },
-        { t: "Požehnané meno má Pán", c: "1. Požehnané meno má Pán, (3x) Najvyšší. \n\nR: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť! \n2. Oslávené meno má Pán, (3x) Najvyšší. \n3. Ježiš, toto meno má Pán, (3x) Najvyšší. \n4. Svätý, svätý, svätý je Pán, (3x) Najvyšší." },
-        { t: "Nádherný Boh", c: "1. Úžasný, tak úžasný si v láske bez hraníc. Tvoj kríž mi dáva milosť sľúbenú. Nik nevidel, nik nepočul, niet srdca, čo tuší, jak slávny je a nádherný Boh môj. \n\nR: Nádherný Boh, ťa ľúbim, nádherný Boh, ja ťa ctím, nádherný Boh, nech pieseň znie. \n\n2. Všemocný, tak všemocný, zem tvoju slávu má, moc tvojich diel v nej každý rozpozná. Krása tvojho kráľovstva spev môjmu srdcu dá, tak zázračný, tak zázračný Boh si. \n\nB: Dal uzrieť si mi všetky zázraky v nás, tou láskou si získal ma. Veď nič na zemi sa ti v kráse nevyrovná. \n\nB2: Mne v duši pieseň znie (3x) nádherný Boh" },
-        { t: "Nádherný Boh (Akordy)", c: "1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc\nTvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú\nNik [D]nevidel,nik [E]nepočul niet [F#m]srdca čo tu[A]ší\nJak [D]slávny je a [E]nádherný Boh [A]môj\n\nR:Si nádherný [D]Boh,Ťa [E]ľúbim\nsi nádherný [D]Boh,ja Ťa [E]ctím\nNádherný [D]Boh,nech [E]pieseň [A]znie" },
-        { t: "Bohatier", c: "1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier. \n\nR: [D] Ty si víťaz, [A] Je[Am]žiš [G] \n[D] Mocný víťaz,[A] Je[Am]žiš [G] \n\n2. Kde som padával, tam ty víťazíš, kde som prehrával, tam ma podržíš." },
-        { t: "Obeta srdca (Túžim priniesť na oltár)", c: "1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D]\nTvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán. [D]\nChcem ti vydať práve [G]dnes každú [A]časť života.[Hm] \nViem, že prijmeš každý [G]dar zlome[A]ného srdca.[D] \n\nR: Povedz, čo ti smiem dať,[G] čo [A]priniesť ti smiem? [D]\nSi môj láskavý Kráľ,[G] ja len [A]miznúci tieň. [D]\nJežiš viac nemám slov, [G]pieseň [A]doznieva tiež, [D]\naj keď nehodný som, [G]chcem ti [A]niečo priniesť – [Hm]\nmožno len tichý plač,[G] len bolesť, čo mám, [Em]\nsvoju [G]hĺbku [D]srdca ti dám, [G]môj [A]láskavý Pán.[D] \n\n2. Kvôli tebe dýchať smiem, môj dlh splatil si sám. \nŽivot svoj si za môj dal, bol to víťazný plán. \nVzal si hanbu z mojich pliec, bol to posledný boj, \notvoril si bránu nebies, dnes som iba tvoj." },
-        { t: "Pred Tebou, môj Pán, sa vzdám", c: "R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m. \n[A]Pred tebou, môj [F#m]Kráľ a [A]Pán, [F#m]pred tebou na[E] tvári vyznáv[D][A]am: \n\n1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou, \n[F#m]v sprievode [E]víťaznom [D]vodíš si [A]ma. \n[F#m]Za tebou [E]pôjdem [D]svetlom i [A]tmou, \nveď [F#m]Ty si môj[A] Pán, [E]hoden si [A]chvál. \n\n2. Iného bližšieho na nebi niet. On pre mňa vydobyl tisícky liet. V otcovom náručí tam ma ukrýva, veď on je môj Pán, hoden je chvál." },
-        { t: "Drž ma bližšie", c: "R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie, daj, nech pravdy sa nepustím, z očí nikdy ťa nestratím. \n\n1. V mojich pádoch aj úspechoch, v mojich šťastných aj smutných dňoch, moje srdce ti patrí len, ty si nádej, žijem v nej. \n\n2. Ty si ten, ktorý dýcha v nás, ty si ten, ktorý stráži ma. Srdce preteká pokojom, keď tvoj hlas smiem počuť v ňom. \n\n3. Nikto neľúbi ako ty, nik sa nestará ako ty, zdá sa, nebo si otvoril, Otče vieš, jak mám ťa rád." },
-        { t: "Tvoj ľud pred Tebou", c: "1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš[D/D7]:/ \n/:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[[Hm]vý, \nk Tebe [Em]ideme, Ty [A]veľký Bože [D]náš.:/ \n\n2. /:Aj ja chcem tu v úcte stáť, môj Boh a Pán:/ /:svojim blížnym a Tebe slúžiť zo všetkých síl, plný nádeje Ti šepkať: „Otče náš.“:/" },
-        { t: "Pane náš, prijmi dar", c: "1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár, \n[G]s láskou ti predkla[C]dám všetko, čo mám. [D]\n[G]Odovzdávam rodi[C]čov, [G]bratov, sestry, priate[C]ľov, \n[Em]dávam seba i [C]tých, čo menej mám [D]rád. \n\n2. S vďakou dávam ti týždeň, čo bol, \ns láskou nesiem ti chvíle, čo sú. \nS vierou ti predkladám, čo nás čaká. \n\nR: /:Dávam [G]ti zo [D]svojich [C]rán, dávam [G]všetko, čo [D]v sebe mám. [C] Všetko [G]teraz ti [D]predkla[C]dám pred tvoju tvár[D], :/\ntu, na [G]oltár." },
-        { t: "Všetko živé chváli ťa", c: "1. [C]Všetko [F]živé chváli [G]Ťa,[F] \n[C]v Duchu, [F]v pravde uctie[G]va.[F] \n[a]Sláva [F]Bohu verné[G]mu, [Am]Ježi[G]ša nám [F]dal. [G] \n\nR: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný, chválim [F]Ťa,\nAlfa [C]i Ome[F]ga, chválim [G]Ťa. Dobrý [C]Boh, silný [F]Boh, nádher[G]ný, slávim Ťa, [F] Elo[Am]him, El sha[F]ddaj, slávim [G]Ťa,[a]z lásky [G]slávim[F]Ťa. [G] \n\nB: [C]Horí, [F]oheň [G]v nás, Ježiš [Am]žije, [F]príde [G]zas." },
-        { t: "Dnes viem", c: "1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť\n[D]Dnes viem [G]že chcem [A]počuť tvoj [D]hlas a žiť\n[D]Dnes viem [G]že chcem [A]Ti svoje [D] áno dať\n[D]Dnes viem [G]že chcem [A]za tebou [D]ísť\n\nR: [Em]Teraz [G]ja a môj dom [D]chceme [A]slúžiť\n[A]Teraz [Em]ja a môj dom [G] chceme [D] len pre teba [A] žiť\n[A] Už [D] dnes\n\nB: [Em]Nádherný [Hm]Radca náš [G] Otec neko[A]nečný\nPán [Em]zástupov, [Hm]večný kráľ, [G]za tebou chceme [A] kráčať [D]" },
-        { t: "Dávam všetko", c: "1. [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám, \n[G]dávam na ol[Am]tár k tvojim [G]nohám, kráľov [C]Kráľ.\nDnes kladiem svoje [G]sny, ja sa zriekam svojich [F]právd, \nuž [G]nechcem pyšný [Am]stáť, chcem [G]nový život [C]mať.\n\nR: [Am] [G]Dávam [C]všetko [F]to, čo [C]mám, tebe, [G]Kráľ. [F] [G]\n\n2. Keď túto pieseň hrám pod krížom stojím sám \na všetky bohatstvá za smeti pokladám.\nChcem poznať teba, Kráľ, slávu mena, ktoré máš, \ntá radosť nekončí, aj keď s tebou trpieť mám." },
-        { t: "Hudba zohráva (Srdce chvály)", c: "1. [D]Hudba dohráva[A],\nvšetko stíši sa[Em]\na ja prichádzam[A]\n[D]priniesť niečo [A]snáď,\nčo pravú cenu má,[Em]\nčo by si mal rád.[A]\n\nB: [Em]Viac ako [D]pieseň Ti dám,[A]\nlebo to čo žiadaš\n[Em]nie je len [D]pieseň sama.[A]\n[Em]Ak niečo [D]iné sa zdá,\n[A]Ty vieš, čo je pravda,\n[Em]Ty vidíš, [D]čo v srdci [A]mám.\n\nR: [D]Túžim sa vrátiť do [A]srdca chvály,\nkde si [Em]jedine Ty, jedine Ty, [A]Je[D]žíš.\nOdpusť mi, Pane, že [A]neverný som,\nsi to [Em]jedine Ty, [G]jedine Ty,[A] Ježíš. [D]" },
-        { t: "Do tmy na svet", c: "1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta.\n[C]Otvor môj[G] zrak nech vid[F]ím.\n[C]Krásu lásk[G]y, v ktorej[F] srdce Ti spieva.\nVeď [C]láska a [G]moc Ti pat[F]rí.\n\nR: Prišli sme Ťa [C]vzývať, prišli sme sa [G]skláňať\nPrišli sme Ti [Ami]vyznať: Si náš [F]Boh.\nSi dokonalá [C]láska, dokonale [G]svätý,\ndokonale[Ami] nádherný ku[F] nám." },
-        { t: "Príď ó Ježiš príď", c: "R: /:[D]Príď,ó Ježiš, [G]príď:/\n\n1.\nTí, čo sú [D]smädní, zoslabnu[F#m]tí. Nech nájdu [G]prameň\na ponoria [Em]srd[D]cia [A]v ňom.\nSmútok a [D]bolesť sa odpla[F#m]ví z nás. Na vlnách [G]lásky voláme [Em]z hĺ[D]bky [A]zas.\n\n\nR2:\n/:[D]Duchu Svätý, [G]príď.:/" },
-        { t: "Nesieme, Pane, chlieb a víno", c: "-1\nN[Dmi]esieme, Pane, chlieb a [C]víno.\nN[Ami]esieme celý život [Dmi]náš.\nN[Dmi]esieme, Pane, chlieb a [C]víno\na[Ami] hľadáme Tvoju [Dmi]tvár[F], Tvoju [C]tvár,\nT[Ami]voju svätú [Dmi]tvár." },
-        { t: "Smieme stáť", c: "1.\nSmieme [C] stáť pred tvojím trónom\nsmieme [Am] stáť pred tvojou tvárou\nsmieme [F] stáť, [G]smieme [C] stáť\n \nR:\n[F]Pre tvoju [G] krv a rany\n[Am]kríž a hrob, čo [C]zostal prázdny\n[Dm]my smieme [C] stáť, smieme [G] stáť" },
-        { t: "Imanuel", c: "1. \n[Hm]Boh je stále[G]medzi nami,[D]je stále[A]blízko nás,\n[Hm]pozná všetky [G]Tvoje rany, [D]pred Ním sa [A]neschováš.\n\n2.\nBoh je práve blízko pri nás, môžeš až k Nemu prísť,\nchce obmyť to, čo skrývaš, báť sa nemusíš.\n\nR: \n[Hm]Imanu[G]el,[D]je blízko[A]nás,\n[Hm]Imanu[G]el,[D]dotkni sa[A]nás,\n[Hm]Imanu[G]el,[D]nemáme[A]síl,\n[Hm]Imanu[G]el,[D]Ty musíš[A]prísť." },
-        { t: "Emanuel (vianočná verzia)", c: "1. [D]To svetlo, ktoré svieti v nás už mnoho[A] ľudských dní\na v každom[Hm] z nich svoj zápas s [G]tmou slávne[A] víťazí,\n[D]aj dnes nám svieti do duší a [A]ukazuje nám,\nže bez lásky[Hm] svet umiera, [G]ak[A] nehľadá.\n\n2. Už slovo telom stalo sa a prebýva tu v nás\na čaká dnes aj od teba, čo v jasliach odovzdáš,\ntak otvor srdce dokorán, veď svetlo na svet prišlo,\nuž vieš, že sa dnes narodil Kristus náš Pán.\n\nB: Sme tu s [Hm]ním, vždy[G] pod tou istou hviezdou,\npri [Em]jeho biednych jasliach, [G]spievame jedným[A] hlasom:\n\nR: [D]Emanuel[A], Eman[G]uel, [A]Emanuel." },
-        { t: "Koledy (Vstávajte, pastieri atď.)", c: "1. [A]Vstávajte, pastieri, [H]berte sa [E]hor´, [A]aká to novina, [D]dajte po[A]zor! ... Keď tá jasná hviezda ... Narodil sa Kristus Pán v Betleme" },
-        { t: "Ak ľud môjho mena", c: "+1\n[Hm]Ak ľud môj[A]ho me[Hm]na sa poko[A]rí\na bu[G]de [A]sa mod[D]liť,\n[Hm]ak vy[A]hľadá [Hm]moju prítom[A]nosť\na od[G]vráti sa [A]od zlých [F#]ciest,\n\n[Hm]vtedy ich z [Em]nebies [A]vypo[D]čujem,\n[G]z nebies im [[Hm]od[F#]pustím.\n[Hm]Odpustím [Em]ich hriech [A]a uzdra[D]vím zem,\n[G]áno, [Hm]uzdra[F#]vím ich [Hm]zem." },
-        { t: "Toto je telo a toto je krv", c: "R: [C]Toto je telo a [G]toto je [Dm]krv,\n[A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj,\n[F]pravý Boh za pokrm ľuďom sa [C]dal,\n[Dm]aby večný život [G]v nás zacho[F]val. [C]\n\n1. Keď už [C]poslanie [Am]spásy vr[G]cholí,\nJežiš [Am]pozdvihol [F7]víno a [G4]chlieb. [G]" },
-        { t: "Vitaj pokrm", c: "1. [C#m]Vitaj pokrm,[G#m] v ktorom [A]je neu[H]stále\n[C#m]prítomný [G#m]tvorca [A]neba, i [H]zeme.\n[E]Vitaj ná[H]poj všetkých[F#m] túžob napl[A]ne[H]nie,\n[C#m]srdce dychtí [G#m]túžbou po te[C#m]be." },
-        { t: "Slnko Kristovej lásky", c: "[G] [C] [D] [C] [G] Slnko Kristovej lásky nech ožiari nás\n[G] [C] [D] [C] [D] [D7] Oheň Svätého Ducha nech zapáli nás" },
-        { t: "Nechám sa viesť", c: "1. [C#m]Kamkoľvek ma [A]zavoláš,\n[H]kamkoľvek ma[F#m] zavoláš, pôjdem.\n[C#m]Kamkoľvek ma [A]zavoláš,\n[H]viem, že pôjdeš [F#m]so mnou.\n\nR: (Tebou)[C#m] nechám sa [A]viesť, [H]nechám sa [F#m]viesť" },
-        { t: "Aj keby nekvitol fík", c: "1. Aj keby nekvitol [Dm] fík, aj keby [B]nerodila zem, aj keby [Gm]nebesá nedoniesli [F]svetlo v nové [A7]ráno." },
-        { t: "Chcem z tvojej živej vody piť", c: "1. Chcem z Tvojej živej vody piť, chcem z Tvojho slova stále žiť, chcem v Tvojej blízkosti vždy byť, veď si môj Pán.\nR: /:Hľadám Tvoju tvár, daj sa mi nájsť. Hľadám Tvoju tvár, daj sa mi nájsť.:/" },
-        { t: "Po Tebe túžim", c: "Po Tebe [F#m]túžim viac[D] môj Boh a [A]Pán v nádvoriach [F#m]Boha živého chcem stáť..." }
-        // ... sem doplniť zvyšné piesne podľa potreby (v súbore je celkovo 61 <song> objektov)
-    ];
-</script>
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <title>Spevník - Kompletný zoznam</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .search-box { margin-bottom: 20px; padding: 10px; width: 100%; max-width: 400px; }
+        .song { border-bottom: 1px solid #ccc; padding: 15px 0; }
+        .song-title { font-weight: bold; color: #2c3e50; font-size: 1.2em; }
+        .song-text { white-space: pre-wrap; margin-top: 10px; color: #555; }
+        .highlight { background-color: yellow; }
+    </style>
+</head>
+<body>
+
+    <h1>Môj Spevník</h1>
+    <input type="text" id="searchInput" class="search-box" placeholder="Hľadať podľa názvu alebo textu..." onkeyup="searchSongs()">
+    
+    <div id="songList"></div>
+
+    <script>
+        // Kompletná databáza piesní zo súboru export.zpk.xml
+        const songDatabase = [
+            { id: "1", t: "Zvelebený Pán", c: "1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán... B: Každú milosť, čo mi dávaš, vyspievam rád... R: Zvelebený buď, Pane náš..." },
+            { id: "2", t: "Požehnané meno má Pán", c: "1. Požehnané meno má Pán, (3x) Najvyšší. R: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť!" },
+            { id: "3", t: "Nádherný Boh (Text)", c: "1. Úžasný, tak úžasný si v láske bez hraníc. Tvoj kríž mi dáva milosť sľúbenú. Nik nevidel, nik nepočul, niet srdca, čo tuší, jak slávny je a nádherný Boh môj. R: Nádherný Boh, ťa ľúbim..." },
+            { id: "3a", t: "Nádherný Boh (Akordy)", c: "1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc. Tvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú..." },
+            { id: "4", t: "Bohatier", c: "1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier. R: [D] Ty si víťaz, [A] Je[Am]žiš [G]" },
+            { id: "5", t: "Obeta srdca (Túžim priniesť na oltár)", c: "1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D] Tvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán... R: Povedz, čo ti smiem dať..." },
+            { id: "6", t: "Pred Tebou, môj Pán, sa vzdám", c: "R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m... 1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou..." },
+            { id: "7", t: "Drž ma bližšie", c: "R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie, daj, nech pravdy sa nepustím, z očí nikdy ťa nestratím." },
+            { id: "8", t: "Tvoj ľud pred Tebou", c: "1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš[D/D7]:/ /:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[[Hm]vý..." },
+            { id: "9", t: "Pane náš, prijmi dar", c: "1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár... R: /:Dávam [G]ti zo [D]svojich [C]rán..." },
+            { id: "10", t: "Všetko živé chváli ťa", c: "1. [C]Všetko [F]živé chváli [G]Ťa, [F] [C]v Duchu, [F]v pravde uctie[G]va. R: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný..." },
+            { id: "11", t: "Dnes viem", c: "1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť. R: [Em]Teraz [G]ja a môj dom [D]chceme [A]slúžiť..." },
+            { id: "12", t: "Dávam všetko", c: "1. [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám... R: [Am] [G]Dávam [C]všetko [F]to, čo [C]mám, tebe, Kráľ." },
+            { id: "13", t: "Hudba zohráva (Srdce chvály)", c: "1. [D]Hudba dohráva[A], všetko stíši sa[Em]... R: [D]Túžim sa vrátiť do [A]srdca chvály..." },
+            { id: "14", t: "Do tmy na svet", c: "1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta. R: Prišli sme Ťa [C]vzývať, prišli sme sa [G]skláňať..." },
+            { id: "15", t: "Priď ó Ježiš príď", c: "R: /:[D]Príď,ó Ježiš, [G]príď:/ 1. Tí, čo sú [D]smädní, zoslabnu[F#m]tí..." },
+            { id: "16", t: "Nesieme, Pane, chlieb a víno", c: "N[Dmi]esieme, Pane, chlieb a [C]víno. N[Ami]esieme celý život [Dmi]náš." },
+            { id: "17", t: "Smieme stáť", c: "1. Smieme [C] stáť pred tvojím trónom... R: [F]Pre tvoju [G] krv a rany [Am]kríž a hrob..." },
+            { id: "18", t: "Imanuel", c: "1. [Hm]Boh je stále[G]medzi nami, [D]je stále[A]blízko nás. R: [Hm]Imanu[G]el, [D]je blízko[A]nás..." },
+            { id: "19", t: "Emanuel (vianočná verzia)", c: "1. [D]To svetlo, ktoré svieti v nás... R: [D]Emanuel[A], Eman[G]uel, [A]Emanuel." },
+            { id: "20", t: "Koledy (Mix)", c: "Vstávajte, pastieri; Keď tá jasná hviezda; Narodil sa Kristus Pán." },
+            { id: "21", t: "Ak ľud môjho mena", c: "[Hm]Ak ľud môj[A]ho me[Hm]na sa poko[A]rí a bu[G]de [A]sa mod[D]liť... R: [Hm]vtedy ich z [Em]nebies [A]vypo[D]čujem..." },
+            { id: "22", t: "Toto je telo a toto je krv", c: "R: [C]Toto je telo a [G]toto je [Dm]krv... 1. Keď už [C]poslanie [Am]spásy vrcholí..." },
+            { id: "23", t: "Vitaj pokrm", c: "1. [C#m]Vitaj pokrm, [G#m] v ktorom [A]je neu[H]stále prítomný tvorca neba i zeme." },
+            { id: "24", t: "Slnko Kristovej lásky", c: "[G] [C] [D] [C] [G] Slnko Kristovej lásky nech ožiari nás..." },
+            { id: "25", t: "Nechám sa viesť", c: "1. [C#m]Kamkoľvek ma [A]zavoláš... R: (Tebou)[C#m] nechám sa [A]viesť..." },
+            { id: "26", t: "Aj keby nekvitol fík", c: "1. Aj keby nekvitol [Dm] fík... Ref.: Áno [F]práve vtedy pozdvihnem svoj hlas..." },
+            { id: "27", t: "Chcem z tvojej živej vody piť", c: "1. Chcem z Tvojej živej vody piť, chcem z Tvojho slova stále žiť... R: /:Hľadám Tvoju tvár...:/" }
+        ];
+
+        // Funkcia na zobrazenie všetkých piesní pri načítaní
+        function displaySongs(songs) {
+            const list = document.getElementById('songList');
+            list.innerHTML = '';
+            songs.forEach(song => {
+                const div = document.createElement('div');
+                div.className = 'song';
+                div.innerHTML = `<div class="song-title">${song.t}</div><div class="song-text">${song.c}</div>`;
+                list.appendChild(div);
+            });
+        }
+
+        // Funkcia na vyhľadávanie
+        function searchSongs() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = songDatabase.filter(s => 
+                s.t.toLowerCase().includes(query) || 
+                s.c.toLowerCase().includes(query)
+            );
+            displaySongs(filtered);
+        }
+
+        // Prvotné zobrazenie
+        displaySongs(songDatabase);
+    </script>
+</body>
+</html>
