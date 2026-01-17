@@ -12,9 +12,9 @@ function parseXML() {
       const xml = parser.parseFromString(xmlText, 'application/xml');
       const songNodes = xml.querySelectorAll('song');
       songs = Array.from(songNodes).map(song => ({
-        id: song.querySelector('ID').textContent,
-        title: song.querySelector('title').textContent,
-        text: song.querySelector('songtext').textContent
+        id: song.querySelector('ID').textContent.trim(),
+        title: song.querySelector('title').textContent.trim(),
+        text: song.querySelector('songtext').textContent.trim()
       }));
       displayList(songs);
     });
@@ -25,7 +25,7 @@ function displayList(list) {
   listDiv.innerHTML = '';
   list.forEach(song => {
     const div = document.createElement('div');
-    div.textContent = song.title;
+    div.textContent = `${song.id}. ${song.title}`;
     div.onclick = () => showSong(song);
     listDiv.appendChild(div);
   });
@@ -36,12 +36,13 @@ function showSong(song) {
   transposeStep = 0;
   document.getElementById('song-list').style.display = 'none';
   document.getElementById('song-display').style.display = 'block';
-  document.getElementById('song-title').textContent = song.title;
+  document.getElementById('song-title').textContent = `${song.id}. ${song.title}`;
   renderSong(song.text);
 }
 
 function renderSong(text) {
-  const content = text.replace(chordRegex, match => {
+  const cleaned = text.replace(/\[|\]/g, ''); // odstráni hranaté zátvorky
+  const content = cleaned.replace(chordRegex, match => {
     const transposed = transposeChord(match, transposeStep);
     return `<span class="chord">${transposed}</span>`;
   });
@@ -69,7 +70,9 @@ function backToList() {
 
 document.getElementById('search').addEventListener('input', e => {
   const query = e.target.value.toLowerCase();
-  const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
+  const filtered = songs.filter(s =>
+    `${s.id}. ${s.title}`.toLowerCase().includes(query)
+  );
   displayList(filtered);
 });
 
