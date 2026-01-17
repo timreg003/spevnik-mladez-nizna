@@ -1,447 +1,3277 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
 <InetSongDb xmlns="http://zpevnik.net/InetSongDb.xsd">
-    <song>
-        <ID><![CDATA[1.-zvelebeny-pan]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán. Zvelebený buď, aj keď v púšti sa nachádzam, aj keď kráčam sám v pustinách, zvelebený Pán. 
-
-B: Každú milosť, čo mi dávaš, vyspievam rád, aj keď tma ma obopína, ja zavolám: R: Zvelebený buď, Pane náš, zvelebený Pán, zvelebený buď, Pane náš, požehnané, slávne meno máš. 
-
-2. Zvelebený buď, keď ma lúč slnka zohrieva, keď je svet krásny bez tieňa, zvelebený Pán. Zvelebený buď aj na púti, čo ťažká je, aj keď obetu prinášam, zvelebený Pán. 
-
-B2: /:Máš právo dať aj vziať:/ ja stále spievam rád, zvelebený Pán.]]></songtext>
-        <author><![CDATA[001]]></author>
-        <authorId><![CDATA[]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Zvelebený Pán]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[2]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. Požehnané meno má Pán, (3x)  Najvyšší. 
-
-R: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť! 
-2. Oslávené meno má Pán, (3x)  Najvyšší. 
-3. Ježiš, toto meno má Pán, (3x)  Najvyšší. 
-4. Svätý, svätý, svätý je Pán, (3x)  Najvyšší.]]></songtext>
-        <author><![CDATA[002]]></author>
-        <authorId><![CDATA[pozehnane-meno-ma-pan]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Požehnané meno má Pán]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[/espe/nadherny-boh]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc
-Tvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú
-Nik [D]nevidel,nik [E]nepočul niet [F#m]srdca čo tu[A]ší
-Jak [D]slávny je a [E]nádherný Boh [A]môj
-
-R:Si nádherný [D]Boh,Ťa [E]ľúbim
-si nádherný [D]Boh,ja Ťa [E]ctím
-Nádherný [D]Boh,nech [E]pieseň [A]znie
-
-2.[D]Všemocný tak [E]všemocný Zem [F#m]Tvoju slávu [A]má
-Moc [D]Tvojich diel v nej [E]každý rozpo[A]zná
-[D]Krása Tvojho [E]kráľovstva spev [F#m]môjmu srdcu [A]dá
-Tak [D]zázračný tak [E]zázračný Boh [A]si
-
-R:Si nádherný [D]Boh,Ťa [E]ľúbim
-si nádherný [D]Boh,ja Ťa [E]ctím
-Nádherný [D]Boh,nech [E]pieseň [A]znie]]></songtext>
-        <author><![CDATA[003]]></author>
-        <authorId><![CDATA[/espe]]></authorId>
-        <groupname><![CDATA[[pisnicky_akordy]]]></groupname>
-        <title><![CDATA[Nádherný Boh]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[4]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier. 
-
-R: [D] Ty si víťaz, [A] Je[Am]žiš [G]  
-[D] Mocný víťaz,[A]  Je[Am]žiš [G] 
-
-2. Kde som padával, tam ty víťazíš, kde som prehrával, tam ma podržíš.]]></songtext>
-        <author><![CDATA[004]]></author>
-        <authorId><![CDATA[bohatier]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Bohatier]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[5]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D]
-Tvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán. [D]
-Chcem ti vydať práve [G]dnes každú [A]časť života.[Hm] 
-Viem, že prijmeš každý [G]dar zlome[A]ného srdca.[D] 
-
-R: Povedz, čo ti smiem dať,[G] čo [A]priniesť ti smiem? [D]
-Si môj láskavý Kráľ,[G] ja len [A]miznúci tieň. [D]
-Ježiš viac nemám slov, [G]pieseň [A]doznieva tiež, [D]
-aj keď nehodný som, [G]chcem ti [A]niečo priniesť – [Hm]
-možno len tichý plač,[G] len bolesť, čo mám, [Em]
-svoju [G]hĺbku [D]srdca ti dám, [G]môj [A]láskavý Pán.[D] 
-
-2. Kvôli tebe dýchať smiem, môj dlh splatil si sám. 
-Život svoj si za môj dal, bol to víťazný plán. 
-Vzal si hanbu z mojich pliec, bol to posledný boj, 
-otvoril si bránu nebies, dnes som iba tvoj.]]></songtext>
-        <author><![CDATA[005]]></author>
-        <authorId><![CDATA[obeta-srdca-(tuzim-priniest-na-oltar)]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Obeta srdca (Túžim priniesť na oltár)]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[6]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m. 
-[A]Pred tebou, môj [F#m]Kráľ a [A]Pán, [F#m]pred tebou na[E] tvári vyznáv[D][A]am: 
-
-1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou, 
-[F#m]v sprievode [E]víťaznom [D]vodíš si [A]ma. 
-[F#m]Za tebou [E]pôjdem [D]svetlom i [A]tmou, 
-veď [F#m]Ty si môj[A] Pán, [E]hoden si [A]chvál. 
-
-2. Iného bližšieho na nebi niet. On pre mňa vydobyl tisícky liet. V otcovom náručí tam ma ukrýva, veď on je môj Pán, hoden je chvál.]]></songtext>
-        <author><![CDATA[006]]></author>
-        <authorId><![CDATA[pred-tebou,-moj-pan,-sa-vzdam]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Pred Tebou, môj Pán, sa vzdám]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[7]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie, daj, nech pravdy sa nepustím, z očí nikdy ťa nestratím. 
-
-1. V mojich pádoch aj úspechoch, v mojich šťastných aj smutných dňoch, moje srdce ti patrí len, ty si nádej, žijem v nej. 
-
-2. Ty si ten, ktorý dýcha v nás, ty si ten, ktorý stráži ma. Srdce preteká pokojom, keď tvoj hlas smiem počuť v ňom. 
-
-3. Nikto neľúbi ako ty, nik sa nestará ako ty, zdá sa, nebo si otvoril, Otče vieš, jak mám ťa rád.]]></songtext>
-        <author><![CDATA[007]]></author>
-        <authorId><![CDATA[drz-ma-blizsie]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Drž ma bližšie]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[8]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[+1
-1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš[D/D7]:/ 
-/:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[[Hm]vý, 
-k Tebe [Em]ideme, Ty [A]veľký Bože [D]náš.:/ 
-
-2. /:Aj ja chcem tu v úcte stáť, môj Boh a Pán:/ /:svojim blížnym a Tebe slúžiť zo všetkých síl, plný nádeje Ti šepkať: „Otče náš.“:/]]></songtext>
-        <author><![CDATA[008]]></author>
-        <authorId><![CDATA[tvoj-lud-pred-tebou-]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Tvoj ľud pred Tebou]]></title>
-        <youtube><![CDATA[https://m.youtube.com/watch?v=CUquzcgDn_U&pp=ygUTdHZvaiBsdWQgcHJlZCB0ZWJvdQ%3D%3D]]></youtube>
-    </song>
-    <song>
-        <ID><![CDATA[9]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár, 
-[G]s láskou ti predkla[C]dám všetko, čo mám. [D]
-[G]Odovzdávam rodi[C]čov, [G]bratov, sestry, priate[C]ľov, 
-[Em]dávam seba i [C]tých, čo menej mám [D]rád. 
-
-2. S vďakou dávam ti týždeň, čo bol, 
-s láskou nesiem ti chvíle, čo sú. 
-S vierou ti predkladám, čo nás čaká. 
-
-R: /:Dávam [G]ti zo [D]svojich [C]rán, dávam [G]všetko, čo [D]v sebe mám. [C] Všetko [G]teraz ti [D]predkla[C]dám pred tvoju tvár[D], :/
-tu, na [G]oltár. 
-[G][C]]]></songtext>
-        <author><![CDATA[009]]></author>
-        <authorId><![CDATA[pane-nas,-prijmi-dar]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Pane náš, prijmi dar]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[10]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [C]Všetko [F]živé chváli [G]Ťa,[F] 
-[C]v Duchu, [F]v pravde uctie[G]va.[F] 
-[a]Sláva [F]Bohu verné[G]mu, [Am]Ježi[G]ša nám [F]dal. [G]
-
-R: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný, chválim [F]Ťa,
-Alfa [C]i Ome[F]ga, chválim [G]Ťa. Dobrý [C]Boh, silný [F]Boh, nádher[G]ný, slávim Ťa, [F] Elo[Am]him, El sha[F]ddaj, slávim [G]Ťa,[a]z lásky [G]slávim[F]Ťa. [G]
-
-B: [C]Horí, [F]oheň [G]v nás, Ježiš [Am]žije, [F]príde [G]zas.]]></songtext>
-        <author><![CDATA[010]]></author>
-        <authorId><![CDATA[vsetko-zive-chvali-ta-]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Všetko živé chváli ťa]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[11]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť
-[D]Dnes viem [G]že chcem [A]počuť tvoj [D]hlas a žiť
-[D]Dnes viem [G]že chcem [A]Ti svoje [D] áno dať
-[D]Dnes viem [G]že chcem [A]za tebou [D]ísť
-
-R: [Em]Teraz [G]ja a môj dom [D]chceme [A]slúžiť
-[A]Teraz [Em]ja a môj dom [G] chceme [D] len pre teba [A] žiť
-[A] Už [D] dnes
-
-B: [Em]Nádherný [Hm]Radca náš [G] Otec neko[A]nečný
-Pán [Em]zástupov, [Hm]večný kráľ, [G]za tebou chceme [A] kráčať [D]]]></songtext>
-        <author><![CDATA[011]]></author>
-        <authorId><![CDATA[dnes-viem]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Dnes viem]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[012]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1.  [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám, 
-[G]dávam na ol[Am]tár k tvojim [G]nohám, kráľov [C]Kráľ.
-Dnes kladiem svoje [G]sny, ja sa zriekam svojich [F]právd, 
-už [G]nechcem pyšný [Am]stáť, chcem [G]nový život [C]mať.
-
-R: [Am] [G]Dávam [C]všetko [F]to, čo [C]mám, [Am]tebe, [G]Kráľ. [F] [G]
-
-2.  Keď túto pieseň hrám pod krížom stojím sám 
-a všetky bohatstvá za smeti pokladám.
-Chcem poznať teba, Kráľ, slávu mena, ktoré máš, 
-tá radosť nekončí, aj keď s tebou trpieť mám.]]></songtext>
-        <author><![CDATA[012]]></author>
-        <authorId><![CDATA[davam-vsetko]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Dávam všetko]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[013]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [D]Hudba dohráva[A],
-všetko stíši sa[Em]
-a ja prichádzam[A]
-[D]priniesť niečo [A]snáď,
-čo pravú cenu má,[Em]
-čo by si mal rád.[A]
-
-B: [Em]Viac ako [D]pieseň Ti dám,[A]
-lebo to čo žiadaš
-[Em]nie je len [D]pieseň sama.[A]
-[Em]Ak niečo [D]iné sa zdá,
-[A]Ty vieš, čo je pravda,
-[Em]Ty vidíš, [D]čo v srdci [A]mám.
-
-R: [D]Túžim sa vrátiť do [A]srdca chvály,
-kde si [Em]jedine Ty, jedine Ty, [A]Je[D]žíš.
-Odpusť mi, Pane, že [A]neverný som,
-si to [Em]jedine Ty, [G]jedine Ty,[A] Ježíš. [D]
-
-2. Nekonečný Kráľ,
-nik nevysloví,
-čo Ti patriť má;
-aj keď slabý som,
-všetko to, čo mám,
-každý dych je Tvoj.]]></songtext>
-        <author><![CDATA[013]]></author>
-        <authorId><![CDATA[hudba-zohrava-(srdce-chvaly)-]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Hudba zohráva (Srdce chvály)]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[150947]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta.
-[C]Otvor môj[G] zrak nech vid[F]ím.
-[C]Krásu lásk[G]y, v ktorej[F] srdce Ti spieva.
-Veď [C]láska a [G]moc Ti pat[F]rí.
-
-R: Prišli sme Ťa [C]vzývať, prišli sme sa [G]skláňať
-Prišli sme Ti [Ami]vyznať: Si náš [F]Boh.
-Si dokonalá [C]láska, dokonale [G]svätý,
-dokonale[Ami] nádherný ku[F] nám.
-
-2. Kráľ všetkých dní a tiež najvyšší vládca,
-slávnejší nad nebesá.
-Ponížil sa, prišiel na Zem, čo stvoril,
-vzdal sa slávy z lásky k nám. 
-
-B: /:Ja [G]nemám [C]dosť slov [F]opísať cen[G]u, ktor[C]ú Ťa [F]môj hriech stál:/]]></songtext>
-        <author><![CDATA[014]]></author>
-        <authorId><![CDATA[178]]></authorId>
-        <groupname><![CDATA[[supermusic]]]></groupname>
-        <title><![CDATA[Do tmy na svet]]></title>
-        <youtube><![CDATA[https://www.youtube.com/embed/4E4ho_hmW1s]]></youtube>
-    </song>
-    <song>
-        <ID><![CDATA[360068]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[R: /:[D]Príď,ó Ježiš, [G]príď:/
-
-1.
-Tí, čo sú [D]smädní, zoslabnu[F#m]tí. Nech nájdu [G]prameň
-a ponoria [Em]srd[D]cia [A]v ňom.
-Smútok a [D]bolesť sa odpla[F#m]ví z nás. Na vlnách [G]lásky voláme [Em]z hĺ[D]bky [A]zas.
-
-
-R2:
-/:[D]Duchu Svätý, [G]príď.:/]]></songtext>
-        <author><![CDATA[015]]></author>
-        <authorId><![CDATA[20054]]></authorId>
-        <groupname><![CDATA[[supermusic]]]></groupname>
-        <title><![CDATA[Priď ó Ježiš príď]]></title>
-        <youtube><![CDATA[http://www.youtube.com/embed/fJ8VLOJmoq4]]></youtube>
-    </song>
-    <song>
-        <ID><![CDATA[50984]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[-1
-N[Dmi]esieme, Pane, chlieb a [C]víno.
-N[Ami]esieme celý život [Dmi]náš.
-N[Dmi]esieme, Pane, chlieb a [C]víno
-a[Ami] hľadáme Tvoju [Dmi]tvár[F], Tvoju [C]tvár,
-T[Ami]voju svätú [Dmi]tvár.]]></songtext>
-        <author><![CDATA[016]]></author>
-        <authorId><![CDATA[178]]></authorId>
-        <groupname><![CDATA[[supermusic]]]></groupname>
-        <title><![CDATA[Nesieme, Pane, chlieb a víno]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[017]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1.
-Smieme [C]  stáť pred tvojím trónom
-smieme [Am]  stáť pred tvojou tvárou
-smieme [F]  stáť, [G]smieme [C]  stáť
- 
-R:
-[F]Pre tvoju [G] krv a rany
-[Am]kríž a hrob, čo [C]zostal prázdny
-[Dm]my smieme [C] stáť, smieme [G] stáť
-
-2.
-Hoden chvál od východu slnka
-hoden chvál až po jeho západ
-hoden chvál, hoden chvál]]></songtext>
-        <author><![CDATA[017]]></author>
-        <authorId><![CDATA[smieme-stat]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Smieme stáť]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[1570]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. 
-[Hm]Boh je stále[G]medzi nami,[D]je stále[A]blízko nás,
-[Hm]pozná všetky [G]Tvoje rany, [D]pred Ním sa [A]neschováš.
-
-2.
-Boh je práve blízko pri nás, môžeš až k Nemu prísť,
-chce obmyť to, čo skrývaš, báť sa nemusíš.
-
-R: 
-[Hm]Imanu[G]el,[D]je blízko[A]nás,
-[Hm]Imanu[G]el,[D]dotkni sa[A]nás,
-[Hm]Imanu[G]el,[D]nemáme[A]síl,
-[Hm]Imanu[G]el,[D]Ty musíš[A]prísť.
-
-3. 
-Ty si teraz medzi nami, si blízko znavených,
-poznáš všetky naše rany, pred Tebou niet kam ísť.
-
-4.
-Ty si práve blízko pri mne, tu končím pred Tebou,
-nech Tvoj Duch vanie ku mne, už viacej nemám slov.
-
-Záver [D]]]></songtext>
-        <author><![CDATA[018]]></author>
-        <authorId><![CDATA[161]]></authorId>
-        <groupname><![CDATA[[supermusic]]]></groupname>
-        <title><![CDATA[Imanuel]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[019]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[1. [D]To svetlo, ktoré svieti v nás už mnoho[A] ľudských dní
-a v každom[Hm] z nich svoj zápas s [G]tmou slávne[A] víťazí,
-[D]aj dnes nám svieti do duší a [A]ukazuje nám,
-že bez lásky[Hm] svet umiera, [G]ak[A] nehľadá.
-
-2. Už slovo telom stalo sa a prebýva tu v nás
-a čaká dnes aj od teba, čo v jasliach odovzdáš,
-tak otvor srdce dokorán, veď svetlo na svet prišlo,
-už vieš, že sa dnes narodil Kristus náš Pán.
-
-B: Sme tu s [Hm]ním, vždy[G] pod tou istou hviezdou,
-pri [Em]jeho biednych jasliach, [G]spievame jedným[A] hlasom:
-
-R: [D]Emanuel[A], Eman[G]uel, [A]Emanuel.
-Emanuel, Emanuel.
-+1
-[H]([E][H][A][H])
-
-3. Boh najväčší dar pripravil, dal svojho Syna nám,
-len v ňom sa ľudstvo obnoví, v ňom človek spásu má.
-Je pravý človek a pravý Boh, je chlebom, čo nám dáva
-a s ním sa každý vráti zas k svojim bratom.
-
-4. Zas čas nový prichádza, čas, keď sa všetko mení,
-tak znovu môžeš začať žiť so srdcom otvoreným.
-Zmyť dušu od starých vín a od zaschnutých hriechov
-a vravieť všetkým neznámym: Ježiš je Pán.]]></songtext>
-        <author><![CDATA[019]]></author>
-        <authorId><![CDATA[emanuel-(vianocna-verzia)]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Emanuel (vianočná verzia)]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[020]]></ID>
-        <lang><![CDATA[cz]]></lang>
-        <songtext><![CDATA[Vstávajte, pastieri
-
-1. [A]Vstávajte, pastieri, [H]berte sa [E]hor´,
-[A]aká to novina, [D]dajte po[A]zor! 
-Aké to zázraky javia sa na ne[E]bi!
-[A]Nikdy som nevidel [H]jak som sta[E]rý
-[A]na nebi vysokom [D]takej [E]žia[A]ri.
-
-2. Len sa ma nebojte, pastuškovia,
-prichádzam k vám ako anjel Slova,
-aby som vám zvestil, že sa vám narodil
-Mesiáš v Betléme, Ježiš malý,
-ktorého oddávna ste čakali.
-
-
-Keď tá jasná hviezda
-
-1. Keď tá [A]jasná [E]hvie[A]zda na nebi svieti[A7]la,
-/:[D]vtedy Panen[Hm]ka Má[E]ria Syna porodi[A]la.:/[A7]
-
-2. Keď ho porodila, takto mu spievala:
-/:Hajaj, búvaj, môj Synáčku, aj ja by som spala.:/
-
-3. Ach, mamička, moja, či o tom neviete,
-/:že som stvoril nebo i zem i všetko na svete.:/
-
-
-Narodil sa Kristus Pán v Betleme
-
-1. [A]Narodil sa Kristus Pán v [E]Betlé[A]me,[H]
-[E]uložený je v jasliach [H]na sla[E]me.
-/:[D]Ej, slama, [A]slama, [D]premi[A]lá,
-[D]nikdy si [A]tak šťastná [E]nebo[A]la.:/
-
-2. Prorokovali nám tak proroci,
-že sa narodí Syn o polnoci.
-/:Ej, polnoc, polnoc, premilá,
-nikdy i tak šťastná nebola.:/
-
-3. Na nebi jasná hviezda svietila
-a nebeským svetlom zažiarila.
-/:Ej, hviezda, hviezda, premilá,
-nikdy si tak šťastná nebola.:/]]></songtext>
-        <author><![CDATA[020]]></author>
-        <authorId><![CDATA[koledy]]></authorId>
-        <groupname><![CDATA[[local]]]></groupname>
-        <title><![CDATA[Koledy]]></title>
-    </song>
-    <song>
-        <ID><![CDATA[454077]]></ID>
+<song>
+<ID>
+<![CDATA[ 1.-zvelebeny-pan ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán. Zvelebený buď, aj keď v púšti sa nachádzam, aj keď kráčam sám v pustinách, zvelebený Pán. B: Každú milosť, čo mi dávaš, vyspievam rád, aj keď tma ma obopína, ja zavolám: R: Zvelebený buď, Pane náš, zvelebený Pán, zvelebený buď, Pane náš, požehnané, slávne meno máš. 2. Zvelebený buď, keď ma lúč slnka zohrieva, keď je svet krásny bez tieňa, zvelebený Pán. Zvelebený buď aj na púti, čo ťažká je, aj keď obetu prinášam, zvelebený Pán. B2: /:Máš právo dať aj vziať:/ ja stále spievam rád, zvelebený Pán. ]]>
+</songtext>
+<author>
+<![CDATA[ 001 ]]>
+</author>
+<authorId>
+<![CDATA[ ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Zvelebený Pán ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 2 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Požehnané meno má Pán, (3x) Najvyšší. R: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť! 2. Oslávené meno má Pán, (3x) Najvyšší. 3. Ježiš, toto meno má Pán, (3x) Najvyšší. 4. Svätý, svätý, svätý je Pán, (3x) Najvyšší. ]]>
+</songtext>
+<author>
+<![CDATA[ 002 ]]>
+</author>
+<authorId>
+<![CDATA[ pozehnane-meno-ma-pan ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Požehnané meno má Pán ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 3 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Úžasný, tak úžasný si v láske bez hraníc. Tvoj kríž mi dáva milosť sľúbenú. Nik nevidel, nik nepočul, niet srdca, čo tuší, jak slávny je a nádherný Boh môj. R: Nádherný Boh, ťa ľúbim, nádherný Boh, ja ťa ctím, nádherný Boh, nech pieseň znie. 2. Všemocný, tak všemocný, zem tvoju slávu má, moc tvojich diel v nej každý rozpozná. Krása tvojho kráľovstva spev môjmu srdcu dá, tak zázračný, tak zázračný Boh si. B: Dal uzrieť si mi všetky zázraky v nás, tou láskou si získal ma. Veď nič na zemi sa ti v kráse nevyrovná. B2: Mne v duši pieseň znie (3x) nádherný Boh ]]>
+</songtext>
+<author>
+<![CDATA[ 003 ]]>
+</author>
+<authorId>
+<![CDATA[ nadherny-boh ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Nádherný Boh ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ /espe/nadherny-boh ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc Tvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú Nik [D]nevidel,nik [E]nepočul niet [F#m]srdca čo tu[A]ší Jak [D]slávny je a [E]nádherný Boh [A]môj R:Si nádherný [D]Boh,Ťa [E]ľúbim si nádherný [D]Boh,ja Ťa [E]ctím Nádherný [D]Boh,nech [E]pieseň [A]znie 2.[D]Všemocný tak [E]všemocný Zem [F#m]Tvoju slávu [A]má Moc [D]Tvojich diel v nej [E]každý rozpo[A]zná [D]Krása Tvojho [E]kráľovstva spev [F#m]môjmu srdcu [A]dá Tak [D]zázračný tak [E]zázračný Boh [A]si R:Si nádherný [D]Boh,Ťa [E]ľúbim si nádherný [D]Boh,ja Ťa [E]ctím Nádherný [D]Boh,nech [E]pieseň [A]znie ]]>
+</songtext>
+<author>
+<![CDATA[ 003 ]]>
+</author>
+<authorId>
+<![CDATA[ /espe ]]>
+</authorId>
+<groupname>
+<![CDATA[ [pisnicky_akordy] ]]>
+</groupname>
+<title>
+<![CDATA[ Nádherný Boh ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 4 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier. R: [D] Ty si víťaz, [A] Je[Am]žiš [G] [D] Mocný víťaz,[A] Je[Am]žiš [G] 2. Kde som padával, tam ty víťazíš, kde som prehrával, tam ma podržíš. ]]>
+</songtext>
+<author>
+<![CDATA[ 004 ]]>
+</author>
+<authorId>
+<![CDATA[ bohatier ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Bohatier ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 5 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D] Tvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán. [D] Chcem ti vydať práve [G]dnes každú [A]časť života.[Hm] Viem, že prijmeš každý [G]dar zlome[A]ného srdca.[D] R: Povedz, čo ti smiem dať,[G] čo [A]priniesť ti smiem? [D] Si môj láskavý Kráľ,[G] ja len [A]miznúci tieň. [D] Ježiš viac nemám slov, [G]pieseň [A]doznieva tiež, [D] aj keď nehodný som, [G]chcem ti [A]niečo priniesť – [Hm] možno len tichý plač,[G] len bolesť, čo mám, [Em] svoju [G]hĺbku [D]srdca ti dám, [G]môj [A]láskavý Pán.[D] 2. Kvôli tebe dýchať smiem, môj dlh splatil si sám. Život svoj si za môj dal, bol to víťazný plán. Vzal si hanbu z mojich pliec, bol to posledný boj, otvoril si bránu nebies, dnes som iba tvoj. ]]>
+</songtext>
+<author>
+<![CDATA[ 005 ]]>
+</author>
+<authorId>
+<![CDATA[ obeta-srdca-(tuzim-priniest-na-oltar) ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Obeta srdca (Túžim priniesť na oltár) ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 6 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m. [A]Pred tebou, môj [F#m]Kráľ a [A]Pán, [F#m]pred tebou na[E] tvári vyznáv[D][A]am: 1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou, [F#m]v sprievode [E]víťaznom [D]vodíš si [A]ma. [F#m]Za tebou [E]pôjdem [D]svetlom i [A]tmou, veď [F#m]Ty si môj[A] Pán, [E]hoden si [A]chvál. 2. Iného bližšieho na nebi niet. On pre mňa vydobyl tisícky liet. V otcovom náručí tam ma ukrýva, veď on je môj Pán, hoden je chvál. ]]>
+</songtext>
+<author>
+<![CDATA[ 006 ]]>
+</author>
+<authorId>
+<![CDATA[ pred-tebou,-moj-pan,-sa-vzdam ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Pred Tebou, môj Pán, sa vzdám ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 7 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie, daj, nech pravdy sa nepustím, z očí nikdy ťa nestratím. 1. V mojich pádoch aj úspechoch, v mojich šťastných aj smutných dňoch, moje srdce ti patrí len, ty si nádej, žijem v nej. 2. Ty si ten, ktorý dýcha v nás, ty si ten, ktorý stráži ma. Srdce preteká pokojom, keď tvoj hlas smiem počuť v ňom. 3. Nikto neľúbi ako ty, nik sa nestará ako ty, zdá sa, nebo si otvoril, Otče vieš, jak mám ťa rád. ]]>
+</songtext>
+<author>
+<![CDATA[ 007 ]]>
+</author>
+<authorId>
+<![CDATA[ drz-ma-blizsie ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Drž ma bližšie ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 8 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš[D/D7]:/ /:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[[Hm]vý, k Tebe [Em]ideme, Ty [A]veľký Bože [D]náš.:/ 2. /:Aj ja chcem tu v úcte stáť, môj Boh a Pán:/ /:svojim blížnym a Tebe slúžiť zo všetkých síl, plný nádeje Ti šepkať: „Otče náš.“:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 008 ]]>
+</author>
+<authorId>
+<![CDATA[ tvoj-lud-pred-tebou- ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Tvoj ľud pred Tebou ]]>
+</title>
+<youtube>
+<![CDATA[ https://m.youtube.com/watch?v=CUquzcgDn_U&pp=ygUTdHZvaiBsdWQgcHJlZCB0ZWJvdQ%3D%3D ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 9 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár, [G]s láskou ti predkla[C]dám všetko, čo mám. [D] [G]Odovzdávam rodi[C]čov, [G]bratov, sestry, priate[C]ľov, [Em]dávam seba i [C]tých, čo menej mám [D]rád. 2. S vďakou dávam ti týždeň, čo bol, s láskou nesiem ti chvíle, čo sú. S vierou ti predkladám, čo nás čaká. R: /:Dávam [G]ti zo [D]svojich [C]rán, dávam [G]všetko, čo [D]v sebe mám. [C] Všetko [G]teraz ti [D]predkla[C]dám pred tvoju tvár[D], :/ tu, na [G]oltár. [G][C] ]]>
+</songtext>
+<author>
+<![CDATA[ 009 ]]>
+</author>
+<authorId>
+<![CDATA[ pane-nas,-prijmi-dar ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Pane náš, prijmi dar ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 10 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Všetko [F]živé chváli [G]Ťa,[F] [C]v Duchu, [F]v pravde uctie[G]va.[F] [a]Sláva [F]Bohu verné[G]mu, [Am]Ježi[G]ša nám [F]dal. [G] R: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný, chválim [F]Ťa, Alfa [C]i Ome[F]ga, chválim [G]Ťa. Dobrý [C]Boh, silný [F]Boh, nádher[G]ný, slávim Ťa, [F] Elo[Am]him, El sha[F]ddaj, slávim [G]Ťa,[a]z lásky [G]slávim[F]Ťa. [G] B: [C]Horí, [F]oheň [G]v nás, Ježiš [Am]žije, [F]príde [G]zas. ]]>
+</songtext>
+<author>
+<![CDATA[ 010 ]]>
+</author>
+<authorId>
+<![CDATA[ vsetko-zive-chvali-ta- ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Všetko živé chváli ťa ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 11 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť [D]Dnes viem [G]že chcem [A]počuť tvoj [D]hlas a žiť [D]Dnes viem [G]že chcem [A]Ti svoje [D] áno dať [D]Dnes viem [G]že chcem [A]za tebou [D]ísť R: [Em]Teraz [G]ja a môj dom [D]chceme [A]slúžiť [A]Teraz [Em]ja a môj dom [G] chceme [D] len pre teba [A] žiť [A] Už [D] dnes B: [Em]Nádherný [Hm]Radca náš [G] Otec neko[A]nečný Pán [Em]zástupov, [Hm]večný kráľ, [G]za tebou chceme [A] kráčať [D] ]]>
+</songtext>
+<author>
+<![CDATA[ 011 ]]>
+</author>
+<authorId>
+<![CDATA[ dnes-viem ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Dnes viem ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 012 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.  [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám, [G]dávam na ol[Am]tár k tvojim [G]nohám, kráľov [C]Kráľ. Dnes kladiem svoje [G]sny, ja sa zriekam svojich [F]právd, už [G]nechcem pyšný [Am]stáť, chcem [G]nový život [C]mať. R: [Am] [G]Dávam [C]všetko [F]to, čo [C]mám, [Am]tebe, [G]Kráľ. [F] [G] 2.  Keď túto pieseň hrám pod krížom stojím sám a všetky bohatstvá za smeti pokladám. Chcem poznať teba, Kráľ, slávu mena, ktoré máš, tá radosť nekončí, aj keď s tebou trpieť mám. ]]>
+</songtext>
+<author>
+<![CDATA[ 012 ]]>
+</author>
+<authorId>
+<![CDATA[ davam-vsetko ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Dávam všetko ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 013 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Hudba dohráva[A], všetko stíši sa[Em] a ja prichádzam[A] [D]priniesť niečo [A]snáď, čo pravú cenu má,[Em] čo by si mal rád.[A] B: [Em]Viac ako [D]pieseň Ti dám,[A] lebo to čo žiadaš [Em]nie je len [D]pieseň sama.[A] [Em]Ak niečo [D]iné sa zdá, [A]Ty vieš, čo je pravda, [Em]Ty vidíš, [D]čo v srdci [A]mám. R: [D]Túžim sa vrátiť do [A]srdca chvály, kde si [Em]jedine Ty, jedine Ty, [A]Je[D]žíš. Odpusť mi, Pane, že [A]neverný som, si to [Em]jedine Ty, [G]jedine Ty,[A] Ježíš. [D] 2. Nekonečný Kráľ, nik nevysloví, čo Ti patriť má; aj keď slabý som, všetko to, čo mám, každý dych je Tvoj. ]]>
+</songtext>
+<author>
+<![CDATA[ 013 ]]>
+</author>
+<authorId>
+<![CDATA[ hudba-zohrava-(srdce-chvaly)- ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Hudba zohráva (Srdce chvály) ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 150947 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta. [C]Otvor môj[G] zrak nech vid[F]ím. [C]Krásu lásk[G]y, v ktorej[F] srdce Ti spieva. Veď [C]láska a [G]moc Ti pat[F]rí. R: Prišli sme Ťa [C]vzývať, prišli sme sa [G]skláňať Prišli sme Ti [Ami]vyznať: Si náš [F]Boh. Si dokonalá [C]láska, dokonale [G]svätý, dokonale[Ami] nádherný ku[F] nám. 2. Kráľ všetkých dní a tiež najvyšší vládca, slávnejší nad nebesá. Ponížil sa, prišiel na Zem, čo stvoril, vzdal sa slávy z lásky k nám. B: /:Ja [G]nemám [C]dosť slov [F]opísať cen[G]u, ktor[C]ú Ťa [F]môj hriech stál:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 014 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Do tmy na svet ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/4E4ho_hmW1s ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 360068 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: /:[D]Príď,ó Ježiš, [G]príď:/ 1. Tí, čo sú [D]smädní, zoslabnu[F#m]tí. Nech nájdu [G]prameň a ponoria [Em]srd[D]cia [A]v ňom. Smútok a [D]bolesť sa odpla[F#m]ví z nás. Na vlnách [G]lásky voláme [Em]z hĺ[D]bky [A]zas. R2: /:[D]Duchu Svätý, [G]príď.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 015 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Priď ó Ježiš príď ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/fJ8VLOJmoq4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 50984 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ -1 N[Dmi]esieme, Pane, chlieb a [C]víno. N[Ami]esieme celý život [Dmi]náš. N[Dmi]esieme, Pane, chlieb a [C]víno a[Ami] hľadáme Tvoju [Dmi]tvár[F], Tvoju [C]tvár, T[Ami]voju svätú [Dmi]tvár. ]]>
+</songtext>
+<author>
+<![CDATA[ 016 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Nesieme, Pane, chlieb a víno ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 017 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Smieme [C]  stáť pred tvojím trónom smieme [Am]  stáť pred tvojou tvárou smieme [F]  stáť, [G]smieme [C]  stáť   R: [F]Pre tvoju [G] krv a rany [Am]kríž a hrob, čo [C]zostal prázdny [Dm]my smieme [C] stáť, smieme [G] stáť 2. Hoden chvál od východu slnka hoden chvál až po jeho západ hoden chvál, hoden chvál ]]>
+</songtext>
+<author>
+<![CDATA[ 017 ]]>
+</author>
+<authorId>
+<![CDATA[ smieme-stat ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Smieme stáť ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 1570 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Hm]Boh je stále[G]medzi nami,[D]je stále[A]blízko nás, [Hm]pozná všetky [G]Tvoje rany, [D]pred Ním sa [A]neschováš. 2. Boh je práve blízko pri nás, môžeš až k Nemu prísť, chce obmyť to, čo skrývaš, báť sa nemusíš. R: [Hm]Imanu[G]el,[D]je blízko[A]nás, [Hm]Imanu[G]el,[D]dotkni sa[A]nás, [Hm]Imanu[G]el,[D]nemáme[A]síl, [Hm]Imanu[G]el,[D]Ty musíš[A]prísť. 3. Ty si teraz medzi nami, si blízko znavených, poznáš všetky naše rany, pred Tebou niet kam ísť. 4. Ty si práve blízko pri mne, tu končím pred Tebou, nech Tvoj Duch vanie ku mne, už viacej nemám slov. Záver [D] ]]>
+</songtext>
+<author>
+<![CDATA[ 018 ]]>
+</author>
+<authorId>
+<![CDATA[ 161 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Imanuel ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 019 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]To svetlo, ktoré svieti v nás už mnoho[A] ľudských dní a v každom[Hm] z nich svoj zápas s [G]tmou slávne[A] víťazí, [D]aj dnes nám svieti do duší a [A]ukazuje nám, že bez lásky[Hm] svet umiera, [G]ak[A] nehľadá. 2. Už slovo telom stalo sa a prebýva tu v nás a čaká dnes aj od teba, čo v jasliach odovzdáš, tak otvor srdce dokorán, veď svetlo na svet prišlo, už vieš, že sa dnes narodil Kristus náš Pán. B: Sme tu s [Hm]ním, vždy[G] pod tou istou hviezdou, pri [Em]jeho biednych jasliach, [G]spievame jedným[A] hlasom: R: [D]Emanuel[A], Eman[G]uel, [A]Emanuel. Emanuel, Emanuel. +1 [H]([E][H][A][H]) 3. Boh najväčší dar pripravil, dal svojho Syna nám, len v ňom sa ľudstvo obnoví, v ňom človek spásu má. Je pravý človek a pravý Boh, je chlebom, čo nám dáva a s ním sa každý vráti zas k svojim bratom. 4. Zas čas nový prichádza, čas, keď sa všetko mení, tak znovu môžeš začať žiť so srdcom otvoreným. Zmyť dušu od starých vín a od zaschnutých hriechov a vravieť všetkým neznámym: Ježiš je Pán. ]]>
+</songtext>
+<author>
+<![CDATA[ 019 ]]>
+</author>
+<authorId>
+<![CDATA[ emanuel-(vianocna-verzia) ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Emanuel (vianočná verzia) ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 020 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Vstávajte, pastieri 1. [A]Vstávajte, pastieri, [H]berte sa [E]hor´, [A]aká to novina, [D]dajte po[A]zor! Aké to zázraky javia sa na ne[E]bi! [A]Nikdy som nevidel [H]jak som sta[E]rý [A]na nebi vysokom [D]takej [E]žia[A]ri. 2. Len sa ma nebojte, pastuškovia, prichádzam k vám ako anjel Slova, aby som vám zvestil, že sa vám narodil Mesiáš v Betléme, Ježiš malý, ktorého oddávna ste čakali. Keď tá jasná hviezda 1. Keď tá [A]jasná [E]hvie[A]zda na nebi svieti[A7]la, /:[D]vtedy Panen[Hm]ka Má[E]ria Syna porodi[A]la.:/[A7] 2. Keď ho porodila, takto mu spievala: /:Hajaj, búvaj, môj Synáčku, aj ja by som spala.:/ 3. Ach, mamička, moja, či o tom neviete, /:že som stvoril nebo i zem i všetko na svete.:/ Narodil sa Kristus Pán v Betleme 1. [A]Narodil sa Kristus Pán v [E]Betlé[A]me,[H] [E]uložený je v jasliach [H]na sla[E]me. /:[D]Ej, slama, [A]slama, [D]premi[A]lá, [D]nikdy si [A]tak šťastná [E]nebo[A]la.:/ 2. Prorokovali nám tak proroci, že sa narodí Syn o polnoci. /:Ej, polnoc, polnoc, premilá, nikdy i tak šťastná nebola.:/ 3. Na nebi jasná hviezda svietila a nebeským svetlom zažiarila. /:Ej, hviezda, hviezda, premilá, nikdy si tak šťastná nebola.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 020 ]]>
+</author>
+<authorId>
+<![CDATA[ koledy ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Koledy ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 454077 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 [Hm]Ak ľud môj[A]ho me[Hm]na sa poko[A]rí a bu[G]de [A]sa mod[D]liť, [Hm]ak vy[A]hľadá [Hm]moju prítom[A]nosť a od[G]vráti sa [A]od zlých [F#]ciest, [Hm]vtedy ich z [Em]nebies [A]vypo[D]čujem, [G]z nebies im [[Hm]od[F#]pustím. [Hm]Odpustím [Em]ich hriech [A]a uzdra[D]vím zem, [G]áno, [Hm]uzdra[F#]vím ich [Hm]zem. ]]>
+</songtext>
+<author>
+<![CDATA[ 021 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ak ľud môjho mena ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 22 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [C]Toto je telo a [G]toto je [Dm]krv, [A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj, [F]pravý Boh za pokrm [C]ľuďom sa [Am]dal, [Dm]aby večný život [G]v nás zacho[F]val. [C] 1. Keď už [C]poslanie [Am]spásy vr[G]cholí, Ježiš [Am]pozdvihol [F7]víno a [G4]chlieb. [G] Ono [Am]krvou a [F]telom sa [Am]stáva, aby [C]do svetla [Am]mohli sme [G4]prejsť. [G] R: [C]Toto je telo a [G]toto je [Dm]krv, [A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj, [F]pravý Boh za pokrm [C]ľuďom sa [Am]dal, [Dm]aby večný život [G]v nás zacho[F]val. [C] 2. Na zem [C]zostúpil, [Am]v chlebe sa [G]delí, v sebe [Am]dedičstvo [F7]nám daro[G4]val, [G] aby [Am]nikto z nás [F]neminul [Am]cieľ, aby [C]nikto z nás [Am]nehlado[G4]val. [G] R: [C]Toto je telo a [G]toto je [Dm]krv, [A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj, [F]pravý Boh za pokrm [C]ľuďom sa [Am]dal, [Dm]aby večný život [G]v nás zacho[F]val. [C] 3. Iba [C]vo viere [Am]rozpoznať [G]musím, že si [Am]skutočne [F7]tu prítom[G4]ný, [G] v tomto [Am]posvätnom [F]chlebe a [Am]víne, Vyku[C]piteľ môj [Am]osláve[G4]ný. [G] R: [C]Toto je telo a [G]toto je [Dm]krv, [A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj, [F]pravý Boh za pokrm [C]ľuďom sa [Am]dal, [Dm]aby večný život [G]v nás zacho[F]val. [C] 4. Naše [C]ústa nech [Am]vždy ohla[G]sujú veľký [Am]zázrak čo [F7]urobil [G4]Pán, [G] že nás [Am]zapálil [F]ohnivou [Am]láskou, že sa [C]ponúka [Am]svetu i [G4]nám. [G] R: [C]Toto je telo a [G]toto je [Dm]krv, [A]čo [Dm]dávaš za mňa na oltár, [Am]Spasiteľ môj, [F]pravý Boh za pokrm [C]ľuďom sa [Am]dal, [Dm]aby večný život [G]v nás zacho[F]val. [C] ]]>
+</songtext>
+<author>
+<![CDATA[ 022 ]]>
+</author>
+<authorId>
+<![CDATA[ toto-je-telo-a-toto-je-krv ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Toto je telo a toto je krv ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 023 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C#m]Vitaj pokrm,[G#m] v ktorom [A]je neu[H]stále [C#m]prítomný [G#m]tvorca [A]neba, i [H]zeme. [E]Vitaj ná[H]poj všetkých[F#m] túžob napl[A]ne[H]nie, [C#m]srdce dychtí [G#m]túžbou po te[C#m]be. 2. Vitaj prameň, každého dobra nášho, vnímam Ťa mám v sebe Boha samého. Poznajte národy jeho všemohúcnosť, v nás Pán Boh má svoju prítomnosť. 3. Vitaj z nebies manna padajúca, lahodnú chuť v ľudskom srdci tvoriaca. Ty najcennejší poklad v duši mojej. Pokoj mám vždy, keď ťa v nej nájdem. 4. Vitaj sladkosť ovocia rajského, žriedlo lásky Otca milosrdného. Kto Ťa okúsi smrti sa nebojí, tvoja láska rany zahojí. 5. Vitaj radosť ľudských sŕdc jediná, strápených duší, nádej mocná. K tebe moje slzy vrúcne volajú, Teba v každom čase milujú. ]]>
+</songtext>
+<author>
+<![CDATA[ 023 ]]>
+</author>
+<authorId>
+<![CDATA[ vitaj-pokrm ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Vitaj pokrm ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 2e89e8wx ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovať akordy [G] [C] [D] [C] [G] Slnko Kristovej lásky nech ožiari nás [G] [C] [D] [C] [D] [D7] Oheň Svätého Ducha nech zapáli nás [Ami] [Emi] [Ami] [Emi] Nech netlejeme len, nech nezhasína deň [F] [Ami] [C] [D] [D7] deň, v ktorom sa jeho milosť oslavovať má. ]]>
+</songtext>
+<author>
+<![CDATA[ 024 ]]>
+</author>
+<authorId>
+<![CDATA[ c2i85pmz ]]>
+</authorId>
+<groupname>
+<![CDATA[ [akordy_texty] ]]>
+</groupname>
+<title>
+<![CDATA[ Slnko Kristovej lásky ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 025 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C#m]Kamkoľvek ma [A]zavoláš, [H]kamkoľvek ma[F#m] zavoláš, pôjdem. [C#m]Kamkoľvek ma [A]zavoláš, [H]viem, že pôjdeš [F#m]so mnou. 2. Tam, kde [A]túžba vždy horí, tam, kde [F#m]láska všetko nové tvorí, [E]Tvoj hlas ma zavolá[H] a strach mizne vo[A] vlnách ([F#m]a ja kráčam po [E]vodách).[H] R: (Tebou)[C#m] nechám sa [A]viesť, [H]nechám sa [F#m]viesť, [C#m]nechám sa [A]viesť.[H][F#m] 3. Aj dnes ma [A]voláš [F#m]objavovať [E]nepoznané.[H] Aj dnes ma [A]voláš otvárať dvere [E]zatvorené.[H] Aj dnes ma [A]voláš [F#m]prebúdzať sny [E]pochované.[H] Aj dnes ma [A]voláš [F#m]tancovať na[E] oceáne.[H] B: [C#m]Všetko, čo [A]mám, ti patrí, [H]dôverujem [F#m]ti. [C#m]Všetko, čo [A]mám, ti patrí, [H]každý dych je [F#m]tvoj! ]]>
+</songtext>
+<author>
+<![CDATA[ 025 ]]>
+</author>
+<authorId>
+<![CDATA[ necham-sa-viest ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Nechám sa viesť ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 331326 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Aj keby nekvitol [Dm] fík, aj keby [B]nerodila zem, aj keby [Gm]nebesá nedoniesli [F]svetlo v nové [A7]ráno. A aj keď [Dm]polia zlyhajú a sýpky [B]prázdne zostanú, aj keď [Gm]všetko vôkol [F]volá, že Boh [A7]nie je. Ref.: Áno [F]práve vtedy pozdvihnem svoj hlas a [C]budem spievať [Gm]chvály. Uprostred [B]trápení, uprostred [Gm]súžení [A7]Ježiš je Pán. Áno [F]práve vtedy pozdvihnem svoj hlas a [C]budem spievať [Gm]chvály. [Dm]Lebo ver[Gm]ím, v [Dm]Neho ver[Am]ím. ( Aj keby nekvitol [Dm]fík ) 2. Keď blízky [Dm]priateľ opustí, a je tak [B]ťažké odpustiť keď sa [Gm]múry v mojom [F]vnútri zrazu [A7]rúcajú keď sa zdá, [Dm]že to neskončí, slzy sa [B]tlačia do očí viem, že [Gm]stojíš blízko [F]tých, čo v Teba [A7]dúfajú. Ref.: ]]>
+</songtext>
+<author>
+<![CDATA[ 026 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Aj keby nekvitol fík ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 027 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Chcem z Tvojej živej vody piť, chcem z Tvojho slova stále žiť, chcem v Tvojej blízkosti vždy byť, veď si môj Pán. R: /:Hľadám Tvoju tvár, daj sa mi nájsť. Hľadám Tvoju tvár, daj sa mi nájsť.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 027 ]]>
+</author>
+<authorId>
+<![CDATA[ chcem-z-tvojej-zivej-vody-pit ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Chcem z tvojej živej vody piť ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 768273 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 1: Po Tebe [F#m]túžim viac[D] môj Boh a [A]Pán v nádvoriach [F#m]Boha živé[D]hochcem prebý[A]vať Tiahni ma, pobežím za Tebou rád veď sladšia ako víno je Tvoja láska [E] R: Zobuď ma [F#m]ranným slnkom [D]oblej ma lúča[A]mi [E] Nech moja [F#m]tvár mi žiari [D]od Tvojej návšte[A]vy [E] Nech oblak Božej slávy môj svet mi naplní prebuď, čo vo mne drieme obnov, čo vo mne spí ]]>
+</songtext>
+<author>
+<![CDATA[ 028 ]]>
+</author>
+<authorId>
+<![CDATA[ 479 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Po Tebe túžim viac ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/D9T9XYFypds ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 809380 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovať 1. Tvoja [Em]láska vzala mi [C]dych a zmenila [G]môj svet, zmenila [D]môj svet. Len na tom záleží byť s Tebou navždy, byť s Tebou navždy. R: [G]Stále bližšie k Tebe [D]kráčať, v Tvojej hĺbke sa roz[Em]plývať, ja túžim poznať [C]viac, Teba poznať [G]viac. Tvoja láska zmysel dáva a všetko prekonáva, ja túžim poznať viac, Teba poznať [Am]viac. [G D] Teba poznať [Am]viac. [G D] Bridge: [C]Woah, [G]woah, [D]Tvoja láska [Em]vznešená je. Woah, woah, Tvoja láska láme. ]]>
+</songtext>
+<author>
+<![CDATA[ 029 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Bližšie ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/3YMc0QsjCwg ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 120917 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovať 1. /:[Emi]Jak [C]jeleň [D]dychtí za vo[Emi]dou ja[C] Bože [D]túžim za Te[Emi]bou:/ R: Zošli[Emi]dážď, zošli[C] dážď, dosť[G] bolo su[D]cha Zošli dážď, zošli dážď, Svätého Ducha Zošli dážď, zošli dážď, nové Turíce Zošli dážď, zošli dážď, rozjasaj srdce ]]>
+</songtext>
+<author>
+<![CDATA[ 030 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Jak jeleň dychtí za vodou ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/8wMzJBRXX8c ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 160937 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovať 1. [C]Hladný prichá[Am7]dzam a viem že [G]Ty ma nasýt[F]iš. [C]Hoc som prázdny, tvoj [Am7]príval lásky [G]smäd môj uha[F]sí. Ča[G]kám Ťa, [F/A]príď, ča[G/H]kám Ťa, [F]príď! R: Pa[C]dám na kole[Fmaj7]ná a dá[C]vam to, čo [Fmaj7]mám, si [C]všetkým Ježiš, čo [Fmaj7]pre mňa zmysel [C]má. 2. [C]Bežím k tebe [Am7]zlomený, Ty [G]náruč otvár[F]aš. [C]Ustatý som, [Am7]dotyk Tvoj však [G]silu novú [F]dá. ]]>
+</songtext>
+<author>
+<![CDATA[ 031 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Hladný ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/Y9PiDcokyuE ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 798425 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovať [E H A] 1. [E]V tichu stojím [H]v Tebe ukry[A]tý [C#m]Viem, že si [H]prítom[A]ný [E]V tichu stojím, [H]očakávam, [A]na Teba len. [C#m]Túžim ťa [H]poznať [A]viac R: [E]Túžim Ťa [H]poznať [C#m]Chcem počuť [A]vždy Tvoj hlas [E]Túžim Ťa [H]poznať [A]viac Chcem sa Ťa dotknúť, chcem vidieť Tvoju tvár, túžim Ťa poznať viac ]]>
+</songtext>
+<author>
+<![CDATA[ 032 ]]>
+</author>
+<authorId>
+<![CDATA[ 1010687 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Túžim Ťa poznať viac ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/U93g2EIslpQ ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 1444790 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1: [D]Boh tak miloval [G]svet že [Hm]svojho [A] syna nám [G] dal R: Nekone[D]čná milosť tak v[G]zácn[A]a ma [Hm] spasila keď [G]niesol si môj [A] hriech Bezhrani[Hm]čná, predivná [G]lá[A]ska ťa [Hm] vied[G]la na [A] kríž /:aby my sme mohli [G] žiť :/ ]]>
+</songtext>
+<author>
+<![CDATA[ 033 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Boh tak miloval svet ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/QOu_M0A0ST4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 189896 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [H]Keď prichádzam, plný smútku [E]som, [H]chcem pocítiť tvoju [E]prítomnosť. Chcem zažiť dnes nové turíce, Ty naplníš chválou mi srdce. 2. V chráme je počuť ozveny, som svojou pýchou veznený. Obmytí tvojou milosťou, stojím tu a bez prázdnych slov. R: [G#m]Pane zošli [E]svojho ducha, [H]nech táto zem [F#]nie je suchá. Pane konaj v tomto chráme, nech na sválu zvolám AMEN! Záver: [H] ]]>
+</songtext>
+<author>
+<![CDATA[ 034 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Pane, zošli svojho Ducha ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 1003455 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [D] Dví [A] ham [Hmi] k Tebe, Pane [G] môj [D] S lá [A] skou [Hmi] celý život [G] svoj [D] Taký, a [A] ký [Hmi] je, [G] aký [D] je. [A] [Hmi] [G] Odovz [D] dá [A] m [Hmi] viac ako [G] viem odovz [D] dať [A] [Hmi] Nič si nene [G] chám Odovz [D] dá [A] m [Hmi] celé to, kým [G] som a čo [D] viem [A] [Hmi] Všetko Tebe [G] dám Do Tvoj [D] [A] [Hmi] ich rúk, [G] Tvojich [D] rúk [A] [Hmi] [G] ]]>
+</songtext>
+<author>
+<![CDATA[ 035 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Dvíham k Tebe, Pane môj ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/w3zDwzF_mL8 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 802017 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Teba, [C]Bože môj hľadám a [G]vyzerám daj mi [F]výhľad [Am]odkiaľ vidíš [G]svet Len Ty, Bože môj si mojou záchranou daj mi múdrosť Ty vieš čo robiť mám R: Zo všet[F]kých síl [Dm]Teba [G]len nave[F]ky nech [Dm]milu[G]jem Si mojou [F]skalou, [Dm]si môj [G]Pán od [C]vekov navždy [F]nech Teba [G]milu[C]jem Ale[F]luja, [Dm]kraľuj [G]nám Ale[F]luja, [Dm]kraľuj [G]nám Ale[F]luja, [Dm]kraľuj [G]nám, si [C]Kráľom nave[F]ky, ale[G]lu[C]ja ]]>
+</songtext>
+<author>
+<![CDATA[ 036 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Daj mi výhľad ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/AYOm6PzriVI ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 15100 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: /:Pane, [G]smädní sme po Te[D]be. Pane, [A]smädní sme po Te[D]be.:/ A: /:Nech táto [Hmi]osla[A]va naplní [G]uli[D]ce, chceme [G]tanco[D]vať z lásky [A]ku Te[D]be.:/ B: /:A všetko čo [G]mám, dám na ol[D]tár, svoj život ne[A]siem pred Tvoju [D]tvár.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 037 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Pane, smädní sme po Tebe ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/gqBcMKJzfjQ ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 838646 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Odej nás [D]do rúcha chvál. [G]Prelom ťažobu úzkosť [D]v nás. Nechaj [A]svoj olej radosti [G]tiecť od trónu [D]k nám! 2. Odej nás [D]do rúcha chvál. [G]Prelom ťažobu úzkosť [D]v nás. [A]Radosť je našou [G]silou našou [D]silou! R: Daj nech [G]znova tancujú kosti [D]zlámané! Zaplav [G]túto suchú zem svojou [A]riekou. Pane [G]k Tebe dvíham zrak, a tak [Hm]čakám, na tvoj [Em]milosti prúd,[G] keď [A]chválu ti vzdám! [G][D] B: [D]Aleluja [G]znej [D]Aleluja [G]vzdávame [D]chválu a česť [A]ty si Kráľ! [D]Aleluja [G]znej [D]Aleluja [G]meníme smútok [A]náš za rúcho [D]chvál! ]]>
+</songtext>
+<author>
+<![CDATA[ 038 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Rúcho chvál ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/T6cNIHUhTqY ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 163854 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 1. T[G]y si vzduch, čo dýc[C2]ham. T[G]y si vzduch, čo dýc[C2]ham. [G]Pre[D]bývaš [Em]Svätý, [C]žiješ vo m[D]ne. 2. Ty si môj denný chlieb. Ty si môj denný chlieb. Živé si Slovo, žiješ vo mne. R: Môj [G]Pá[D][Em]an [D]po Tebe [C]túžim (príď [D]k nám). Môj [G]Pá[D][Em]an[D] bez Teba[C] blúdim (som [D] sám). ]]>
+</songtext>
+<author>
+<![CDATA[ 039 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ty si vzduch, čo dýcham ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/gkpJQdwJU4Y ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 980136 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Ja ťa [A]budem chváliť [F#m]celým telom [C#m]svojim tancom a [H]svojim spevom R: [A]Aleluja, [F#m]aleluja, [E]aleluja [H]znie 2. Poď sloboda, rozprúď ducha nech tu radosť neutícha 3. [F#m]A aj nech svet sa rúca [H]ja viem, kam kráčať mám [F#m]aj keď sa vody búria [H]učíš ma kráčať po vlnách Voláš ma do tanca dávam ti svoju dlaň zatváram svoje oči otváram srdce dokorán B: [A]Nad každou [H]bolesťou, nad každým trápe[C#m]ním učíš ma tanco[[G#m]vať počujem, spievaš mi ]]>
+</songtext>
+<author>
+<![CDATA[ 040 ]]>
+</author>
+<authorId>
+<![CDATA[ 843727 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Aleluja ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/bnBRGmtlLCI ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 1197 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [F]Pane, [B]som tak veľmi [C]rád[B], [F]život s [B]Tebou som už [C]skúsil.[B] [F]Tak Ti [B]spievam pieseň [C]chvál[B], [F] poznat [B]Teba vždy som [C]túžil.[B] R: [F]Z nebies zo[B]stúpil si k [C]nám na [B]túto [F]zem, tu na [B]kríži musels' [C]mrieť aj [B]za môj [F]hriech. [F]Kríž pred [B]hrobom v krvi [C]stál, z hrobu [Ami]Otec si Ťa [Dmi]vzal, /: tak Ti [B]spievam [C]pieseň [F]chvál.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 041 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Pane som tak veľmi rád ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/w3zDwzF_mL8 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 102196 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Boh je tak [Hm]blízko [A]nás, Boh je tak [F#m]blízko [G]nás, Boh je tak [Hm]blízko [A]nás, [F#m]Boh je v [Hm]nás. R: Ty si ten [D]dar od Otca [A]nám, Ty si tá [Em]láska, čo prišla k [Hm]nám, Ty si ma [G]z hriechu vykúpiť [A]chcel – [F#m]Eman[Hm]uel. ]]>
+</songtext>
+<author>
+<![CDATA[ 042 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Boh je tak blízko nás ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 192016 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Z[C]velebe[Ami]ný si, Bože [Emi]nave[Ami]ky, z [F]Tvojich [C]rúk všetko [Dm]má[G]me. Z[C]velebe[Ami]ný si, Bože [Emi]nave[Ami]ky, [F]chlieb Ti [C]tu priná[G]ša[C]me. 2. .....víno Ti prinášame. 3. .....dary Ti prinášame. ]]>
+</songtext>
+<author>
+<![CDATA[ 043 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Zvelebený si, Bože ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/pvyiqMJJQ-E ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 189612 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C] [F] [C] Poď, teraz je čas vzdať chválu, [G] [Dm] [C] [F] poď, srdce svoje mu s láskou daj. [C] [F] [C] Poď, taký aký si, chváľ Ho, [G] [Dm] [F] [C] poď, predstúp pred Kráľa, prijme ťa. Tak poď! [F] [C] R: Každý jazyk v ten deň vyzná: Ty si Pán! [F] [C] Každý Ti raz úctu vzdá. [F] [Am] Tým, čo teraz s láskou Ťa hľadajú, [F] [G] Ty poklad vzácny dáš - 2x ]]>
+</songtext>
+<author>
+<![CDATA[ 044 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Poď teraz je čas ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/AHgm7R7kUfQ ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 185404 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Ty si mojou [E]láskou, nemennou a [A]stálou, mojím pevným [H]miestom, na ňom môžem [A9]stáť. Tajomne ma [E]dvíhaš, lásku vo mne [A]skrývaš, keď si pri mne [H]blízko, láska nesie [A9]ma. REF: /: Ale[E]luja, ale[H]luja, ale[C#m]luja, [A9]Tebe spievať chcem. :/ 2. Prekvapíš ma láskou, prenikneš ma krásou, radosť prúdi zvnútra môjho srdca von. Vždy, keď ku mne prídeš, svetlom zaplavíš svet, a ja cítim pieseň v mojom srdci rásť. REF: ]]>
+</songtext>
+<author>
+<![CDATA[ 045 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ty si mojou láskou ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/qB7kxy_iNf4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 703819 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C#m]Duchu svätý príď zostúp s [A]ohňom svojim [E]srdce moje naplň túžim [H]byť len Tvojim. [C#m]Ruky prázdne mám a pred [A]tebou stojím. [E]Mocne sa ma dotkni, [H]mocne sa ma dotkni. Ref: [E]Prí[H]ď, [A]radosť do srdca [H]vlej mi [E]Prí[H]ď, [A]pošli ma ja [H]chcem ísť [E]Prí[H]ď, [A]nový zápal [H]daj mi [E]Prí[H]ď, [A]s Tebou túžim [H]žiť ]]>
+</songtext>
+<author>
+<![CDATA[ 046 ]]>
+</author>
+<authorId>
+<![CDATA[ 865277 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Mocne sa ma dotkni ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/ROBAwEnsaxE ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ vsade-vokol-nas ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1: Tvoja láska drží stráž v čase búrok vo vlnách, všade vôkol nás, si všade vôkol nás. Nech tvoj príliv milostí naše srdcia zaplaví hlbšie ako oceán, hlbšie ako oceán. R: Tvoja láska mocne obmýva ma, prúdi ako dravá rieka. Ponáram sa v hĺbke tvojich rán. Krvou, ktorá z kríža stiekla, prietrž nekonečnej lásky obmyla môj hriech, smiem čistý stáť. Ty si všade vôkol nás, Ty si všade vôkol nás. B: Nie je miesto, kde ma nenájdeš, kde nehľadáš, kam neprídeš prv než ja vstúpim, stále viem – ty budeš so mnou stáť. ]]>
+</songtext>
+<author>
+<![CDATA[ 047 ]]>
+</author>
+<authorId>
+<![CDATA[ 47 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Všade vôkol nás ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ chvalove/moj-duch-jasa ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovat [A] Dnes tancujem pred Tebou tak ako Dávid, v strede dňa jasám a chcem Ťa zas chváliť. [A] Narodil som sa pre oslavu Teba, v kráľovstve radosti, lásky a neba. [F#m] [E] Woooo [A] [A] Chcem Ťa viac! [A] Slobodu pri Tebe stále rád nájdem, pr elomíš každé puto dávaš nádej. [A] Ponoril som sa do milosti kráľa môj duch plný radosti chválu vzdáva. [F#m] [E] Woooo [A] [A] Chcem Ťa viac! [A] Woooo [D] [F#m] [D] [F#m] Ja budem stáť, nemám strach. [D] [F#m] [E] [A] Ja budem Ťa chváliť a tancovať. [A] Woooo [D] [F#m] [D] [F#m] Ja budem stáť a hanba padá. [D] [F#m] [E] [A] a v radosti Pána je moja sila. [D] |: Môj duch jasá v Tvojej milosti, [A] [E] moje pery plesajú v radosti.:| ]]>
+</songtext>
+<author>
+<![CDATA[ 048 ]]>
+</author>
+<authorId>
+<![CDATA[ chvalove ]]>
+</authorId>
+<groupname>
+<![CDATA[ [velky_zpevnik] ]]>
+</groupname>
+<title>
+<![CDATA[ Môj duch jasá ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 185990 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Moja [C] sila a chvála je Pán [Ami], On sa [F] mi stal záchran [G] com.:/ /: Silný je [C] Pán [Ami], On sa [F] mi stal záchran [G] com./ ]]>
+</songtext>
+<author>
+<![CDATA[ 049 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Moja sila a chvála je pán ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/q8Z3v2XS_B4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ jasaj-v-panovi ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. /:[C]Jasaj v Pánovi [F]celá [C]zem, [F]toto je veľký [G]Hospodinov [C]deň.:/ R: /:Jasaj v Páno[F]vi.:/ /[D][G]/ 2. /:Toto je deň, ktorý dal nám Pán, radujme sa, zaznej pieseň chvál.:/ 3. /:Chváľme Pána on je prítomný, on je našich chvál hodný.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 050 ]]>
+</author>
+<authorId>
+<![CDATA[ 50 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Jasaj v Pánovi ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ vsetko-ti-davam,-najvyssi ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 1. [D]Všetko ti [A]dávam, Najvy[Hm]šší, všetko [G]ponúkam, môj Pán,[D] z lásky [A]dary priná[Hm]šam, s láskou [G]kladiem na ol[D]tár,[A][Hm] [G]kladiem na ol[D][A]tár.[Hm][G] R: Môj Boh si [D]ty, môj Pán [A]večný, chcem ťa [Em]chváliť, tvojim [G]byť. Ty síl mi [D]daj, tvoj pokrm [A]lieči, ostaň vždy [Em]so mnou, môj [G]Pán. (Môj Boh si [D]Ty.) 2. Tajomstvo lásky, spásy dar v chlebe, víne podávaš, za to, Otče, vďačíme, žehnaj celý život náš, celý život náš. ]]>
+</songtext>
+<author>
+<![CDATA[ 051 ]]>
+</author>
+<authorId>
+<![CDATA[ 51 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Všetko Ti dávam, Najvyšší ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 1157356 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Odmenou je Pán tým, čo v Ňom majú nádej. A tým, čo Ho hľadajú, samé dobré veci dá. Aj v skúškach dní chcem zostať s Ním, nehľadím späť, som slobodný. R.: Ježiš, stačíš mi sám. Ježiš, stačíš mi sám. Všetko v Tebe mám, viac nechcem. Všetko v Tebe mám. 2. S prosbou prichádzam, chcem radosť prežívať. Všetko s Ním chcem zažívať a v nebi domov mať. Aj v chvíľach zlých, chcem byť verný. Ježiš je tu, buď oslávený. B: Odteraz túžim s Ježišom kráčať, nehľadím späť, nehľadím späť. Kríž je mi spásou, svet slávou márnou, nehľadím späť, nehľadím späť. 2x ]]>
+</songtext>
+<author>
+<![CDATA[ 052 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ježiš stačíš mi sám ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/K2ZIsj27Iyk ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ blatom-a-trnim ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Blatom a tŕním si šiel, k zemi ťažký tlačil ťa kríž. Nás od smrti spasiť si chcel, však sám si k smrti šiel blíž. Z čelá steká ti pot, z dlaní krv, bič ukrutne ženie ťa vpred. Čo ťa čaká, si vedel už prv, no predsa si necúvol späť. R: V duchu vidím kríž, na ňom visíš ranami pokrytý, život večný z nich si nám zaistil. V duchu vidím kríž, na ňom visíš ranami pokrytý, chcem za tebou ísť, môj cieľ si istý. 2. Veľa odporcov máš, hoc prišiel si odstrániť chlad, chudobnému prednosť dáš, ak boháč len seba má rád. Ježišu, ty si vzor náš, čo od nás chceš, prežil si sám. Lásku vždy pre nás máš, ísť za tebou pomáhaj nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 053 ]]>
+</author>
+<authorId>
+<![CDATA[ 53 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Blatom a tŕním ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 770618 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Je [C]nádherné, byť v nádvoriach, [F]tam kde Ty [G]bývaš, veď [C]po Tebe, smäd v duši mám, môj [G]Pán Vždy srdce sa mi, utíši, keď pri Tebe som, a v tieni Tvojich krídel spievam si: R: S Tebou je [F]lepší jeden deň, s Tebou je [G]lepší krátky čas, s Tebou je [F]lepší jeden deň, než inde [G]tisíc.[C] 2. Len jednu vec, si žiadam mať, zrieť Tvoju krásu, byť s Tebou tam, kde Tvoja láska je. Bridge: [C#m]Po Tebe Boh [G]živý, [F]volám zo všetkých [G]síl, [C#m]po vodách Ducha Sväté[G]ho, [F] [G] [C#m]viac krát som to skú[G]sil, [F]tak volám znovu [G]príď, [G#m]chcem blízko Teba stáť, [F#m]chcem blízko Teba [F]stáť,vždy [G]stáť. ]]>
+</songtext>
+<author>
+<![CDATA[ 054 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ S tebou je lepší jeden deň (Je nádherné) ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/Ckvd3H3dDgc ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ mas-tron ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Ježiš, Ježiš, máš trón uprostred chvál, môj Kráľ, môj Kráľ. ]]>
+</songtext>
+<author>
+<![CDATA[ 055 ]]>
+</author>
+<authorId>
+<![CDATA[ 55 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Máš trón ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ chvalove/otvaram-srdce-dokoran ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C] [G] Otváram srdce dokorán [Em] nech prúdi Tvoj Duch [D] nech prúdi Tvoj Duch [C] [G] Tam, kde vstúpiš Ty, tma sa vytratí [Em] [D] a strach už nemá moc, ovládať každý krok [C] [G] Tam, kde vládneš Ty, láska víťazí [Em] [D] a dáva silu ísť [C] [G] So srdcom otvoreným [Em] [D] znovu bežíme za Tebou ]]>
+</songtext>
+<author>
+<![CDATA[ 056 ]]>
+</author>
+<authorId>
+<![CDATA[ chvalove ]]>
+</authorId>
+<groupname>
+<![CDATA[ [velky_zpevnik] ]]>
+</groupname>
+<title>
+<![CDATA[ Otváram srdce dokorán ]]>
+</title>
+<step>
+<![CDATA[ -7 ]]>
+</step>
+</song>
+<song>
+<ID>
+<![CDATA[ 391093 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Ami]Denne sa modlím: [Fmaj7]Buď vôľa Tvoja, [C]Pri tom prosím len [G]nech je ako moja. [Ami]Nie je to ľahké [Fmaj7]prijať to, čo nechcem, [C]Môže to bolieť, [G]keď pokorný byť [Ami]neviem.[F][C][G] 2. Ja som chcel niečo a veril, že aj ty chceš, A dnes už viem to, iba Ty poznáš odpoveď. Čo sa zdá blízko, Ty vidíš veľmi vzdialené, Čo ja chcem rýchlo, pre Teba nie je podstatné. R: /:[Ami]Buď [F]vôľa Tvoja, [C]aj keď iná je než tá [G]moja, [Ami]Buď [F]všetko, čo chceš [C]Ty .:/ 3. Preto sa modlím, nech vôľa moja, O to Ťa prosím, nech je ako Tvoja. Nauč ma prijímať z Tvojej ruky všetko, Nechcem už snívať a potom sa pýtať: Prečo. R: /:Buď vôľa Tvoja, aj keď iná je než tá moja, Buď všetko, čo chceš Ty.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 057 ]]>
+</author>
+<authorId>
+<![CDATA[ 587654 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Buď vôľa Tvoja ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/7hTTVW1jrJ4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 698452 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [E]Rád, [A]spievam, Bože, [H]chválo[E]spev, [E]báz[A]ňou sa napl[D H]ním [E]Vstú[A]pim do sveta [H]zázra[E]kov, keď [F#mi]vo viere [A]Ťa obja[E]vím 1. [G#]Velebí moja [C#mi]duša Pána [G#]a môj duch ja[C#mi]sá On [G#]pohliadol na [C#mi]moju biednosť,[D] spasenie mi [H]dá[H7]va. 2. Mne veľké veci urobil ten, ktorý je mocný Pre jeho meno presväté je každý slobodný 3. On mocnárov zosadil z trónov, skúša bohatých Hladných kŕmi dobrotami, prijíma pokorných 4. Ujal sa svojho služobníka, Boh milosrdný Ako sľúbil našim otcom, zostáva verný ]]>
+</songtext>
+<author>
+<![CDATA[ 058 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Rád spievam, Bože ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/pTQmAZ5ldkk ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ hymna-pute-zalubenych ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. My [D]prosíme ťa, Pane, [G]daj nám požehnanie, a [Hm]zachráň [A]nás od prázdnych [G]ciest. 2. Nech [D]tvoja láska, Pane, sa [G]našou láskou stane, nech [Hm]necháme sa [A]tebou [G]viesť. R: Ty [G]dávaš [A]lásku [D]nám, čo [G]neberie lež [A]dá[D]va, /:a [G]z dvoch vzdiale[A]ných [Hm]sŕdc, môj Pane, [G]v Tebe [A]jedno sa [D]stáva:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 059 ]]>
+</author>
+<authorId>
+<![CDATA[ 59 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Hymna púte zaľúbených ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ si-cestou,-po-ktorej-chcem-ist ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Si [A]cestou, po [H]ktorej chcem [E]ísť, si [A]pravdou, v [H]ktorú [E]verím, [A]živo[H]tom si [E]úž[H]as[C#m]ným, [A]za tebou [H]túžim [E]ísť. ]]>
+</songtext>
+<author>
+<![CDATA[ 060 ]]>
+</author>
+<authorId>
+<![CDATA[ 60 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Si cestou, po ktorej chcem ísť ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 1479091 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Ami]Skôr než uzrel som sv[G]et, ty spieval si n[F]ado mnou [Ami]Vždy si bol k[G]u mne tak láskav[F]ý [Ami]Skôr než dýchať som sm[G]el, vdýchol si ži[F]vot svoj [Ami]Vždy si bol k[G]u mne tak láskav[F]ý R: O ty m[Ami]ocná, večná n[G]ekonečná l[F]áska Otca k n[C]ám Ty op[Ami]ustíš stáda, n[G]eprestávaš k[F]ým nenájdeš m[C]a Nedá sa k[Ami]úpiť, nedá zasl[G]úžiť, stále d[F]ávaš seba v[C]iac. O ty m[Ami]ocná, večná, n[G]ekonečná l[F]áska Otca k n[C]ám 2. [Ami]Skôr než tvojim som b[G]ol, o mňa si z[F]ápasil [Ami]Vždy si bol k[G]u mne tak láskav[F]ý [Ami]Keď slabý som b[G]ol, ty za mňa si z[F]aplatil [Ami]Vždy si bol k[G]u mne tak láskav[F]ý B: [Ami]Nie je tma čo neprež[G]iariš Vrch ktorý nezd[F]oláš Tak chceš ma n[C]ájsť [Ami]Nie je múr ktorý nezv[G]alíš Klam čo neodzbr[F]ojíš Tak chceš ma n[C]ájsť ]]>
+</songtext>
+<author>
+<![CDATA[ 061 ]]>
+</author>
+<authorId>
+<![CDATA[ 22810 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Nekonečná láska ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/kx5QbKlJ9Xo ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 882914 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Som Tvojou ovečkou [a]malou a voňavou [Hmi]čistou a radostnou [G]Tebou ľúbenou R: [D]Ja milujem Kráľa a on ľúbi mňa [A]ja milujem Kráľa a on ľúbi mňa [Hmi]ja milujem Kráľa a on ľúbi [G]/[A]mňa ]]>
+</songtext>
+<author>
+<![CDATA[ 062 ]]>
+</author>
+<authorId>
+<![CDATA[ 17387 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ovečka ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/7XUG5QwiGQg ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ ja-sa-sklanam-pred-tebou ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Ja sa skláňam pred Tebou, ja sa skláňam pred Tebou, život Ti dávam, život Ti dávam. 2. Sám v sebe umieram, so všetkým, čo v sebe mám, s Tebou povstávam, s Tebou povstávam. 3. Daj nech moje srdce bije s Tvojím. 4. Zmocni sa ma, zmocni sa ma, život Ti dávam, odovzdávam. ]]>
+</songtext>
+<author>
+<![CDATA[ 063 ]]>
+</author>
+<authorId>
+<![CDATA[ 62 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Ja sa skláňam pred Tebou ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ svata,-ziva-voda ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [G]Svätá, [A]živá [F#]vo[Hm]da, Ježiš, z [G]Tvojich [A]rán prú[Hm]di. [G]Svätá, [A]živá [F#]vo[Hm]da, do mojej [G]hlinenej [A]nádo[D]by. R: /:[D]Duch a [A]neve[Hm]sta hovoria: [G]Príď a naber [A]si.:/ /:[D]Každý, kto [A]počú[Hm]va, nech odpovie: [G]Príď a naber [A]si:./ B: [D]Ježiš [A]na kríži [Hm]všetko dal, nič si [G]nenechal, Svätý [A]Boh. [G]Ďaku[A]jem Ti, [F#]Je[Hm]žiš, že si [G]za mňa [A]život [Hm]dal. [G]Ďaku[A]jem Ti, [F#]Je[Hm]žiš, že si mi [G]Otca [A]uká[D]zal. ]]>
+</songtext>
+<author>
+<![CDATA[ 064 ]]>
+</author>
+<authorId>
+<![CDATA[ 64 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Svätá, živá voda ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ chvalove/milostou-zijem ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ skontrolovat 1. [G]Strhol ma do tanca [D]srdcom na srdce [Em]Tajomstvom bláznovstva [C]láskou ma [D]omámil R: [G]Milosťou žijem [D]nech robí vo mne [Em]čo sa jej zapáči [C]čo sa jej [D]zachce 2. [G]Vodí ma do záhrad [D]stúpame do kopca [Em]Vodu mi podáva [C]čo tečie z jeho rán [G]čím viac pijem z nej [D]tým viac smädí ma [Em]Tá voda živá je [C]srdce mi obmýva B: Až do [G]dôsledkov [D]krvavých stôp [C]Víťaznou vierou [Em]a Božou mocou ]]>
+</songtext>
+<author>
+<![CDATA[ 065 ]]>
+</author>
+<authorId>
+<![CDATA[ chvalove ]]>
+</authorId>
+<groupname>
+<![CDATA[ [velky_zpevnik] ]]>
+</groupname>
+<title>
+<![CDATA[ Milosťou žijem ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 667021 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [F]TY ma nesieš [B]sám, Tebe [C]veriť s[F]miem. [F]TY mi pomá[B]haš keď ma [C]láka [Dmi]hriech. Ty sa [C]dotýkaš [B]hviezd aj detských s[F]ĺz Ty po[C]chopiť vi[B]eš. 2. Tebe ustúpia temné mraky s tmou ty utíšiš búrky nado mnou. Tebe nemôže vziať Tvoju slávu nik, ani tvoj majestát. R: [B]Ja chválu Tebe [F]vzdám pred iným sa nesklo[C]ním Tvoje meno v srdci [Dmi]mám, Tvoje [C]meno vyslo[B]vím! Ja chválu Tebe vzdám aby Tvoj Duch prúdil mnou aby uzdravený bol, kto sa skloní pred Tebou! ]]>
+</songtext>
+<author>
+<![CDATA[ 066 ]]>
+</author>
+<authorId>
+<![CDATA[ 16911 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ty ma nesieš sám ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/8xp4M21AVh0 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ taky,-aky-som ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Em]Dvíham ruky, aj keď k [C]zemi padám. Dnes túžim vzdať [G]Ti chválu, nechať všetko [D]prísť k Tebe Kráľ. A [Em]hľadám Teba, aj keď [C]seba strácam, na všetko[G], čo je za mnou zabúdam, za [D]Tebou utekám. R: Ta[Em]ký, aký som, [C]nahý pred Tebou, [G]nechám sa premeniť, [D]nechám sa láskou zlomiť. B: [Am]Vzdávam sa svojich predstáv, [C]vzdávam sa svojich snov. [G]Už žiaden strach a žiaden [Hm]vzdor. Celý som Tvoj. ]]>
+</songtext>
+<author>
+<![CDATA[ 067 ]]>
+</author>
+<authorId>
+<![CDATA[ 67 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Taký, aký som ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ strhni-ma-do-svojej-lasky ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Strhni ma do svojej lásky, Kráľ, nech nerozmýšľam, len utekám za tebou, len za tebou. R: Prosím, buď teraz so mnou, už vidím, mal si pravdu, viem, dlho som bol preč. Prosím, zaveď ma domov, chcem byť zas tvojím synom, zlož vinu z mojich pliec. B: Ja som, kto som, lebo ty si, kto si, ja viem, kto som, lebo ty Kráľom si, Nebies Kráľ, môj nebies Kráľ. ]]>
+</songtext>
+<author>
+<![CDATA[ 068 ]]>
+</author>
+<authorId>
+<![CDATA[ 68 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Strhni ma do svojej lásky ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ chvalove/duchu-svaty-si-tu-vitany ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Nič ma neláka viac ako bližšie stáť. Nič sa nevyrovná tomu, čo si nám dal, v Tvojej blízkosti. 2. Ja poznám a viem, Tvoja láska je liek, v nej slobodný som a hanby už niet, v Tvojej blízkosti. R. Duchu Svätý si tu vítaný, príď vtiahni nás tam kde tróniš Ty, Tvoja sláva prichádza dnes s túžbou k nám, zaplav láskou k Tebe naše srdcia, Kráľ. B. Nech stále viac pred Tebou bázeň mám. Dnes túžim zažívať, aký dobrý Boh si k nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 069 ]]>
+</author>
+<authorId>
+<![CDATA[ chvalove ]]>
+</authorId>
+<groupname>
+<![CDATA[ [velky_zpevnik] ]]>
+</groupname>
+<title>
+<![CDATA[ Duchu svätý, si tu vítaný ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ moj-hriech,-tvoj-kriz ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Môj hriech, Tvoj kríž, otrok je dnes dieťa Kráľa Môj smiech, Tvoj triumf láskou, ktorá hraníc nemá. B: Zmluvu lásky so mnou nezrušíš, nie, už nikdy, nikdy nezrušíš. R: Pieseň víťazstva slobodných detí, tanec s Kráľom do svätyne svätých, svojou smrťou si pochoval môj hriech, svojim vzkriesením nebesá otvoril. B2: Láskou bez hraníc si pochoval môj hriech, svojím vzkriesením mi nebo otvoril. ]]>
+</songtext>
+<author>
+<![CDATA[ 070 ]]>
+</author>
+<authorId>
+<![CDATA[ 70 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Môj hriech, tvoj kríž ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 913584 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Môj hriech tvoj kríž otrok je dnes dieťa Kráľa môj smiech tvoj triumf lásku ktorá hraníc nemá B: Zmluvu lásky so mnou nezrušíš nie už nikdy nikdy nezrušíš R: Pieseň víťazstva slobodných detí tanec s kráľom do svätyne svätých Svojou smrťou si pochoval môj hriech svojim vzkriesením nebesá otvoril. B: Zmluvu lásky so mnou nezrušíš nie už nikdy nikdy nezrušíš ]]>
+</songtext>
+<author>
+<![CDATA[ 070 ]]>
+</author>
+<authorId>
+<![CDATA[ 479 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Môj hriech,tvoj kríž ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/5tSeR9MGkYM ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ zivy-chlieb ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Z Tvojich štedrých [G]darov, Pane, [Am]ktorými zem [Em]požehnávaš, [F]nesieme Ti [C]z lásky chlieb a [Dm]víno na ol[F][G]tár. [C]Zhromaždení v [G]Tvojom chráme, [Am]kde nás všetkých [Em]povolávaš, [F]chceme konať[C] obeť, ktorú [Dm]si nám priká[G][C]zal. R: [F]Živý [G]chlieb, ktorý [C]zostúpil z [Am]neba, je náš [Dm]Ježiš [G]Kristus, Pán a [C]Kráľ. [F]Vo víne [G]a v kúsku [C]chleba Ťa prijí[Am]mam, tak [Dm]verím, že [G]život večný [C]mám. 2. Z Tvojich štedrých darov, Pane, ktorými zem požehnávaš, nesieme Ti z lásky chlieb a víno na oltár. V srdci veľkú radosť máme, že sa nám za pokrm dávaš; svojim deťom, ktoré túžia prísť pred Tvoju tvár. ]]>
+</songtext>
+<author>
+<![CDATA[ 071 ]]>
+</author>
+<authorId>
+<![CDATA[ 71 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Živý chlieb ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 793653 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [H]Súcit nekonečný, [E2]milosťou si ty. [H]Sladkým odpustením, [E2]vernosť bez hraníc [G#m]vo mne [F#]prítom[E2]ná. 2. Ty si Otec mocný, Kráľ, čo lieči nás. Spasiteľ si nežný, obeť prečistá za mňa slávená. R: [H]Dnes sa dávam [E2]celý[F#], všetko, [H]čím som, do tvojich [E2] rúk [H]vkladám[F#]. Ty si [G#m]získal [E2]život [F#]môj, svoje [G#m]á[E2]no dnes ti [F#]dá[H]vam ]]>
+</songtext>
+<author>
+<![CDATA[ 072 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Súcit nekonečný ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/NxypiAU0w4Q ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 326050 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Duch, čo nado [G]mnou sa vznášaš [Ami]s chvením čakám [G]na Teba [C]Zaplav svojou [G]prítomnosťou [Ami]príď, ó, príď a [G]naplň [C9]ma R:[F]Na[G]plň [Ami]ma, [F]naplň [C]ma [F]Duchu, [C]príď a [Ami]naplň [G]ma [F]Na[G]plň [Ami]ma, [F]naplň [C]ma [F]teraz [C]príď a [G]naplň [C]ma 2.Premáha ma moja slabosť vkladám ju do Tvojich rúk Očisť, poteš, uzdrav, uč ma príď, ó, príď a naplň ma 3.Túžim naplno žiť život v svojej láske vyšli ma Žriedlo lásky, viery, moci príď, ó, príď a naplň ma ]]>
+</songtext>
+<author>
+<![CDATA[ 073 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Naplň ma ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/NcwxWw0e9cI ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ ja-som-dobry-pastier ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 1. Tak už[D] vstaň, dnes volá ťa [A]Pán, [Hm]On má s tebou [G]plán, [D]prišiel ťa za[G]chrániť pastier [A]sám. Keď sa [D]Jeho ovca [A]stratí, On[Hm] nechá všetky, [G]kým sa s ňou ne[A]vráti. R: „[D]Ja som[G] Dobrý Pastier,“ [Hm]hovorí[A] Pán. „[D]Ja za [G]moje ovce[Hm] život[A] dám,“ a naozaj[D] dal. Nevá[A]hal, vyplnil [Hm]želanie Otca, [G]ktorý miluje [A]nás. [G][A][D] 2. Dnes už viem, že príde deň, keď sa všetko pominie, len Jeho láska zostane. A ak je v tebe, nemusíš sa báť, tvoju nádej naplní svojim príchodom Pán ]]>
+</songtext>
+<author>
+<![CDATA[ 074 ]]>
+</author>
+<authorId>
+<![CDATA[ 74 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Ja som Dobrý pastier ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 894992 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.[Hmi]Nemôžem [D]prestať [G]myslieť na teba, [Hmi]nemôžem [D]sa ťa [G] striasť. [Hmi]Si ako [D]oheň v mojom [G]vnútri, čo páli ma, [Hmi D G] páliš ma. [Emi D C Emi D C] B:[Hmi]Si [D]všetko, čo [G]chcem, [Hmi]si [D]všetko, čo [G]mám, [Hmi]aj keď [D]zdá sa, že [G]spíš, ja tvoje meno zavo[C]lám proti búrkam, proti tm[D]ám. R:Si [G]verný Boh a [D]verný kráľ, [Emi]dokončíš dielo, [C]ktoré si vo mne začal. [G]Verný Boh, [D]verný kráľ, [Emi]nevzdáš sa snov, ktoré si [C]so mnou snívať začal. B2:[G]Ohlásim zo striech, [D]že ľúbiš ma a ja ľúbim teba. [Emi]Ohlásim zo striech, že si [C]verný a verný a verný [G]kráľ. ]]>
+</songtext>
+<author>
+<![CDATA[ 075 ]]>
+</author>
+<authorId>
+<![CDATA[ 843727 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Verný Boh ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/in0SMYdZXs0 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ /espe/vsemocny ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [Hmi] [G] [A] Dokonale svätý [Hmi] [G] [A] Víťaz bojov všetkých dní [Hmi] [G] [A] Si tak úžasný [HmiG] [A] Baránok víťazný [Hmi] [A] [Hmi] [A] Chválim všemocného Pána, On mi silu dáva, nádherný [Hmi] [G] [A] Dokonale svätý [Hmi] [G] [A] Víťaz bojov všetkých dní [Hmi] [G] [A] Si tak úžasný [HmiG] [A] Baránok víťazný [Hmi] [A] [Hmi] [A] Chválim všemocného Pána, On mi silu dáva, nádherný [Hmi] [A] [Hmi] [A] Chválim všemocného Pána, On mi silu dáva, nádherný ]]>
+</songtext>
+<author>
+<![CDATA[ 078 ]]>
+</author>
+<authorId>
+<![CDATA[ /espe ]]>
+</authorId>
+<groupname>
+<![CDATA[ [pisnicky_akordy] ]]>
+</groupname>
+<title>
+<![CDATA[ Všemocný ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ nech-vas-pozehna-pan-jezis ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C][G][C][Em] [C][G][D][C][G] ]]>
+</songtext>
+<author>
+<![CDATA[ 080 ]]>
+</author>
+<authorId>
+<![CDATA[ 80 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Nech Vás požehná Pán Ježiš ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 183993 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ -1 R: [Emi]Príď Svätý Duch, vojdi do [D]nás. [Hm]Príď Svätý Duch, plápolaj [Emi]v nás. Príď Svätý Duch, oživuj [D]nás. [Hm]Duchu Svätý [Emi]príď. 2x [C][D] 1. [Em]Príď Duchu, pre[D]nikni nás. [Hm]Príď Duchu, za[Emi]stav sa pri nás. Príď Duch, vlož [D]život do nás, [Hm]poznať daj sa [Emi]nám. [C][D] 2. Príď Ty Duch, Duch svätosti. Príď Ty duch, Duch múdrosti. Príď Ty duch, Duch lásky, poznať daj sa nám. 3. Príď Duchu a zjednoť nás. Príď Duch a naplň nás. Príď Duchu a obnov nás, poznať daj sa nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 087 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Príď Svätý Duch ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/n0XFj8i4RKk ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ chvalove/jesua-sk ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C] [D] [Em] [Hmi] Ješua Môjho [Em]srdca kráľ krásou [C]vyniká, nad [G]tisíc nad [D]tisíc. [C] [D] [Em] [Hmi] Ješua Len [C]tvoje je kráľovstvo, [D]tvoja je všetka moc, [Em]tvoja je sláva [Hm]na veky. Amen. ]]>
+</songtext>
+<author>
+<![CDATA[ 099 ]]>
+</author>
+<authorId>
+<![CDATA[ chvalove ]]>
+</authorId>
+<groupname>
+<![CDATA[ [velky_zpevnik] ]]>
+</groupname>
+<title>
+<![CDATA[ Ješua ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 334922 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [G]Síl nám pribúda [C]keď na Teba [G]čakáme, [C]keď na Teba [G]čakáme, [C]keď Ťa čaká[G]me. 4x Si [C]Boh, môj večný [Em]vlád[D]ca, ná[C]dej a mocná [Em]spá[D]sa. Si [G]svätý nekonečný [C]kraľ, si stále živý [Em]Boh, ty neustávaš, ty [C]ne[D]u[C]sí[D]naš. Ty [G]sám ochrániš malič[C]kých, potešíš plačú[Em]cich, na krídlach orlích k [C]výš[D]kam [C]dví[D]haš [G]nás. ]]>
+</songtext>
+<author>
+<![CDATA[ 100 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Síl nám pribúda ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/BYZeeTcTvYk ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 8047 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C]Ty mi dávaš [G]nohy jeleníc, [Am]s Tebou naberiem [F]denne nových síl, [C]s Tebou preskočím [G]múry trápenia [F]a mojej ceste dáš [C]pečať víťazstva. Kde nádej zomrela, vzkriesenie zatrúbi a hymnu slobody mi do úst položíš. Nikto už nevezme, čo si mi zasľúbil, so žalmom na perách zaspávam v pokoji. ]]>
+</songtext>
+<author>
+<![CDATA[ 106 ]]>
+</author>
+<authorId>
+<![CDATA[ 479 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Nohy jeleníc ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/8wMzJBRXX8c ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 1125790 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Em]Daj mi na[D]piť [G]uhas môj [C]smäd [Em]Upriam môj [D]zrak [G]len na teba[C] [Em]Veď pre mňa m[D]áš nádherný pl[Em]án Veď pre mňa m[D]áš nádherný pl[Em]án Veď pre mňa m[D]áš nádherný pl[G]án R: Zaplav ma [C]láskou, občerstvi ma[D] prichádzam s [Em]bázňou, premieňaj [G]ma Nech smelo [C]môžem predstú[D]piť až pred tvoj [G]trón ]]>
+</songtext>
+<author>
+<![CDATA[ 109 ]]>
+</author>
+<authorId>
+<![CDATA[ 1050911 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Zaplav Ma Láskou ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/LdHvh8-MO40 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 614314 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Dobrorečíme Ti, [Dmaj7]Bože, Pane svetov, [Em]že sme z Tvojej štedrosti [A]prijali tento chlieb. [D]Obetujeme ho Tebe [Dmaj7]ako ako plod zeme [Em]a práce [A]našich rúk, [D]aby sa nám stal [Em]chlebom živo[D]ta.[A7] R: /:[D]Požehnaný [G]Boh, [D]požehnaný [G]Boh, [D]požehnaný [G]Boh[A]nave[D]ky.:/ 2. Dobrorečíme Ti, Bože, Pane svetov, že sme z Tvojej štedrosti, prijali toto víno. Obetujeme ho Tebe ako plod viniča a práce našich rúk, aby sa nám stal duchovným nápojom. R: ]]>
+</songtext>
+<author>
+<![CDATA[ 112 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Dobrorečíme Ti, Bože ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/F9j6RAgLihU ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 429526 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +2 [D] [A] [Hm] [G] [A] [D] 1. [Hmi]všetky [A]národy Ze[D]me, teba [G]chvá[D]liť spo[G]lu chce[A]me Keď si blízko jasáme, svedčiť máme až po sám kraj Zeme R: [Hm]a[A]le[G]lu[A]ja, [Hm]a[A]le[G]lu[A]ja, Príj[G]mite moc ducha [A]svätého [Hm]a[A]le[G]lu[A]ja, [Hm]a[A]le[G]lu[A]ja príj[G]mite moc staňte [A]sa svetlom sveta 2. Keď volá nás Duch Svätý vravieť áno tvojej vôli Svedčíme tak naveky o tvojej láske a veľkej milosti R: Aleluja aleluja príjmite moc Ducha Svätého Aleluja aleluja príjmite moc staňte sa svetlom sveta B: [G]Baránok ve[A]lebím ťa[D] [G] Svätý pán [A]velebím ťa[D] [G]Živý chlieb [A]velebím ťa[Hm] [G]Emanuel [A]velebím ťa[D] Emanuel,našou [G]piesňou [A]nech znie ]]>
+</songtext>
+<author>
+<![CDATA[ 116 ]]>
+</author>
+<authorId>
+<![CDATA[ 22810 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Príjmite moc ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 50415 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Otvor mi oči Duch Svätý, [G]otvor mi oči môj Pán vidieť Ťa [F]túžim, [G]vidieť Ťa [C]túžim R: Chcem vidieť [G]Teba vo mne [Am]rásť a[F]žiariť svetlo Tvojej [G]slávy vylej na mňa lásku a [Am]moc spievam [F]svätý, svätý, [G]svätý ]]>
+</songtext>
+<author>
+<![CDATA[ 124 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Otvor mi oči Duch svätý ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/n0XFj8i4RKk ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 342567 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1: [A]Dnes dávaš [H]všetko, čo [C#m]máš. [A]našiel si [H]lásku, a [E]tak ju stráž. [A]Boh klope [H]na dvere, [C#m]kým svet spí, on aj v noci [A]bdie a dnes [E]aj ty bdieš [H]s ním. 2: Láska je úsmev a plač, smútok a strach náhle zmýva dážď. cítim, že Boh je tak blízko nás, cítiš, že s ním si stále viac svoj. B: Boh ti [A]práve dal to [C#m]znamenie tých nových [A]dní, [E]krásnych [H]dní. R: Až do konca [A]dní on [H]chráni ťa [C#m]láskou, dnes ti vrátil [A]raj, tak ho [H]vnútri [E]maj. Až do konca [A]dní má k [H]človeku [C#m]blízko s ním nikdy nie si [A]sám. /:Až [E]do konca [H]dní.:/ záver: [A][H][E] 3. Vždy príde otázok pár, čo trápia srdce a trápia tvár. Vieš, že ťa nezlomia, kým si s ním, neboj sa ísť, on vie, čo s tým. ]]>
+</songtext>
+<author>
+<![CDATA[ 126 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Až do konca dní ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/1ry96dMszZM ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ kto-som-ja ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Kto som ja, že sám Najvyšší si ma [Am]vš[G]í[E]ma? [C]Strateného ma zachránil, s láskou [Am]pri[G]jí[F]ma, s láskou [Am]pri[G]jí[F]ma. R: Synom [C]spasený, ozaj [G]slobodný, Božie [Am]die[G]ťa [F]som, áno, [C]som! 2. Konečne celkom slobodný, v Ňom milosť mám. Hriechu otročiť nemusím, lebo Ježiš sám zomrel z lásky k nám. R: Synom spasený, ozaj slobodný, Božie dieťa som, áno, som! Otec v dome má miesto pre všetkých, Božie dieťa som, áno, som! M: Ty ma [Am]poznáš, neza[G]necháš, som [F]tým, kým vravíš, že [C]som. Keď sa [Am]stratím, Ty ma [G]hľadáš, som [F]tým, kým vravíš, že [C]som. Som [Am]tým, kým [G]vravíš, že [F]som. ]]>
+</songtext>
+<author>
+<![CDATA[ 129 ]]>
+</author>
+<authorId>
+<![CDATA[ 129 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Kto som ja ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 349601 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Dotkni sa mojich očí, Pan[A]e, by som uvidel[G] ťa. [D]Dotkni sa mojich úst, aby som [A] chválil [G] tvoje meno.[A] [D]Dotkni sa môjho [A]srdca, Pane, [G]obnovuj ma. R: /:Zošli sv[Em]ojho Duc[D]ha, aby očistil[A] ma.:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 132 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Dotkni sa mojich očí ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/ExH8Z6YQ25M ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ el-shaddai ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +2 R: El Shad[Dm]dai, El shad[G]dai, El El[C]jona [Em]Ado[Am]nai, večné [F]meno, Pane, [G]máš, ku nám [Am]v sláve [G]prichá[C]dzaš. El Shad[Dm]dai, El shad[G]dai, El El[C]jona [Em]Ado[Am]nai, od ve[F]kov až nave[G]ky, El Shad[C]dai. 1. Viem, že [Dm]ty si Syna [G]dal, on hrie[C]chy na [Em]kríži [Am]sňal, obe[F]tu dal za nás [G]sám, [Am]život večný [G]je náš [C]Pán. Ty si [Dm]Pán Boh, ktorý [G]vie, poznáš [C]srdce [Em]úpri[Am]mné, [Dm]z pút našich [G]oslobodíš [C]nás. 2. To, čo Otec zasľúbil, v Synovi sám naplnil. Nikto z ľudí netuší, že sa Mesiáš zjavil. Veľká je moc Pánova, veľká láska Kristova, dokonané je pre nás, dokonané je pre nás. ]]>
+</songtext>
+<author>
+<![CDATA[ 135 ]]>
+</author>
+<authorId>
+<![CDATA[ 135 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ El Shaddai ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 45967 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Ty napĺňaš [F]chválou naše [C]ústa, [C]Ty napĺňaš [Dm]vďakou naše [G]srdcia. [Am]Ó, Pane [G]náš [F]príď k [C]nám, svoju slá[G]vu [F]zjav [Am]nám, vo svojej [F]sláve Svätý [G]Bože prídi k [C]ná[C7]m. R: Tvojej [F]slávy [G]prúd prúdi k [C]ná[C7]m, viac, než [F]okraj [G]Tvojho rúcha [Am]vnímame. Ty máš [F]trón na [E]chválach, veď pre[Am]bývaš [G]všade [F]tam, kde Ťa v [C]Duchu a v [G]pravde vzýva[C]jú. ]]>
+</songtext>
+<author>
+<![CDATA[ 136 ]]>
+</author>
+<authorId>
+<![CDATA[ 402 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Ty napľňaš chválou naše ústa ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/gGZQQh_Wimo ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 165715 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C]Stojíme [G]pred tvárou [Am]živého [F]Kráľa [G]kráľov. Dnes [C]spievame a [G]hlásame – [Am]Ježiš je [F]Pán! Náš [C]Pán dáva život [F]rado[G]stný,[F]rado[G]stný,[F]rado[G]stný. Náš [C]Pán dáva život [F]rado[G]stný,[F]voľnosť dáva [C]nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 138 ]]>
+</author>
+<authorId>
+<![CDATA[ 402 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Stojíme pred tvárou ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/KFneQPviDa4 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 386283 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C]/[D]Stretol [F]/[G]ma dnes [C]/[D]Pán [F]/[G]a novú [C]/[D]radosť mi do [F]/[G]srdca [C]/[D]vlial Ó [F]/[G]ale[G]/[A]luja, [C]/[D]z tej [F]/[G]radosti [C]/[D]chcem, [F]/[G]spievať a [C]/[D]tlieskať [F]/[G]Páno[C]/[D]vi. R./:Tak [F]/[G]vše[G]/[A]tci [C]/[D]spolu [F]/[G]chválme [C]/[D]ho, [F]/[G]za to,že [C]/[D]drží nás v [F]/[G]náru[C]/[D]čí:/ [A7] ]]>
+</songtext>
+<author>
+<![CDATA[ 142 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Stretol ma dnes Pán ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/4V4N25PVLVE ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ svet-hlada-lasku ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.[D] Svet hľadá lásku, [G]láska hovorí, [Hm]človek ju skúša v sebe [A]náj[G]sť. [D]Možno sa pýtaš, prečo [G]sa to nedarí. [Hm]Prečo sa všetko [A]točí v slepých [G]uličkách. Možno[G] ani sám ne[D]vieš, aká[G] láska je, [Em]tak počú[D]vaj nech ti to [A]poviem. R1: [D]Lá[Hm]ska nezávi[G]dí, lás[A]ka závisť[D] nepo[A]zná, nikdy [G]svoje nehľa[A]dá, láska je pokorná, odmenu nečaká, keď prosíš, láska dá. 2. Ľudia dávajú láske rôzne mená, každý svoj obraz o nej má. Tak mnoho z nich však tušenie nemá. Čo je to láska, čo vlastne znamená? Možno ani sám nevieš, aká láska je, tak počúvaj, nech ti to poviem. R2: Láska je zhovievavá, láska nemyslí na zlé, všetko v tichosti nesie. Láska je trpezlivá, vie, kedy vravieť áno a kedy povedať nie. B:[G] Lásku nám Boh ukázal, [Hm]keď svojho Syna [A]dal, [A]aby tam na kríži [D]zomieral. [G]V krvi Božieho Syna[Hm] je [Hm]láska zjave[A]ná. /:Láska [D][A]má meno Ježiš:/ lásku nikdy [G]nenájdeš, kým [Hm]jeho nespo[A]znáš, /:láska[D][A] má meno Ježiš:/ [G]Jež[A]iš. ]]>
+</songtext>
+<author>
+<![CDATA[ 143 ]]>
+</author>
+<authorId>
+<![CDATA[ 143 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Svet hľadá lásku ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ taky-je-zivot-nas ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Nesieme[A]chlieb,víno [Hm]Tebe [A]Ježiš[G] Kráľ, ako [D]to,čím sme, [A]čo spája[G] [A]nás. Je v nich náš pot, slzy, námaha i žiaľ, je v nich láska i radosti pár. R: Taký[D] je život[A]náš, takých[Em]nás Pane [G][A]máš, [D]Tvoji sme, [A]Ty prijímaš [G][A]nás. Dávania čas je tu, chvíľa pre obetu, Ty pre nás, my pre Teba sme. 2. Každý deň prináša to, čo nečakáš, mení plány i zvráskaví tvár. Prijímať to, chápať, to nie je iba tak, pomôž Mária vravieť „Fiat“. ]]>
+</songtext>
+<author>
+<![CDATA[ 154 ]]>
+</author>
+<authorId>
+<![CDATA[ 154 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Taký je život náš ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ emanuel ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]To svetlo, ktoré svieti v nás už mnoho[A] ľudských dní a v každom[Hm] z nich svoj zápas s [G]tmou slávne[A] víťazí, [D]aj dnes nám svieti do duší a [A]ukazuje nám, že bez lásky[Hm] svet umiera, [G]ak[A] nehľadá. B: Sme tu s [Hm]ním, vždy[G] pod tou istou hviezdou, pri [Em]jeho biednych jasliach, [G]spievame jedným[A] hlasom: R: [D]Emanuel[A], Eman[G]uel, [A]Emanuel. Emanuel, Emanuel. +1 [H]([E][H][A][H]) ]]>
+</songtext>
+<author>
+<![CDATA[ 155 ]]>
+</author>
+<authorId>
+<![CDATA[ 155 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Emanuel ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 181751 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [G] Toto sú dni [C] Eliáša, keď [G] preniká [D] svet Pánov [G] hlas. Toto sú dni, keď Tvoj [C] sluha Mojžiš, [G] obnovil [D] zákon Tvoj [G]zas. [Hm] Hoci sú dni veľkej [Em]skúšky, keď [C] hlad, temno [Am]vzpiera sa v [D] nás, sme [G] stále tým hlasom na [C] púšti kričiac:„Tak [G] priprav sa, [D] prichádza [G] Pan!“ R. Hľa vchádza [G] Pán na oblakoch k [C] nám ako slnka [G] jas, poľnica už [D] znie. Zdvihni [G] hlas, je tu jubilejný [C]rok, zo Siona [G] spása [D] príde k [G] nám. 2. Toto sú dni Ezechiela, keď kosti suché ožijú. Toto sú dni, keď Tvoj sluha Dávid, zaspieval pieseň novú. To je čas Pánovej žatvy, keď obilie čaká na nás a my sme tí pozvaní Jemu slúžiť a oznámiť, čo zveril nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 156 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Toto sú dni Eliáša ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/5f1kvJBmpWo ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ ak-sa-milujeme-navzajom ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Ak sa milu[Emi]jeme [Ami]navzájom, Boh je v [F]ná[G]ás. A [C]Jeho [Emi]Láska v [Ami]nás dosa[F]huje doko[G]nalosť. 2. [C]Ak si odpus[Emi]tíme [Ami]navzájom, Boh je v [F]ná[G]ás. /:A [C]Jeho [Emi]Láska v [Ami]nás dosa[F]huje doko[G]nalosť. ]]>
+</songtext>
+<author>
+<![CDATA[ 169 ]]>
+</author>
+<authorId>
+<![CDATA[ 169 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Ak sa milujeme navzájom ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 173 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [D][G][Hm][A][Hm][A][D] [D] [G] [Hm] [A] [D] [G] [Hm] [A] R. Oslávený, buď ty, Duch, ktorý máš Oheň, čo nás spája. [D] [G] [Hm] [A] [Hm] [A] [D] Spievam a hrám, nech celý vesmír Vie, že si Pán. Aleluja. [D] [G] [A] [D] [G] [A] 1. Duch Svätý, roznieť posvätné ohne Ohne pre nás zapálené. [D] [G] [Hm] [A] [D] [G] [D] Služobníka neobíď, prosím ťa, Vojdi, srdce mám pripravené. 2. Duch Svätý, odhaľ tajomstvo Otcovej lásky nám dané. Bože príď a uzdravuj zranené, Vojdi, srdce mám pripravené. 3. Duch Svätý, príď a rozviaž v nás To, čo je hriechom spútané. Naprav k láske chodníky zblúdené, Vojdi, srdce mám pripravené. 4. Duch Svätý, vezmi môj život Do svojich rúk a sám ho chráň. Novú pieseň zaspievam, v náručí Tvojom zaplesám, srdce ti dám. ]]>
+</songtext>
+<author>
+<![CDATA[ 173 ]]>
+</author>
+<authorId>
+<![CDATA[ oslaveny,-bud-ty,-duch ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Oslávený, buď ty, Duch ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ mocny-sta-ocean ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [G]Mocný sťa oce[Em]án, [Am]Ty si môj Boh a[D] Pán, [G]velebou ospie[Em]vam [Am]slávny Tvoj majes[D]tát. [Em]Obloha hviezdnych krás, [Am]vesmír a slnka jas, [D]nádhera vôkol nás, všetko to volá: Tak [G]príď [D]do našich prázdnych [Em]dní, zažiar svetlom svo[C]jím, ranným rozvidne[D]ním. Zem, [G]tá [D]túži po [Em]spasení, lásky oheň [C]zapáľ, Mesi[D]áš, v srdciach vychladnu[G]tých. ]]>
+</songtext>
+<author>
+<![CDATA[ 174 ]]>
+</author>
+<authorId>
+<![CDATA[ 174 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Mocný sťa oceán ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 418996 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Aj keby som [G]šiel dolinami, tam, kde číha smrť, viem, [C]Tvoja láska vyháňa strach. A aj keď budem [G]sám čeliť bojom, ktoré život mi dá, tak [C]nevzdám to, veď viem, že Ťa mám. Nebojím sa [Em7]zlé[D]é[G]ho, veď môj Boh je [Em7]blí[D]í[G]zko mňa, ak môj Boh je [Em7]blí[D]í[G]zko, koho sa mám [D]báť, koho sa mám [C]báť? [G]Nie, nie, Ty neopustíš, keď dobre je, či v časoch zlých. [Em7]Nie, nie, Ty neopustíš, keď vánok je, či búrka hrozí. [D]Nie, nie, Ty neopustíš, [C]nie, v žiadnej chvíli ma neo[G]pustíš.[D][C] Už vidím svetla [G]jas, ktoré žiari v srdciach vytrvalých a [C]veniec slávy pripravený. A raz musí [G]prísť zlému koniec, no kým príde ten čas, chcem [C]aby si bol oslávený. Už vidím svetla [G]jas, ktoré žiari v srdciach vytrvalých a raz musí [Em7]prísť zlému koniec, no kým príde ten čas, [D]vždy Ťa budem chváliť, [C]vždy Ťa budem chváliť. ]]>
+</songtext>
+<author>
+<![CDATA[ 185 ]]>
+</author>
+<authorId>
+<![CDATA[ 20054 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Neopustíš ]]>
+</title>
+<youtube>
+<![CDATA[ http://www.youtube.com/embed/mtpw980KK34 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 183 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +2 1. Duchu [Hm]Boží, príď v žiare [D]svojej slávy [A]A vylej sa na [G]nás! M:[Hm][D][A][G] 1. Duchu [Hm]svätý, príď v žiare [D]svojej slávy [A]A vylej sa na [G]nás! 2. Nech oheň [G]Tvoj zápali [D]naše srdcia Nech oheň [A]Tvoj nás prepá[G]li M: [G] [A] [Hm] [A] 3. Viem, že [Hm]nemôžem vedieť všetko Viem, že [A]učíš ma dôverovať Viem, že [F#m]je so mnou niekto Kto [G]bude ma vždy milovať Ty [Hm]miluješ ma napriek hriechu Môžem [A]čistý pred Tebou stáť Z môjho [F#m]srdca zobral si pýchu Ktorá [G]bránila mi srdce dať 2. Nech oheň [G]Tvoj zápali [D]naše srdcia Nech oheň [A]Tvoj nás prepá[G]li 4. Ja [G]neprestanem Teba hľadať [A]Srdce túži ďalej bádať [G]Ty si bližšie, než sa zdá [A]Ty si bližšie, než sa zdá (PAUZA!!!!) 2. Nech oheň [G]Tvoj zápali [D]naše srdcia Nech oheň [A]Tvoj nás prepá[G]li ]]>
+</songtext>
+<author>
+<![CDATA[ 188 ]]>
+</author>
+<authorId>
+<![CDATA[ duchu-bozi-prid ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Duchu Boží príď ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 45966 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. Si[C] večný[G] Boh, si[Am]mocný[F] Kráľ, [C]plesám nad všet[G]kým, čo urobil si [F]ná[G]m Si[C] večný[G] Boh, si[Am]mocný[F] Kráľ, [C]plesám nad všet[G]kým, čo urobil si [C]nám [A7] 2. Si [D]večný [A]Boh, si [Hm]mocný [G]Kráľ, [D]plesám nad všet[A]kým, čo urobil si [G]ná[A]m. Si [D]večný [A]Boh, si [Hm]mocný [G]Kráľ, [D]plesám nad všet[A]kým, čo urobil si [D]nám. ]]>
+</songtext>
+<author>
+<![CDATA[ 189 ]]>
+</author>
+<authorId>
+<![CDATA[ 402 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Si večný Boh ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/LCybFhw7oMU ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ ja-som-to ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Ja som to, ja som to, ktorý rozpráva s tebou. Milujem vás, milujem vás, milujem vás, hovorí Pán. Zo skaly voda vytryskla, na púšti záhrada rozkvitla. Zo skaly voda vytryskla, z tvojho kríza láska bláznivá. ]]>
+</songtext>
+<author>
+<![CDATA[ 190 ]]>
+</author>
+<authorId>
+<![CDATA[ 190 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Ja som to ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ tvoje-milosrdenstvo ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [Am]Tvoje milosrdenstvo [G]je, Pane, [F]večné, [Dm]preto neopúšťaj [F]dielo svojich [E]rúk, [Am]srdce tvoje [G]zdrojom lásky [F]nekonečnej, [Dm]v ňom nám dávaš [E]novú nádej. [F]Zmiluj [Dm]sa nad [F]nami,zmiluj [E]sa nad [Am]nami. [Am]Odpusť [F]nám, zmy [G]ťarchu [C]našich [E]previnení. [Am]Kriste [F]nám vlož [G]Ducha [C]pravdy, [G]čo nás zmení. [F]Zmiluj sa [Dm]nad nami, [F]zmiluj[E] sa nad [Am]nami ]]>
+</songtext>
+<author>
+<![CDATA[ 992 ]]>
+</author>
+<authorId>
+<![CDATA[ 993 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Tvoje milosrdenstvo ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ marnotratny-syn ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1.Tak [Am]povedz, či smiem sa [Fmaj7]vrátiť do [G]dverí otcovs[E]kých, či [Am]ďalej musím sa [Fmaj7]trápiť? Už [G]nemám na to [E]síl. Či [Dm]odpustíš mi, že som všetko [G]stratil, že [C]pastier svíň som, hanbu som ti [Fmaj7]spravil? Odpustí[E]š? 2.Tak povedz, či dáš mi nádej, že s tebou zas byť smiem? Nič nechcem, k sluhom len zájdem a službou dám ti zmier. Či uveríš mi, že chcem začať znova, že nemám v pláne útek zopakovať? Uveríš? R:Znova [A]túžba [E]ku tebe ma [F#m]ženie, z tvojich [Hm]rúk mi žiari odpu[E]stenie, slová [D]strácam, čo [E]chystal som sa [F#m]vyriecť, že ma [D]vítaš, z [Hm]handier dáš ma [E]vyzliecť. Ty ma [A]ľúbiš, som [E]znova tvojím [F#m]synom. ty si [D]z biedy ku [Hm]sebe ma [E]zdvihol. Prosím, [D]ty ma [E]chráň, [C#m]ty ma [F#m]bráň, [D]veď len [E]teba [A]mám. 3.Tvoj pokoj ku mne sa vrátil, zas šťastné srdce mám, som krehký, ľahko sa sklátim, to dobre chápeš sám. Si Baránok, čo sníma hriechy sveta, si záchranou, keď číha na mňa bieda, Ježiš môj. 4.Si láskou, ja lásku hľadám, len ona cenu má. Vo všetkom už som sa sklamal, len ty si pri mne stál. Hoc´ viem, že veľa výhod má tvoj domov, len kvôli tebe chcem sa vrátiť domov, Ježiš môj. ]]>
+</songtext>
+<author>
+<![CDATA[ 993 ]]>
+</author>
+<authorId>
+<![CDATA[ 993 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Márnotratný syn ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ deti-krala ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ Bridge 1 D G (Em7) A D Hm G A D Verse 1 M:[D]Akú hodnotu [G]mám, ukazuješ [A]mi. Milova[D]ný - v Tebe načerpám [Hm]síl! Viem, som Tvoj [G]Syn, vyhlasu[A]jem, som syn Krá[D]ľa! Verse 2 Ž:Akú hodnotu mám, ukazuješ mi. Milovaná - v Tebe načerpám síl! Som Tvoja dcéra, vyhlasujem, som dcéra Kráľa! Chorus 1 /:Akú hodnotu máme, ukazuješ nám. Milovaní - v Tebe načerpáme! Sme Tvoje deti, vyhlasujeme, sme deti Kráľa!:/ ]]>
+</songtext>
+<author>
+<![CDATA[ 994 ]]>
+</author>
+<authorId>
+<![CDATA[ 994 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Deti kráľa ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ nik-nie-je-ako-on ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C#m]Je len jeden na [A]tróne, [E]Ježiš, [G#m]svätý. [C#m]Len on je hoden [A]chvál, [E]úcty a [H]slávy. [C#m]Je len jeden na [A]tróne, [E]Ježiš, [G#m]svätý. [C#m]Len on je hoden [A]chvál, [E]úcty a [H]slávy. R:[C#m]Hoden [H]baránok[E] bol zabitý[F#m], no zasadol na [A]trón, nik [H]nie je ako [C#m]on. [C#m]Celé [H]stvorenstvá[E] v kolenách[F#m] a chvália jeho len[A], nik nie[H] je ako [C#m]on. 2. [C#m]Je len jeden na [A]tróne, [E]Ježiš, [G#m]svätý. [C#m]Len on je hoden [A]chvál, [E]úcty a [H]slávy. R: [C#m]Hoden [H]baránok[E] bol zabitý[F#m], no zasadol na [A]trón, nik [H]nie je ako [C#m]on. [C#m]Celé [H]stvorenstvá[E] v kolenách[F#m] a chvália jeho len[A], nik nie[H] je ako [C#m]on. [C#m]Hoden [H]baránok[E] bol zabitý[F#m], no zasadol na [A]trón, nik [H]nie je ako [C#m]on. [C#m]Celé [H]stvorenstvá[E] v kolenách[F#m] a chvália jeho len[A], nik nie[H] je ako [C#m]on. BRIDGE: Si kráľom všetkej [C#m]slávy, si kráľom všetkej [C#m]slávy, si kráľom všetkej [A]slávy, si [H]kráľom nad [C#m]všetkým. Si kráľom hodným [C#m]chvály, si kráľom hodným [C#m]chvály, si kráľom hodným [A]chvály, si [H]kráľom nad [C#m]všetkým. Si kráľom všetkej [C#m]slávy, si kráľom všetkej [C#m]slávy, si kráľom všetkej [A]slávy, si [H]kráľom nad [C#m]všetkým. Si kráľom hodným [F#m]chvály, si kráľom hodným [C#m]chvály, si kráľom hodným [A]chvály, si [H]kráľom nad [C#m]všetkým. R: [A]Hoden [H]baránok[C#m] bol zabitý[F#m], no zasadol na [A]trón, nik [H]nie je ako [C#m]on. [A]Celé [H]stvorenstvá[C#m] v kolenách[F#m] a chvália jeho [A]len, nik [H]nie je ako [C#m]on. [A]Hoden [H]baránok[C#m] bol zabitý[F#m], no zasadol na [A]trón, nik [H]nie je ako [C#m]on. [A]Celé [H]stvorenstvá[C#m] v kolenách[F#m] a chvália jeho [A]len, nik [H]nie je ako [C#m]on. [A]Nik [H]nie je ako [C#m]on.[A]Nik [H]nie je ako [C#m]on. ]]>
+</songtext>
+<author>
+<![CDATA[ 995 ]]>
+</author>
+<authorId>
+<![CDATA[ 995 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Nik nie je ako on ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 70370 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [D][G][A][G] [D][G][A][G] Keď [D] Boží[A] Syn nás[Hm] navští[G]vil a[D] prinies[A]ol svoju[G] lásku [A]k nám, vtedy[D] celý[A] svet videl[Hm], aký je B[G]oh [Em]predivný, ú[A]žasný P[D]án. [G][A][G] [D][G][A][G] Jeho život bol svetlom v noci a hmle, jeho slová sa vpíjali do duší, deti objímal, lásku rozdával, predivný, úžasný Pán. Jedine[G] láska[A] dokáže[D] zázrak dať slabým[G] silu a[A] života[Hm] cieľ. Jedine[G] Boh ťa[A] prevedie[D] v skúškach, tak [G]poď za ním a skús, aký pr[Em]edivný a[A] úžasný je P[D]án. ]]>
+</songtext>
+<author>
+<![CDATA[ 996 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Jedine láska ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/nPfr1rCrAdE ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 1466345 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C] Zalievaj ma láskou [F] ako záhradu sady [C] polia [F] [C] Zalievaj ma láskou [F] nech všetko rastie, kvitne [C] vonia [F] [C] Zalievaj ma láskou [F] horké slzy odplav [C] preč [F] [C] Zalievaj ma láskou [F] ňou mi srdce [C] lieč [F] ]]>
+</songtext>
+<author>
+<![CDATA[ 997 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Zalievaj ma láskou ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/jolZrbzzUwQ ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ 331 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ +1 [D]Dovoľ mi [G]blízko dnes [A]stáť, dovoľ mi [D]pred ol[G]tár s tebou[A] ísť. [D]Dovoľ [G] vziať tvoju [A]dlaň, dovoľ mi [D]ísť do Bo[G]žích ná[A]dvorí. [Hm] Na oltár[G] sviece a plátno [A]čisté, ako symbol, čo chrániť nás má. Zo sŕdc nám brieždia slová čisté, kedy do dlaní Pán nás schová. [Hm]Hovorím[A]áno a[D]túžim tam[E]ísť,ticho[Hm]pretkané[A]láskou,[D]tie slová[E]prijíma. [Hm]Hovorím [A]áno a [D]dávam ti [E]dlaň, svoje[Hm] srdce ti [A]dnes predkla[D]dám. ]]>
+</songtext>
+<author>
+<![CDATA[ 998 ]]>
+</author>
+<authorId>
+<![CDATA[ 161 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Dovoľ mi blízko dnes stáť ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ aleluja ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D][F#m][G][D][G][D] /[Em][A] /[A][D] 2. [Em][D][C][H7][Em] ]]>
+</songtext>
+<author>
+<![CDATA[ 999 ]]>
+</author>
+<authorId>
+<![CDATA[ aleluja ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Aleluja ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ baranok ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C#m][H][A][E] [C#m][H][A][C#m][H][A][C#m] 2. [Em][C][Am][H7][C][D][Em]/[E] 3. +1 [Dm][Am][B][C] 4. +4 [Am][Em][F][G] Agnus dei pomalé /:[Dm][B][C][Dm]:/ [C][F] /:[F][Gm][F][C][B][C][Dm]:/ [C][F] Agnus dei rýchle +4 [C][G][F][C] [G][F] [G][F][C] [E][H][A][E] [H][A] [H][A][E] ]]>
+</songtext>
+<author>
+<![CDATA[ 999 ]]>
+</author>
+<authorId>
+<![CDATA[ baranok ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Baránok ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ otce-nas ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [Hm]Otče náš, [G]ktorý si na nebesiach, [A] posväť sa [F#m]meno tvo[Hm]je, príď kráľovstvo [A]tvoje, buď [G]vôľa tvoja, [A]ako v nebi, [F#m]tak i na ze[Hm]mi. [F#]    [G]Chlieb náš každodenný [A]daj nám dnes [G]a odpusť nám [A]naše viny, [D]ako i my odpúšťame [E]svojim vinníkom a [A]neuveď nás [E] do pokušenia, ale [D]zbav nás [E] zlé[A]ho.[D]  [Dm]  [A] ]]>
+</songtext>
+<author>
+<![CDATA[ 999 ]]>
+</author>
+<authorId>
+<![CDATA[ 999 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Otče náš ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 330188 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [C]Pane,[G]zmiluj sa,[Dm]zmiluj [Am]sa, [F]Pane,[C]zmiluj sa,[Dm]Pane,zmil[G]uj sa. [C]Kriste,[G]zmiluj sa,[Dm]zmiluj [Am]sa, [F]Kriste,[C]zmiluj sa,[Dm]Kriste,zmil[G]uj sa[A7] [D]Pane,[A]zmiluj sa,[Em]zmiluj [Hm]sa, [G]Pane,[D]zmiluj sa,[Em]Pane,zmiluj [A]sa, Zmiluj[D]sa. 2. /:[C#m][A][H][C#m]:/ [H] /:[E][A][H][E][G#m][C#m][A][H][C#m]:/ [H] +4 /:[Am][F][G][Am]:/ [G] /:[C][F][G][C][Em][Am][F][G][Am]:/ [G] 3. nad nami [D][Hm][G][A] [D][Hm][G][A][D] ]]>
+</songtext>
+<author>
+<![CDATA[ 999 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Pane zmiluj sa ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ svaty ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [E]Svätý, svätý, svätý, [D]Pán, Boh [C]všetkých sve[E]tov. Plné sú, nebesia i [D]zem tvo[C]jej slá[E]vy. Ho[F#m]sa[A]na na výsos[E]tiach! Ho[F#m]sa[A]na na výsos[E]tiach! [E]Požehnaný, ktorý prichádza v me[D]ne [C]Páno[E]vom. Ho[F#m]sa[A]na na výsos[E]tiach! Ho[F#m]sa[A]na na výsos[E]tiach! 2. [F#m]Svätý, [D]svätý, [F#m]svätý, [D]svätý, [F#m]svätý[D], [A] Pán,    Boh [E]všetkých sve[A]tov.[E]   [D] Plné [Hm]sú nebe[D]sia [Hm]i zem tvojej [E]slávy. /:[A] Hosana, [E]hosana na [D]výsostiach! (na výsostiach)[E] :/    [F#m]Pože[D]hnaný, ktorý [F#m] prichá[D]dza [A]v mene [E]Páno[A]vom.[E]   [A] Hosana, [E]hosana na [D]výsostiach! (na výsostiach)[E]   [A] Hosana, [E]hosana na [D]výsostiach! Na výso[F#]stiach. 3. [A][D][A][Hm][E][A] [F][G][A] [G][D][E] [A][D][A][Hm][E][A] [F][G][A] [F][G][A] 4. [A][C#m][F#m][Hm][D][E] [A][C#m][F#m][Hm][D][E] /:[A][C#m][D][E][A]:/ [E] [A][Hm][E] 5. [G][C][G][Am][D][G] [G][C][G][Am][D][G] ]]>
+</songtext>
+<author>
+<![CDATA[ 999 ]]>
+</author>
+<authorId>
+<![CDATA[ svaty ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Svätý ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 999 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [F]Ctime [C]tú[F]to Sviatosť [C]sláv[F]nu, [C]zbožne skloňme [G]kole[C]ná, [F]boho[C]služ[F]bu staro[C]dá[F]vnu [C]nahraď nová, [G]vzneše[C]ná; [F]pomôž [Gm]zmyslom, [C]ktoré [F]slabnú, [Dm]viera [F]s láskou [Gm]spo[C]je[F]ná.   Otcu, Synu jedinému chvála buď a plesanie, sláva, moc a česť ich menu, tak aj dobrorečenie; od obidvoch Poslanému rovnaké buď uctenie. [Gm][C]A[F]men ]]>
+</songtext>
+<author>
+<![CDATA[ ctíme túto ]]>
+</author>
+<authorId>
+<![CDATA[ ctime-tuto ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ 999 ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ k-jaslickam ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [D]K jasličkám by som aj ja rád [G]be[D]žal, nepoznám [E]cestu, ach [A]aký to [D]žiaľ! 1. [A]Tam, kde šťastná zvesť, [D]Nového zákona, [A]tam sú dnes jasle, [D]tam je dnes On, tam je [Hm]Boh slávy, [Em]tam sa [A]ti zjaví, [D]tam je dnes [G]Ježiš[A]kov [D]trón. R: K jasličkám by som aj ja rád bežal, nepoznám cestu, ach aký to žiaľ! 2. Tam, kde veriaci, zídu sa k večeri, tam sú dnes jasle, tam je dnes On, tam vo sviatosti, tam ho dosiahneš, tam je dnes Ježiškov trón. ]]>
+</songtext>
+<author>
+<![CDATA[ K jasličkám ]]>
+</author>
+<authorId>
+<![CDATA[ 999 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ 999 ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ velebi-moja-dusa-pana ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [A]Vele[E]bí moja [H]duša Pá[C#m]na a môj duch [A]jasá, v Bohu [E]mojom spasite[H]ľovi. 1. [C#m]Lebo zhliadol [A]na moju biedu, [E]blahoslavená je [H]Tá, ktorá ve[C#m][A]rí jeho [E]Slovu, [H]a hovorí [C#m][A][E]áno [H]pre Jeho vôľu.[A][E][H] 2. [C#m]Veľké [H]veci mi [A]urobil [C#m]ten, ktorý je [H]mocný, [E]sväté je [H]jeho me[C#m]no /:a [A]Jeho milo[E]srdenstvo je [H]večné:/ (3x) [A]Ukázal silu svojho [E]ramena, [H]rozptýlil tých, ktorí pyšne [C#m]zmýšľa[A]jú. Mocnárov [E]zosadil z [H]trónov a povýšil [C#m]poníže[A]ných. [E]Hladných nakŕmil dobrota[H]mi a [C#m]bohatých [G#m]prepustil – naprá[A]zdno. ]]>
+</songtext>
+<author>
+<![CDATA[ M001 ]]>
+</author>
+<authorId>
+<![CDATA[ m001 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Velebí moja duša Pána ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ kralovna-nebeska ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [E]Kráľovná[A] nebeská,[E] Matka ľu[H]dí, [C#m]niesla si[A] toho čo [F#m]povznáša [H]nás [E]ak už nás [A]jeho hlas[E] nezobu[H]dí [C#m]pros za[A] nás Már[H]ia pros za [E]nás 1. [E]Boh vyb[A]ral ťa[H] spomedzi [E]žien, [F#m]anjel hovo[H]rí: [E]Z Teba [A]vzíde [H]Knieža a [C#m]Pán [A]ak mu otvo[H]ríš. 2. Nám pod krížom darovaná, Matka presvätá Ty nás môžeš za ruku viesť, svetlom odetá. 3. Božou láskou naplnená, silou pokorných spomeň tam aj naše mená v sieňach nebeských ]]>
+</songtext>
+<author>
+<![CDATA[ M005 ]]>
+</author>
+<authorId>
+<![CDATA[ m5 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Kráľovná nebeská ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ dievca-z-naroda ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Dievča z národa, nikto [A]netuší, [Hm]aká nádhera je v Tvojej [G]duši. [D]Srdcom ochotná [A]a niečim iná, [Hm]budeš kráľovná, porodíš [G]Syna. R: [D]Panna Mária, [A]Matka láskavá, [Hm]Ježiš Ťa nám [A]dal. [D]Čistá ľalia, [A]Veža Dávida, [Hm]vyvolil Ťa [A]Kráľ. [D]Láska, pokora, [A]srdce dokorán [Hm]chcem byť ako [A]Ty. [D]Prosím otvor mi, [A]veď ma, pomôž mi [Hm]k Tvojmu Syno[A]vi. 2. Srdce bolestí, nebolo to ľahké vidieť Ježiša, súd a bičovanie. Pod krížom stojíš, oči uplakané, Ducha vydýchol, je dokonané. R: 3: Dievča z národa, už aj ja tuším, aká nádhera je v tvojej duši. Bývaš v nebesiach, si stále so mnou, vo všetkých potopách si mojou loďou. ]]>
+</songtext>
+<author>
+<![CDATA[ M006 ]]>
+</author>
+<authorId>
+<![CDATA[ m006 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Dievča z národa ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 184074 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Vždy je s nami tá, čo viem, že [G]ľúbi [Emi]moje srdce, [A]ruky, moju [D]tvár. [A] [D]Vždy je blízko tá, čo viem, že [G]chráni [Emi]každý úsmev [A]čo mi život [D]dal. R: [D]Ty nás vítaš v chráme plnom [G]lásky [Emi]na tom Tvojom [A]tichom nádvo[D]rí. [A] [D]Čakáme Ťa [D7]každú chvíľu, [G]prosíme Ťa, [Gm]daj nám silu. [D]Mária, [F#]Ty naša Kráľov[Hmi]ná, [E] [D]Mária, [A]Ty naša Kráľov[D]ná. 2. Spojme svoje hlasy v jednu pieseň, ktorá všetkým srdcia otvorí. Silu viery mladosť naša nesie a s ňou naše pevné názory. ]]>
+</songtext>
+<author>
+<![CDATA[ M007 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Vždy je s nami ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/lZFE1HClxZ0 ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ anjekskym-pozdravenim ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [Hm]Anjelským pozdravením [G]zvon sa[A] ozý[Hm]va, každý verný kresťan dnes[G] Mári[A]u vzý[Hm]va:[A] R: [D]Ave, ave, Mária,[G] zaznej vrúcny [F#]hlas! [Hm]Zdravas', zdravas', Kráľovná, [G]srdce, [A]plesaj [Hm]v nás![A] 2. Pannu anjel Pánov bol takto pozdravil, poklonil sa Márii a jej hovoril: 3. Plná božej milosti, nevinnosti kvet, počneš Krista milého, ktorý spasí svet. 4. Na tie slová Mária uľakala sa. Ako sa to môže stať? posla pýta sa. 5. Anjel Pána zvestoval v poníženosti: Neľakaj sa, Mária, plná milosti. 6. Vôľu ti ja zvestujem Boha silného: počneš v svojom panenstve z Ducha Svätého. 7. Z teba, Panna, zrodí sa slávny Spasiteľ, najvyššieho Boha Syn, náš Vykupiteľ. 8. Po tých slovách Mária hlavu sklonila, nebeskému posolstvu vďačne zvolila. 9. „Ajhľa, dievka Pánova“, Panna vravela, odovzdaná do vôle hneď Stvoriteľa. 10. Slovo Telom stalo sa, Slovo preslávne, pre spasenie všetkých nás, na zem zoslané. 11. Ó ty ruža spanilá kvetu bieleho, teba chválim zo srdca svojho celého. 12. Tys' nám všetkým za Matku bola zvolená, večnej slávy korunou si ozdobená. 13. Nad všetky ťa stvorenia Boh sám povýšil, rúchom všetkých čností ťa plne okrášlil. 14. Ty si všetkých hriešnikov istá bezpeka, cesta v život vedúca, radosť, útecha. 15. Ty si všetkých strápených pravá potecha, ktorá v srdciach ranených nádej zanechá. ]]>
+</songtext>
+<author>
+<![CDATA[ M009 ]]>
+</author>
+<authorId>
+<![CDATA[ m9 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Anjelským pozdravením ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ debs0y8o ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ [C] [Ami] [F] [G] 1. Čakajú ťa nástrahy tohoto sveta, [C] [Ami] [F] [G] Mária ťa volá: Poď moje dieťa [F] [G] [C] [Ami] R: Mária ma ochraňuje, ja sa nebojím [F] [G] [C] [Ami] vrhnem sa pod jej ochranný plášť [F] [G] [C] [Ami] Ona podá ruku a ja smelo kráčam s ňou [F] [G] [C] Mária je Matkou najdrahšou. 2. Ona nám vždy vyprosí hodné milosti na ňu sa spoľahni v každej ťažkosti. 3. Matka moja láskavá ja ťa milujem svoje srdce mladé tebe darujem. ]]>
+</songtext>
+<author>
+<![CDATA[ M010 ]]>
+</author>
+<authorId>
+<![CDATA[ c2i85pmz ]]>
+</authorId>
+<groupname>
+<![CDATA[ [akordy_texty] ]]>
+</groupname>
+<title>
+<![CDATA[ Čakajú ťa nástrahy ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ laskava-panna ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [E]Láskavá [C#m]Panna, [G#m]ó, Matka [H7]naša, [A]živo[H7]tom nás [E]sprevá[C#m]dzaj, [F#m]oro[H7]duj za nás.[E] 1. [Em]Nech ťa netrápia denné [D]ťažkosti, ktoré [G]život pripra[H7]ví. Všetko [Em]odovzdaj do rúk [D]Márie, ona [G]pomoc vypro[H7]sí. 2. Nikdy nezhasne svetlo nádeje tomu, kto ti slúži s láskou, pevnú dôveru k tebe, Matka, mám, ty si našou hviezdou rannou. 3. S tebou, Mária, dobro víťazí, ty si našou oporou, bolesť zahojíš, radosť obnovíš, Pomocnica kresťanov. ]]>
+</songtext>
+<author>
+<![CDATA[ M012 ]]>
+</author>
+<authorId>
+<![CDATA[ m12 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Láskavá Panna ]]>
+</title>
+</song>
+<song>
+<ID>
+<![CDATA[ 362242 ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ R: [C]Milujem Máriu, [F]mám [G]ju [C] rád, som [F]dieťa, ktoré [G]Matku [C]má. [C]Kráľovnej vesmíru [F]spie[G]vam [C] dnes, tej [F]ktorá srdce [G]otvá[C]ra. 1. [F]Pod ochranou [G]Matky sme [C]spoje[Am]ní tým [F]putom, ktoré [G]nik nede[C]lí, [F]cítime [G]silu Bo[Am]žej lásky, [D]v ktorej je Duch dobro[G]ty.[F G] 2. Obráť sa k Márii, modli sa s ňou, len ona je tou bránou, cez ňu ti otvára náručie Boh, neváhaj, priblíž sa k nej. ]]>
+</songtext>
+<author>
+<![CDATA[ M014 ]]>
+</author>
+<authorId>
+<![CDATA[ 178 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [supermusic] ]]>
+</groupname>
+<title>
+<![CDATA[ Milujem Máriu, mám ju rád ]]>
+</title>
+<youtube>
+<![CDATA[ https://www.youtube.com/embed/CN-YLCY3EkU ]]>
+</youtube>
+</song>
+<song>
+<ID>
+<![CDATA[ tato-piesen-patri-tebe,-maria ]]>
+</ID>
+<lang>
+<![CDATA[ cz ]]>
+</lang>
+<songtext>
+<![CDATA[ 1. [D]Táto [A]pieseň patrí [G]tebe, [D]Mária, [Hm]ňou t'a [A]chceme teraz [G]oslá[A]viť[D], [Hm]nech ju spie[A]va s nami [G]celá [D]krajina, [Hm]všetci chcú [A]pri Matke [G]šťas[A]tní [D]byť. 2. Ty si Matka slovenského národa, pomocnica v každom súžení, tvoja láska nikdy ľudí nezradí, k tebe ide človek strápený. R: [G]Má[A]ria, [D]Boho[A]rodič[Hm]ka, [G]otvor [A]nám svoju [D]náruč [G]doko[A]rán, [D]veď nás [A]do ne[Hm]ba, [G]Matka [A]Már[D]ia ([G]Matka [A]Már[D]ia). 3. Ty si verná služobnica Pánova, naučíš nás slúžiť Otcovi, jeho vôľu stále plniť s ochotou, byť na blízku svojmu bratovi. 4. Tebe vzdávať úctu, Matka Mária, pod ochranou tvojou život žiť, s tebou kráčať, chválu vzdávať, nezradit', s tebou k cieľu šťastne dorazit. ]]>
+</songtext>
+<author>
+<![CDATA[ M015 ]]>
+</author>
+<authorId>
+<![CDATA[ m15 ]]>
+</authorId>
+<groupname>
+<![CDATA[ [local] ]]>
+</groupname>
+<title>
+<![CDATA[ Táto pieseň patrí tebe, Mária ]]>
+</title>
+</song>
+<playlists>
+<playlist>
+<ID>
+<![CDATA[ 18.1. ]]>
+</ID>
+<title>
+<![CDATA[ 18.1. ]]>
+</title>
+<playlist_songs>
+<playlist_song id="150947" source_type="supermusic"/>
+<playlist_song id="marnotratny-syn" source_type="local"/>
+<playlist_song id="nik-nie-je-ako-on" source_type="local"/>
+<playlist_song id="tvoje-milosrdenstvo" source_type="local"/>
+<playlist_song id="deti-krala" source_type="local"/>
+<playlist_song id="kto-som-ja" source_type="local"/>
+<playlist_song id="019" source_type="local"/>
+<playlist_song id="/espe/nadherny-boh" source_type="pisnicky_akordy"/>
+</playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ 5.12. ]]>
+</ID>
+<title>
+<![CDATA[ 5.12. ]]>
+</title>
+<playlist_songs>
+<playlist_song id="330188" source_type="supermusic"/>
+<playlist_song id="1003455" source_type="supermusic"/>
+<playlist_song id="svaty" source_type="local"/>
+<playlist_song id="baranok" source_type="local"/>
+<playlist_song id="334922" source_type="supermusic"/>
+<playlist_song id="1570" source_type="supermusic"/>
+<playlist_song id="362242" source_type="supermusic"/>
+</playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ 7.11. ]]>
+</ID>
+<title>
+<![CDATA[ 7.11. ]]>
+</title>
+<playlist_songs>
+<playlist_song id="330188" source_type="supermusic"/>
+<playlist_song id="15100" source_type="supermusic"/>
+<playlist_song id="svaty" source_type="local"/>
+<playlist_song id="baranok" source_type="local"/>
+<playlist_song id="1125790" source_type="supermusic"/>
+<playlist_song id="1466345" source_type="supermusic"/>
+<playlist_song id="ak-sa-milujeme-navzajom" source_type="local"/>
+<playlist_song id="debs0y8o" source_type="akordy_texty"/>
+</playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ jaslickova ]]>
+</ID>
+<title>
+<![CDATA[ jasličková ]]>
+</title>
+<playlist_songs> </playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ liturgia ]]>
+</ID>
+<title>
+<![CDATA[ Liturgia ]]>
+</title>
+<playlist_songs>
+<playlist_song id="aleluja" source_type="local"/>
+<playlist_song id="baranok" source_type="local"/>
+<playlist_song id="330188" source_type="supermusic"/>
+<playlist_song id="svaty" source_type="local"/>
+</playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ mladez- ]]>
+</ID>
+<title>
+<![CDATA[ Mládež ]]>
+</title>
+<playlist_songs>
+<playlist_song id="1.-zvelebeny-pan" source_type="local"/>
+<playlist_song id="2" source_type="local"/>
+<playlist_song id="4" source_type="local"/>
+<playlist_song id="5" source_type="local"/>
+<playlist_song id="6" source_type="local"/>
+<playlist_song id="7" source_type="local"/>
+<playlist_song id="8" source_type="local"/>
+<playlist_song id="9" source_type="local"/>
+<playlist_song id="10" source_type="local"/>
+<playlist_song id="11" source_type="local"/>
+<playlist_song id="012" source_type="local"/>
+<playlist_song id="013" source_type="local"/>
+<playlist_song id="150947" source_type="supermusic"/>
+<playlist_song id="360068" source_type="supermusic"/>
+<playlist_song id="50984" source_type="supermusic"/>
+<playlist_song id="017" source_type="local"/>
+<playlist_song id="1570" source_type="supermusic"/>
+<playlist_song id="019" source_type="local"/>
+<playlist_song id="020" source_type="local"/>
+<playlist_song id="454077" source_type="supermusic"/>
+<playlist_song id="22" source_type="local"/>
+<playlist_song id="023" source_type="local"/>
+<playlist_song id="2e89e8wx" source_type="akordy_texty"/>
+<playlist_song id="025" source_type="local"/>
+<playlist_song id="331326" source_type="supermusic"/>
+<playlist_song id="027" source_type="local"/>
+<playlist_song id="768273" source_type="supermusic"/>
+<playlist_song id="809380" source_type="supermusic"/>
+<playlist_song id="120917" source_type="supermusic"/>
+<playlist_song id="160937" source_type="supermusic"/>
+<playlist_song id="798425" source_type="supermusic"/>
+<playlist_song id="1444790" source_type="supermusic"/>
+<playlist_song id="189896" source_type="supermusic"/>
+<playlist_song id="1003455" source_type="supermusic"/>
+<playlist_song id="802017" source_type="supermusic"/>
+<playlist_song id="15100" source_type="supermusic"/>
+<playlist_song id="163854" source_type="supermusic"/>
+<playlist_song id="980136" source_type="supermusic"/>
+<playlist_song id="chvalove/otvaram-srdce-dokoran" source_type="velky_zpevnik"/>
+<playlist_song id="614314" source_type="supermusic"/>
+<playlist_song id="429526" source_type="supermusic"/>
+<playlist_song id="50415" source_type="supermusic"/>
+<playlist_song id="342567" source_type="supermusic"/>
+<playlist_song id="349601" source_type="supermusic"/>
+<playlist_song id="173" source_type="local"/>
+<playlist_song id="1197" source_type="supermusic"/>
+<playlist_song id="183" source_type="local"/>
+<playlist_song id="102196" source_type="supermusic"/>
+<playlist_song id="192016" source_type="supermusic"/>
+<playlist_song id="189612" source_type="supermusic"/>
+<playlist_song id="703819" source_type="supermusic"/>
+<playlist_song id="vsade-vokol-nas" source_type="local"/>
+<playlist_song id="chvalove/moj-duch-jasa" source_type="velky_zpevnik"/>
+<playlist_song id="185990" source_type="supermusic"/>
+<playlist_song id="185404" source_type="supermusic"/>
+<playlist_song id="jasaj-v-panovi" source_type="local"/>
+<playlist_song id="vsetko-ti-davam,-najvyssi" source_type="local"/>
+<playlist_song id="1157356" source_type="supermusic"/>
+<playlist_song id="blatom-a-trnim" source_type="local"/>
+<playlist_song id="770618" source_type="supermusic"/>
+<playlist_song id="391093" source_type="supermusic"/>
+<playlist_song id="mas-tron" source_type="local"/>
+<playlist_song id="698452" source_type="supermusic"/>
+<playlist_song id="hymna-pute-zalubenych" source_type="local"/>
+<playlist_song id="si-cestou,-po-ktorej-chcem-ist" source_type="local"/>
+<playlist_song id="1479091" source_type="supermusic"/>
+<playlist_song id="882914" source_type="supermusic"/>
+<playlist_song id="ja-sa-sklanam-pred-tebou" source_type="local"/>
+<playlist_song id="svata,-ziva-voda" source_type="local"/>
+<playlist_song id="chvalove/milostou-zijem" source_type="velky_zpevnik"/>
+<playlist_song id="667021" source_type="supermusic"/>
+</playlist_songs>
+</playlist>
+<playlist>
+<ID>
+<![CDATA[ vigilia-2025 ]]>
+</ID>
+<title>
+<![CDATA[ Vigília 2025 ]]>
+</title>
+<playlist_songs>
+<playlist_song id="349601" source_type="supermusic"/>
+<playlist_song id="50415" source_type="supermusic"/>
+<playlist_song id="183" source_type="local"/>
+<playlist_song id="189896" source_type="supermusic"/>
+<playlist_song id="22" source_type="local"/>
+<playlist_song id="429526" source_type="supermusic"/>
+<playlist_song id="chvalove/otvaram-srdce-dokoran" source_type="velky_zpevnik"/>
+<playlist_song id="173" source_type="local"/>
+</playlist_songs>
+</playlist>
+</playlists>
+</InetSongDb>
