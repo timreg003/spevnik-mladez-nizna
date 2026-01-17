@@ -54,14 +54,16 @@ h1 {
   color: #fff;
 }
 
-.transpose-bar {
+.transpose-bar,
+.zoom-bar {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.transpose-bar button {
+.transpose-bar button,
+.zoom-bar button {
   background: #1e1e1e;
   border: none;
   color: #fff;
@@ -70,7 +72,8 @@ h1 {
   cursor: pointer;
 }
 
-.transpose-bar span {
+.transpose-bar span,
+.zoom-bar span {
   color: #aaa;
 }
 
