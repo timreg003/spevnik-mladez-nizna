@@ -4,20 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Piesne</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Piesne</h1>
-  <input type="text" id="search" placeholder="Hľadať pieseň..." />
-  <button onclick="transposeSong(1)">+</button>
-  <button onclick="transposeSong(-1)">–</button>
-  <div id="song-list"></div>
-  <div id="song-display" style="display:none;">
-    <button onclick="backToList()">Späť</button>
-    <h2 id="song-title"></h2>
-    <pre id="song-content"></pre>
+  <div class="container">
+    <h1><i class="fas fa-music"></i> Piesne</h1>
+    <input type="text" id="search" placeholder="Hľadať pieseň..." />
+    <div id="song-list"></div>
+    <div id="song-display" style="display:none;">
+      <button onclick="backToList()" class="back-btn"><i class="fas fa-arrow-left"></i> Späť</button>
+      <h2 id="song-title"></h2>
+      <div class="transpose-bar">
+        <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
+        <span>Transpozícia</span>
+        <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
+      </div>
+      <pre id="song-content"></pre>
+    </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
