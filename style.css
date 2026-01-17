@@ -27,11 +27,13 @@ pre {
   font-family: inherit;
   font-size: 16px;
   color: #000;
+  line-height: 1.6;
 }
 
 .chord {
   color: blue;
   font-weight: bold;
   position: relative;
-  top: -0.5em;
+  top: -0.3em;
+  font-size: 0.95em;
 }
