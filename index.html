@@ -1,66 +1,23 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spevník Mládež</title>
-    <script src="https://cdn.jsdelivr.net/npm/chordsheetjs@5.0.0/dist/chordsheetjs.min.js"></script>
-    <style>
-        :root { --p: #1a73e8; --chord: #2563eb; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        .header { background: var(--p); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .container { max-width: 700px; margin: auto; padding: 10px; }
-        #search { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ccc; margin-top: 10px; font-size: 16px; outline: none; }
-        .song-card { background: white; padding: 15px; margin: 8px 0; border-radius: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; }
-        .song-card:hover { background: #f0f7ff; }
-        #view { display: none; background: white; min-height: 100vh; }
-        .controls { display: flex; gap: 8px; margin-bottom: 15px; padding: 15px; background: #fff; position: sticky; top: 0; border-bottom: 1px solid #eee; z-index: 5; }
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #eee; flex: 1; }
-        .btn-p { background: var(--p); color: white; }
-        
-        /* ŠTÝL PRE MODRÉ TUČNÉ AKORDY */
-        .chord { color: var(--chord) !important; font-weight: bold !important; }
-        #content { white-space: pre-wrap; line-height: 2.8; font-family: 'Courier New', monospace; font-size: 1.15em; padding: 15px; overflow-x: auto; }
-        .paragraph { margin-bottom: 1.5em; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Piesne</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <h1>Piesne</h1>
+  <input type="text" id="search" placeholder="Hľadať pieseň..." />
+  <button onclick="transposeSong(1)">+</button>
+  <button onclick="transposeSong(-1)">–</button>
+  <div id="song-list"></div>
+  <div id="song-display" style="display:none;">
+    <button onclick="backToList()">Späť</button>
+    <h2 id="song-title"></h2>
+    <pre id="song-content"></pre>
+  </div>
 
-<div id="main-ui">
-    <div class="header">
-        <div class="container">
-            <h2 style="margin:0;">Spevník Mládež</h2>
-            <input type="text" id="search" placeholder="Hľadať pieseň..." oninput="filter()">
-        </div>
-    </div>
-    <div class="container" id="list"></div>
-</div>
-
-<div id="view">
-    <div class="controls">
-        <button class="btn" onclick="back()">← Späť</button>
-        <button class="btn btn-p" onclick="changeKey(-1)">♭ -1</button>
-        <button class="btn btn-p" onclick="changeKey(1)"># +1</button>
-    </div>
-    <div class="container">
-        <h2 id="v-title" style="color:var(--p); margin-top:0;"></h2>
-        <div id="content"></div>
-    </div>
-</div>
-
-<script>
-    const database = [
-        { t: "1. Zvelebený Pán", c: "1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán.\n\nB: Každú milosť, čo mi dávaš, vyspievam rád, aj keď tma ma obopína, ja zavolám:\n\nR: Zvelebený buď, Pane náš, zvelebený Pán, zvelebený buď, Pane náš, požehnané, slávne meno máš." },
-        { t: "2. Požehnané meno má Pán", c: "1. Požehnané meno má Pán, (3x) Najvyšší.\n\nR: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť!" },
-        { t: "3. Nádherný Boh", c: "1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc\nTvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú\nNik [D]nevidel, nik [E]nepočul niet [F#m]srdca čo tu[A]ší\nJak [D]slávny je a [E]nádherný Boh [A]môj\n\nR: Si nádherný [D]Boh, Ťa [E]ľúbim, si nádherný [D]Boh, ja Ťa [E]ctím." },
-        { t: "4. Bohatier", c: "1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier.\n\nR: [D] Ty si víťaz, [A] Je[Am]žiš [G]\n[D] Mocný víťaz, [A] Je[Am]žiš [G]" },
-        { t: "5. Obeta srdca", c: "1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D]\nTvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán. [D]\n\nR: Povedz, čo ti smiem dať,[G] čo [A]priniesť ti smiem? [D]" },
-        { t: "6. Pred Tebou, môj Pán, sa vzdám", c: "R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m.\n\n1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou, [F#m]v sprievode [E]víťaznom [D]vodíš si [A]ma." },
-        { t: "8. Tvoj ľud pred Tebou", c: "1. /:Tvoj ľud [D]pred Tebou sa [A]schádza, Bože náš[D]:/\n/:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[Hm]vý, k Tebe [Em]ideme, Ty [A]veľký Bože [D]náš.:/" },
-        { t: "9. Pane náš, prijmi dar", c: "1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár, [G]s láskou ti predkla[C]dám všetko, čo mám. [D]\n\nR: /:Dávam [G]ti zo [D]svojich [C]rán, dávam [G]všetko, čo [D]v sebe mám.:/" },
-        { t: "10. Všetko živé chváli ťa", c: "1. [C]Všetko [F]živé chváli [G]Ťa,[F] [C]v Duchu, [F]v pravde uctie[G]va.\n\nR: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný, chválim [F]Ťa." },
-        { t: "13. Srdce chvály", c: "1. [D]Hudba dohráva[A], všetko stíši sa[Em] a ja prichádzam[A]\n[D]priniesť niečo [A]snáď, čo pravú cenu má,[Em] čo by si mal rád.[A]" },
-        { t: "14. Do tmy na svet", c: "1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta. [C]Otvor môj[G] zrak nech vid[F]ím." },
-        { t: "15. Priď ó Ježiš príď", c: "R: /:[D]Príď, ó Ježiš, [G]príď:/\n1. Tí, čo sú [D]smädní, zoslabnu[F#m]tí." },
-        { t: "16. Nesieme, Pane, chlieb a víno", c: "N[Dmi]esieme, Pane, chlieb a [C]víno. N[Ami]esieme celý život [Dmi]náš." },
-        { t
+  <script src="script.js"></script>
+</body>
+</html>
