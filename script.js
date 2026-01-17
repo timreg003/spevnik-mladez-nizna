@@ -70,4 +70,23 @@ function changeFontSize(delta) {
   localStorage.setItem('fontSize', fontSize);
 }
 
-window.addEventListener('DOMContentLoaded
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('fontSize');
+  if (saved) {
+    fontSize = parseInt(saved);
+    document.getElementById('song-content').style.fontSize = fontSize + 'px';
+  }
+});
+
+function backToList() {
+  document.getElementById('song-list').style.display = 'block';
+  document.getElementById('song-display').style.display = 'none';
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  const query = e.target.value.toLowerCase();
+  const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
+  displayList(filtered);
+});
+
+parseXML();
