@@ -2,80 +2,133 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <title>Spevník - Kompletný zoznam</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Môj Spevník</title>
+    <script src="https://cdn.jsdelivr.net/npm/chordsheetjs@5.0.0/dist/chordsheetjs.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .search-box { margin-bottom: 20px; padding: 10px; width: 100%; max-width: 400px; }
-        .song { border-bottom: 1px solid #ccc; padding: 15px 0; }
-        .song-title { font-weight: bold; color: #2c3e50; font-size: 1.2em; }
-        .song-text { white-space: pre-wrap; margin-top: 10px; color: #555; }
-        .highlight { background-color: yellow; }
+        :root { --main-blue: #1a73e8; --chord-color: #d32f2f; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); }
+        .header { background: var(--main-blue); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 800px; margin: auto; padding: 20px; }
+        input#search { width: 100%; padding: 15px; border-radius: 25px; border: none; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .song-card { background: white; margin: 10px 0; padding: 15px; border-radius: 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; }
+        .song-card:hover { background: #f0f7ff; }
+        .index { font-weight: bold; margin-right: 15px; color: var(--main-blue); width: 30px; }
+        #song-view { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #content { white-space: pre-wrap; line-height: 2; font-family: monospace; font-size: 1.1em; }
+        .chord { color: var(--chord-color); font-weight: bold; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; background: var(--main-blue); color: white; margin-right: 5px; }
+        .back-btn { background: #6c757d; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>Môj Spevník</h1>
-    <input type="text" id="searchInput" class="search-box" placeholder="Hľadať podľa názvu alebo textu..." onkeyup="searchSongs()">
+<div class="header">
+    <h1>Môj Online Spevník</h1>
+    <div class="container" style="padding:0">
+        <input type="text" id="search" placeholder="Hľadať pieseň..." oninput="filterSongs()">
+    </div>
+</div>
+
+<div class="container">
+    <div id="list">
+        </div>
+
+    <div id="song-view">
+        <button class="btn back-btn" onclick="back()">← Späť na zoznam</button>
+        <div style="margin-bottom: 20px;">
+            <button class="btn" onclick="changeKey(-1)">♭ Znížiť</button>
+            <button class="btn" onclick="changeKey(1)"># Zvýšiť</button>
+        </div>
+        <h2 id="title"></h2>
+        <div id="content"></div>
+    </div>
+</div>
+
+<script>
+    // Dáta vytiahnuté priamo z tvojho súboru export.zpk.xml
+    const database = [
+        { t: "Zvelebený Pán", c: "1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán..." },
+        { t: "Požehnané meno má Pán", c: "1. Požehnané meno má Pán, (3x) Najvyšší.\nR: Viem, že meno Pána je môj úkryt..." },
+        { t: "Nádherný Boh", c: "[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc\nTvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú..." },
+        { t: "Bohatier", c: "1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier." },
+        { t: "Obeta srdca", c: "[D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D]" },
+        { t: "Pred Tebou, môj Pán, sa vzdám", c: "R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená..." },
+        { t: "Drž ma bližšie", c: "R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie..." },
+        { t: "Tvoj ľud pred Tebou", c: "1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš..." },
+        { t: "Pane náš, prijmi dar", c: "[G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár..." },
+        { t: "Všetko živé chváli ťa", c: "[C]Všetko [F]živé chváli [G]Ťa, [F] [C]v Duchu, [F]v pravde uctie[G]va." },
+        { t: "Dnes viem", c: "1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť..." },
+        { t: "Dávam všetko", c: "1. [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám..." },
+        { t: "Srdce chvály", c: "1. [D]Hudba dohráva[A], všetko stíši sa[Em]..." },
+        { t: "Do tmy na svet", c: "1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta..." },
+        { t: "Príď ó Ježiš príď", c: "R: /:[D]Príď,ó Ježiš, [G]príď:/" },
+        { t: "Nesieme, Pane, chlieb a víno", c: "N[Dmi]esieme, Pane, chlieb a [C]víno." },
+        { t: "Smieme stáť", c: "1. Smieme [C] stáť pred tvojím trónom..." },
+        { t: "Imanuel", c: "[Hm]Boh je stále [G]medzi nami, [D]je stále [A]blízko nás." },
+        { t: "Toto je telo a toto je krv", c: "R: [C]Toto je telo a [G]toto je [Dm]krv..." },
+        { t: "Vitaj pokrm", c: "1. [C#m]Vitaj pokrm, [G#m] v ktorom [A]je neu[H]stále..." },
+        { t: "Nechám sa viesť", c: "1. [C#m]Kamkoľvek ma [A]zavoláš, [H]kamkoľvek ma[F#m] zavoláš, pôjdem." },
+        { t: "Aj keby nekvitol fík", c: "1. Aj keby nekvitol [Dm] fík, aj keby [B]nerodila zem..." },
+        { t: "Chcem z tvojej živej vody piť", c: "1. Chcem z Tvojej živej vody piť, chcem z Tvojho slova stále žiť..." }
+    ];
+
+    let currentSong = null;
+    let transpose = 0;
+    const parser = new ChordSheetJS.ChordProParser();
+    const formatter = new ChordSheetJS.HtmlDivFormatter();
+
+    function renderList() {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = '';
+        database.sort((a,b) => a.t.localeCompare(b.t, 'sk')).forEach((song, index) => {
+            const div = document.createElement('div');
+            div.className = 'song-card';
+            div.innerHTML = `<span class="index">${index + 1}.</span> <span>${song.t}</span>`;
+            div.onclick = () => showSong(song);
+            listDiv.appendChild(div);
+        });
+    }
+
+    function showSong(song) {
+        currentSong = song;
+        transpose = 0;
+        document.getElementById('list').style.display = 'none';
+        document.getElementById('search').parentElement.style.display = 'none';
+        document.getElementById('song-view').style.display = 'block';
+        document.getElementById('title').innerText = song.t;
+        renderContent();
+        window.scrollTo(0,0);
+    }
+
+    function renderContent() {
+        try {
+            const parsed = parser.parse(currentSong.c).transpose(transpose);
+            document.getElementById('content').innerHTML = formatter.format(parsed);
+        } catch(e) {
+            document.getElementById('content').innerText = currentSong.c;
+        }
+    }
+
+    function changeKey(val) { transpose += val; renderContent(); }
     
-    <div id="songList"></div>
+    function back() {
+        document.getElementById('list').style.display = 'block';
+        document.getElementById('search').parentElement.style.display = 'block';
+        document.getElementById('song-view').style.display = 'none';
+        window.scrollTo(0,0);
+    }
 
-    <script>
-        // Kompletná databáza piesní zo súboru export.zpk.xml
-        const songDatabase = [
-            { id: "1", t: "Zvelebený Pán", c: "1. Zvelebený buď tam, kde kraj medom oplýva, tam, kde rieky vždy hojné sú, zvelebený Pán... B: Každú milosť, čo mi dávaš, vyspievam rád... R: Zvelebený buď, Pane náš..." },
-            { id: "2", t: "Požehnané meno má Pán", c: "1. Požehnané meno má Pán, (3x) Najvyšší. R: Viem, že meno Pána je môj úkryt, v boji sa v ňom môžem skryť a v bezpečí žiť!" },
-            { id: "3", t: "Nádherný Boh (Text)", c: "1. Úžasný, tak úžasný si v láske bez hraníc. Tvoj kríž mi dáva milosť sľúbenú. Nik nevidel, nik nepočul, niet srdca, čo tuší, jak slávny je a nádherný Boh môj. R: Nádherný Boh, ťa ľúbim..." },
-            { id: "3a", t: "Nádherný Boh (Akordy)", c: "1.[D]Úžasný, tak [E]úžasný si [F#m]v láske bez hra[A]níc. Tvoj [D]kríž mi dáva [E]milosť sľúbe[A]nú..." },
-            { id: "4", t: "Bohatier", c: "1. V tebe [D] slaboch [A] je mocný [Am] boha[G]tier, v tebe [D] mocný [A] som ako [Am] boha[G]tier. R: [D] Ty si víťaz, [A] Je[Am]žiš [G]" },
-            { id: "5", t: "Obeta srdca (Túžim priniesť na oltár)", c: "1. [D] Túžim priniesť na ol[G]tár život, [A] čo v tebe mám. [D] Tvojou láskou zlome[G]ný chcem ťa [A]chváliť, môj Pán... R: Povedz, čo ti smiem dať..." },
-            { id: "6", t: "Pred Tebou, môj Pán, sa vzdám", c: "R: [A]Pred tebou, môj [D]Pán, sa [A]vzdám, [F#m]pred tebou na [E]kolená [D]padá[A]m... 1.[F#m]Iba Ty v[E]ládneš [D]svojou [A]silou..." },
-            { id: "7", t: "Drž ma bližšie", c: "R: Drž ma bližšie sám deň čo deň, naša láska nech večnosť zrie, daj, nech pravdy sa nepustím, z očí nikdy ťa nestratím." },
-            { id: "8", t: "Tvoj ľud pred Tebou", c: "1. /:Tvoj ľud [D/Em]pred Tebou sa [A/A]schádza, Bože náš[D/D7]:/ /:k Tebe[G] ideme, [A]lebo Ty si [D]do[F#m]broti[[Hm]vý..." },
-            { id: "9", t: "Pane náš, prijmi dar", c: "1. [G]Pane náš, prijmi [C]dar, [G]čo chcem ti dať na ol[C]tár... R: /:Dávam [G]ti zo [D]svojich [C]rán..." },
-            { id: "10", t: "Všetko živé chváli ťa", c: "1. [C]Všetko [F]živé chváli [G]Ťa, [F] [C]v Duchu, [F]v pravde uctie[G]va. R: Dobrý [C]Boh, verný [C]Boh, úžas[G]ný..." },
-            { id: "11", t: "Dnes viem", c: "1. [D]Dnes viem [G]že chcem [A]za tebou [D]ísť. R: [Em]Teraz [G]ja a môj dom [D]chceme [A]slúžiť..." },
-            { id: "12", t: "Dávam všetko", c: "1. [C]Dnes chcel by som ti [G]dať to, čo v srdci [F]mám... R: [Am] [G]Dávam [C]všetko [F]to, čo [C]mám, tebe, Kráľ." },
-            { id: "13", t: "Hudba zohráva (Srdce chvály)", c: "1. [D]Hudba dohráva[A], všetko stíši sa[Em]... R: [D]Túžim sa vrátiť do [A]srdca chvály..." },
-            { id: "14", t: "Do tmy na svet", c: "1.[C]Do tmy na[G] svet prišlo [F]k nám svetlo sveta. R: Prišli sme Ťa [C]vzývať, prišli sme sa [G]skláňať..." },
-            { id: "15", t: "Priď ó Ježiš príď", c: "R: /:[D]Príď,ó Ježiš, [G]príď:/ 1. Tí, čo sú [D]smädní, zoslabnu[F#m]tí..." },
-            { id: "16", t: "Nesieme, Pane, chlieb a víno", c: "N[Dmi]esieme, Pane, chlieb a [C]víno. N[Ami]esieme celý život [Dmi]náš." },
-            { id: "17", t: "Smieme stáť", c: "1. Smieme [C] stáť pred tvojím trónom... R: [F]Pre tvoju [G] krv a rany [Am]kríž a hrob..." },
-            { id: "18", t: "Imanuel", c: "1. [Hm]Boh je stále[G]medzi nami, [D]je stále[A]blízko nás. R: [Hm]Imanu[G]el, [D]je blízko[A]nás..." },
-            { id: "19", t: "Emanuel (vianočná verzia)", c: "1. [D]To svetlo, ktoré svieti v nás... R: [D]Emanuel[A], Eman[G]uel, [A]Emanuel." },
-            { id: "20", t: "Koledy (Mix)", c: "Vstávajte, pastieri; Keď tá jasná hviezda; Narodil sa Kristus Pán." },
-            { id: "21", t: "Ak ľud môjho mena", c: "[Hm]Ak ľud môj[A]ho me[Hm]na sa poko[A]rí a bu[G]de [A]sa mod[D]liť... R: [Hm]vtedy ich z [Em]nebies [A]vypo[D]čujem..." },
-            { id: "22", t: "Toto je telo a toto je krv", c: "R: [C]Toto je telo a [G]toto je [Dm]krv... 1. Keď už [C]poslanie [Am]spásy vrcholí..." },
-            { id: "23", t: "Vitaj pokrm", c: "1. [C#m]Vitaj pokrm, [G#m] v ktorom [A]je neu[H]stále prítomný tvorca neba i zeme." },
-            { id: "24", t: "Slnko Kristovej lásky", c: "[G] [C] [D] [C] [G] Slnko Kristovej lásky nech ožiari nás..." },
-            { id: "25", t: "Nechám sa viesť", c: "1. [C#m]Kamkoľvek ma [A]zavoláš... R: (Tebou)[C#m] nechám sa [A]viesť..." },
-            { id: "26", t: "Aj keby nekvitol fík", c: "1. Aj keby nekvitol [Dm] fík... Ref.: Áno [F]práve vtedy pozdvihnem svoj hlas..." },
-            { id: "27", t: "Chcem z tvojej živej vody piť", c: "1. Chcem z Tvojej živej vody piť, chcem z Tvojho slova stále žiť... R: /:Hľadám Tvoju tvár...:/" }
-        ];
+    function filterSongs() {
+        const q = document.getElementById('search').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        document.querySelectorAll('.song-card').forEach(card => {
+            const title = card.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            card.style.display = title.includes(q) ? 'flex' : 'none';
+        });
+    }
 
-        // Funkcia na zobrazenie všetkých piesní pri načítaní
-        function displaySongs(songs) {
-            const list = document.getElementById('songList');
-            list.innerHTML = '';
-            songs.forEach(song => {
-                const div = document.createElement('div');
-                div.className = 'song';
-                div.innerHTML = `<div class="song-title">${song.t}</div><div class="song-text">${song.c}</div>`;
-                list.appendChild(div);
-            });
-        }
+    renderList();
+</script>
 
-        // Funkcia na vyhľadávanie
-        function searchSongs() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = songDatabase.filter(s => 
-                s.t.toLowerCase().includes(query) || 
-                s.c.toLowerCase().includes(query)
-            );
-            displaySongs(filtered);
-        }
-
-        // Prvotné zobrazenie
-        displaySongs(songDatabase);
-    </script>
 </body>
 </html>
