@@ -78,11 +78,16 @@ function renderSong(text) {
 }
 
 function transposeChord(chord, steps) {
-  const chromaticH = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
-  const chromaticB = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const chromaticSharp = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
 
-  // H → B (pre transpozíciu)
-  let normalized = chord.replace(/H/g, 'B').replace(/Bb/g, 'A#');
+  // H → B, Db → C#, Eb → D#, Gb → F#, Ab → G#, Bb → A# (pre transpozíciu)
+  let normalized = chord
+    .replace(/H/g, 'B')
+    .replace(/Bb/g, 'A#')
+    .replace(/Db/g, 'C#')
+    .replace(/Eb/g, 'D#')
+    .replace(/Gb/g, 'F#')
+    .replace(/Ab/g, 'G#');
 
   const root = normalized.match(/[A-G][#b]?/);
   if (!root) return chord;
@@ -90,14 +95,14 @@ function transposeChord(chord, steps) {
   const rootOnly = root[0];
   const suffix = normalized.replace(rootOnly, '');
 
-  const index = chromaticB.indexOf(rootOnly);
+  const index = chromaticSharp.indexOf(rootOnly);
   if (index === -1) return chord;
 
   const newIndex = (index + steps + 12) % 12;
-  const newRootB = chromaticB[newIndex];
+  const newRoot = chromaticSharp[newIndex];
 
   // B → H (pre výstup)
-  const finalRoot = newRootB === 'B' ? 'H' : newRootB;
+  const finalRoot = newRoot === 'B' ? 'H' : newRoot;
 
   return finalRoot + suffix;
 }
