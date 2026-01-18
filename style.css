@@ -1,6 +1,18 @@
 body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
 .container { max-width: 700px; margin: auto; }
-h1 { font-size: 1.8em; font-weight: 700; background: linear-gradient(90deg, #00bfff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+
+/* Hlavný nadpis a názov piesne s modro-bielym prechodom */
+.main-title, #render-title {
+    font-weight: 700;
+    background: linear-gradient(90deg, #00bfff, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.main-title { font-size: 1.8em; text-align: center; }
+#render-title { font-size: 1.6em; margin-bottom: 5px; border: none; }
+
 #search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; box-sizing: border-box; }
 #piesne-list div, #playlists-section div { background: #1e1e1e; cursor: pointer; }
 h2 { color: #00bfff; margin-top: 15px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
