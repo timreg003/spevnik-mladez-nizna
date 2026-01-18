@@ -1,31 +1,44 @@
-* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
-body { margin: 0; font-family: 'Inter', sans-serif; background: #000; color: #fff; padding: 15px; }
-.container { max-width: 600px; margin: auto; }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
+.container { max-width: 700px; margin: auto; }
 
-.header-ui { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 10px 0; }
-.main-title { font-size: 1.4em; margin: 0; color: #00bfff; text-align: center; flex-grow: 1; font-weight: 700; text-transform: uppercase; }
-.admin-trigger { opacity: 0.1; padding: 10px; cursor: pointer; }
-.home-trigger { color: #00bfff; font-size: 1.4em; padding: 10px; cursor: pointer; }
+/* Zákaz označovania textu modrou farbou */
+#piesne-list, #playlists-section, .controls, .back-btn, .main-title, #render-title, #song-content {
+    -webkit-user-select: none;
+    user-select: none;
+}
 
-#search { width: 100%; padding: 15px; border-radius: 12px; background: #1a1a1a; color: #fff; border: 1px solid #333; margin-bottom: 20px; font-size: 16px; outline: none; }
+/* Gradient nadpisy vycentrované */
+.main-title, #render-title, .playlist-header-title {
+    font-weight: 700;
+    background: linear-gradient(90deg, #00bfff, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: block;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
 
-.playlist-header-title { color: #00bfff; font-size: 1.1em; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #00bfff; padding-bottom: 5px; }
-.list-item { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
-.song-num { color: #00bfff; font-weight: bold; margin-right: 10px; }
+.main-title { font-size: 1.8em; margin: 0; }
+#render-title { font-size: 1.6em; margin-bottom: 5px; }
 
-.controls-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; background: #111; padding: 10px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #222; }
-.ctrl-item { text-align: center; }
-.ctrl-item small { display: block; margin-bottom: 5px; color: #888; font-size: 10px; text-transform: uppercase; }
-.btn-group { display: flex; background: #222; border-radius: 8px; overflow: hidden; }
-.btn-group button { flex: 1; background: none; border: none; color: #fff; padding: 10px 5px; border-right: 1px solid #333; font-size: 14px; }
-.btn-group button:last-child { border-right: none; }
+.playlist-header-title {
+    font-size: 1.4em;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-.back-link { background: none; border: none; color: #00bfff; width: 100%; padding: 15px; font-weight: 600; cursor: pointer; font-size: 16px; }
-#song-content { background: #111; padding: 30px 15px; border-radius: 15px; line-height: 2; white-space: pre-wrap; font-size: 17px; text-align: center; border: 1px solid #222; }
-.chord { color: #00bfff; font-weight: bold; padding: 0 2px; }
+#search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
+#piesne-list div, #playlists-section div { background: #1e1e1e; border-radius: 8px; margin-bottom: 4px; }
 
-.admin-box { background: #1a1a1a; border: 1px solid #00bfff; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-#playlist-name { width: 100%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 5px; }
-.admin-btns { display: flex; gap: 10px; }
-.save-btn { flex: 2; background: #00bfff; color: #000; font-weight: bold; border-radius: 8px; padding: 10px; border: none; }
-.clear-btn { flex: 1; background: #333; color: #fff; border-radius: 8px; padding: 10px; border: none; }
+.controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; gap: 10px; border: 1px solid #333; }
+.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+button { background: #1e1e1e; border: none; color: #fff; padding: 10px 14px; cursor: pointer; }
+
+.back-btn { background: none; color: #00bfff; font-size: 16px; border: none; cursor: pointer; margin-bottom: 15px; width: 100%; text-align: center; font-weight: 600; }
+#song-content { background: #1a1a1a; padding: 25px 15px; border-radius: 12px; line-height: 2.2; white-space: pre-wrap; margin-top: 10px; font-size: 17px; text-align: center; color: #fff; }
+.chord { color: #00bfff; font-weight: bold; background: #252525; padding: 1px 4px; border-radius: 4px; }
