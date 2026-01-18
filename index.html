@@ -65,4 +65,25 @@
           <small>Písmo</small>
           <div class="btn-row">
             <button onclick="changeFontSize(-1)">A-</button>
-            <button
+            <button onclick="changeFontSize(1)">A+</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="song-content"></div>
+
+      <div class="feedback-section">
+        <p>Ak si našiel/la chybu napíš, opravím :)</p>
+        <form id="my-form" class="custom-form">
+          <input type="hidden" name="_subject" id="email-subject">
+          <input type="text" name="Meno" placeholder="Tvoje meno" required>
+          <textarea name="Správa" placeholder="Nájdená chyba..." required></textarea>
+          <button type="submit" id="submit-btn" class="submit-btn">Odoslať opravu</button>
+          <p id="form-status" style="margin-top: 10px; font-weight: 600;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
