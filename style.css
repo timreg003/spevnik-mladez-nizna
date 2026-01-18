@@ -1,15 +1,20 @@
-/* Základné nastavenia */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: #121212;
     color: #e0e0e0;
     margin: 0;
     padding: 0;
     line-height: 1.6;
-    -webkit-tap-highlight-color: transparent;
 }
 
-/* Hlavička */
+/* Hlavný stĺpec v strede monitora */
+#song-list, #song-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #121212;
+    min-height: 100vh;
+}
+
 header {
     background-color: #1f1f1f;
     padding: 15px;
@@ -17,23 +22,11 @@ header {
     top: 0;
     z-index: 100;
     border-bottom: 2px solid #333;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-}
-
-h1, h2, h3, h4 {
-    margin: 0;
-    color: #ffffff;
-}
-
-/* Ovládacie prvky v hlavičke */
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    text-align: center;
 }
 
 input[type="text"] {
-    flex-grow: 1;
+    width: 90%;
     background: #2c2c2c;
     border: 1px solid #444;
     color: white;
@@ -42,229 +35,91 @@ input[type="text"] {
     font-size: 16px;
 }
 
-button {
-    background: #333;
-    color: white;
-    border: 1px solid #555;
+/* Kategórie */
+.section-title {
+    background-color: #1a1a1a;
+    color: #00bfff;
     padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
+    margin-top: 20px;
     font-size: 14px;
-    transition: background 0.2s;
-}
-
-button:active {
-    background: #555;
-}
-
-#admin-btn {
-    background: #444;
-    font-size: 18px;
-}
-
-/* Sekcia Playlisty */
-#playlists-section {
-    background: #1a1a1a;
-    padding: 15px;
-    margin: 10px;
-    border-radius: 12px;
-    border: 1px dashed #444;
-}
-
-#playlists-container {
-    margin-top: 10px;
-}
-
-.playlist-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.playlist-row button {
-    background: #2c2c2c;
-    border: 1px solid #444;
-    flex-grow: 1;
-    text-align: left;
-    padding: 12px;
-}
-
-/* Admin panel pre tvorbu playlistu */
-#admin-panel {
-    background: #1f1f1f;
-    margin: 10px;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #00bfff;
-}
-
-.selection-item {
-    background: #2c2c2c;
-    padding: 10px;
-    margin-bottom: 6px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.selection-item button {
-    padding: 4px 10px;
-    font-size: 12px;
-}
-
-#save-btn {
-    background: #0088cc;
-    border: none;
-    font-weight: bold;
-    width: 100%;
-    margin-top: 10px;
-    padding: 15px;
-}
-
-/* Zoznam piesní */
-#piesne-list {
-    padding: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .song-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 15px;
     border-bottom: 1px solid #222;
-    padding: 5px 0;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.song-info {
-    flex-grow: 1;
-    padding: 15px 10px;
-    cursor: pointer;
-    font-size: 18px;
+.song-item:active {
+    background-color: #222;
 }
 
 .song-number {
     color: #00bfff;
     font-weight: bold;
-    margin-right: 10px;
+    width: 55px;
+    flex-shrink: 0;
 }
 
-.add-btn {
-    background: #00bfff;
-    border: none;
-    color: white;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    font-size: 20px;
-    margin-right: 10px;
-}
-
-/* Detail piesne */
-#song-detail {
-    padding-bottom: 100px;
-}
-
-#song-title {
-    padding: 10px 15px;
-    font-size: 22px;
-    background: #121212;
-    text-align: center;
-}
-
-.transpose-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    background: #1f1f1f;
-    padding: 10px;
-    border-bottom: 1px solid #333;
-}
-
-#transpose-val {
-    font-size: 20px;
-    font-weight: bold;
-    color: #00bfff;
-    min-width: 40px;
-    text-align: center;
-}
-
+/* AKORDY - Belasé a presne zarovnané */
 #song-content {
     padding: 20px;
     white-space: pre-wrap;
-    font-family: 'Courier New', Courier, monospace;
-    line-height: 1.4;
+    font-family: 'Courier New', Courier, monospace; /* Monospace pre presnosť */
+    line-height: 2.8; /* Priestor pre akordy */
+    font-size: 18px;
 }
 
-/* Akordy */
 .chord {
-    color: #fbbf24; /* Zlatistá farba pre akordy */
+    color: #00bfff;
     font-weight: bold;
+    position: relative;
     display: inline-block;
     height: 0;
+    width: 0;
     vertical-align: top;
-    position: relative;
-    top: -1.2em;
-    margin-right: 2px;
-    font-size: 0.9em;
+    top: -1.3em;
 }
 
-/* Spodné ovládanie (A+, A-, Chords) */
-.font-controls {
-    position: fixed;
-    bottom: 60px;
-    right: 10px;
+/* Ovládanie */
+.transpose-controls {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 101;
-}
-
-.font-controls button {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    background: #333;
-    border: 1px solid #444;
-}
-
-#base-key-display {
-    position: fixed;
-    bottom: 70px;
-    left: 10px;
-    font-size: 12px;
-    color: #888;
-}
-
-/* Navigácia medzi piesňami */
-.nav-buttons {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: 60px;
+    justify-content: space-around;
+    padding: 15px;
     background: #1f1f1f;
-    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
 }
 
-.nav-buttons button {
-    flex: 1;
+.btn-nav {
+    background: #333;
+    color: white;
     border: none;
-    border-radius: 0;
-    background: transparent;
+    padding: 10px 20px;
+    border-radius: 5px;
     font-size: 16px;
 }
 
-.nav-buttons button:first-child {
-    border-right: 1px solid #333;
+.font-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-/* Špeciálne pre tlačidlo Späť */
-.btn-back {
-    font-size: 18px;
-    background: transparent;
+.font-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #00bfff;
+    color: black;
     border: none;
-    color: #00bfff;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
