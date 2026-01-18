@@ -20,7 +20,6 @@ function loadPlaylist() {
       playlist = JSON.parse(saved);
       renderPublicPlaylist();
       document.getElementById('public-playlist-section').style.display = 'block';
-      document.getElementById('playlist-creator').style.display = 'none';
       return;
     } else {
       localStorage.removeItem('playlist');
@@ -29,7 +28,6 @@ function loadPlaylist() {
     }
   }
   document.getElementById('public-playlist-section').style.display = 'none';
-  document.getElementById('playlist-creator').style.display = 'block';
 }
 
 function renderPublicPlaylist() {
@@ -40,7 +38,7 @@ function renderPublicPlaylist() {
 
   playlist.forEach(song => {
     const li = document.createElement('li');
-    li.innerHTML = `<i class="fas fa-music"></i> ${song.title}`;
+    li.innerHTML = `${song.title}`;
     li.style.cursor = 'pointer';
     li.onclick = () => openPublicPlaylist();
     list.appendChild(li);
@@ -53,7 +51,6 @@ function removePublicPlaylist() {
     localStorage.removeItem('playlistTime');
     localStorage.removeItem('playlistName');
     document.getElementById('public-playlist-section').style.display = 'none';
-    document.getElementById('playlist-creator').style.display = 'block';
   }
 }
 
@@ -69,6 +66,20 @@ function showSongFromPlaylist(index) {
   if (!song) return;
   currentPlaylistIndex = index;
   showSong(song);
+}
+
+function prevSong() {
+  const currentIndex = songs.findIndex(s => s.title === currentSong.title);
+  if (currentIndex > 0) {
+    showSong(songs[currentIndex - 1]);
+  }
+}
+
+function nextSong() {
+  const currentIndex = songs.findIndex(s => s.title === currentSong.title);
+  if (currentIndex < songs.length - 1) {
+    showSong(songs[currentIndex + 1]);
+  }
 }
 
 function prevInPlaylist() {
@@ -90,7 +101,6 @@ function startNewPlaylist() {
   const name = prompt('Názov nového playlistu (napr. nedeľa-29-6):');
   if (!name || !name.trim()) return;
 
-  // výber piesní – pomocou prompt – bez zaškrtávacích políčok
   const selected = [];
   let more = true;
   while (more) {
@@ -112,9 +122,27 @@ function startNewPlaylist() {
   localStorage.setItem('playlistTime', Date.now().toString());
 
   renderPublicPlaylist();
-  document.getElementById('playlist-creator').style.display = 'none';
   document.getElementById('public-playlist-section').style.display = 'block';
   alert('Playlist vytvorený!');
+}
+
+function addToExistingPlaylist() {
+  if (playlist.length === 0) { alert('Nie je žiadny existujúci playlist'); return; }
+  const more = true;
+  while (more) {
+    const title = prompt('Zadaj názov piesne (alebo nechaj prázdne pre ukončenie):');
+    if (!title || !title.trim()) { break; }
+    const found = songs.find(s => s.title.toLowerCase() === title.toLowerCase().trim());
+    if (found) {
+      playlist.push({ title: found.title });
+    } else {
+      alert('Pieseň nebola nájdená – skús znova.');
+    }
+  }
+  localStorage.setItem('playlist', JSON.stringify(playlist));
+  localStorage.setItem('playlistTime', Date.now().toString());
+  renderPublicPlaylist();
+  alert('Pieseň pridaná!');
 }
 
 // === NAČÍTANIE PLAYLISTU Z XML ===
@@ -147,69 +175,21 @@ function renderSongList(list) {
   listDiv.innerHTML = '';
   list.forEach(song => {
     const div = document.createElement('div');
-    div.innerHTML = `<i class="fas fa-music"></i> ${song.title}`;
+    div.innerHTML = `${song.title}`;
+    div.style.cursor = 'pointer';
     div.onclick = () => showSong(song);
+    div.style.fontSize = '19px';
+    div.style.lineHeight = '1.9';
+    div.style.padding = '14px';
+    div.style.borderBottom = '1px solid #2a2a2a';
+    div.style.borderRadius = '8px';
+    div.style.marginBottom = '10px';
+    div.style.background = '#1e1e1e';
+    div.style.transition = 'background 0.2s';
+    div.onmouseenter = () => div.style.background = '#2a2a2a';
+    div.onmouseleave = () => div.style.background = '#1e1e1e';
     listDiv.appendChild(div);
   });
 }
-
-function showSong(song) {
-  currentSong = song;
-  transposeStep = 0;
-  document.getElementById('song-list').style.display = 'none';
-  document.getElementById('song-display').style.display = 'block';
-  document.getElementById('song-title').textContent = song.title;
-  renderSong(song.text);
-}
-
-function renderSong(text) {
-  const content = text.replace(/\[(.*?)\]/g, (match, chord) => {
-    const transposed = transposeChord(chord, transposeStep);
-    return `<span class="chord">${transposed}</span>`;
-  });
-  document.getElementById('song-content').innerHTML = content;
-}
-
-function transposeChord(chord, steps) {
-  const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const root = chord.match(/[A-G][#b]?/);
-  if (!root) return chord;
-  const rootOnly = root[0];
-  const suffix = chord.replace(rootOnly, '');
-  const index = chromatic.indexOf(rootOnly);
-  if (index === -1) return chord;
-  const newIndex = (index + steps + 12) % 12;
-  return chromatic[newIndex] + suffix;
-}
-
-function transposeSong(direction) {
-  transposeStep += direction;
-  renderSong(currentSong.text);
-}
-
-function changeFontSize(delta) {
-  fontSize = Math.max(12, Math.min(28, fontSize + delta));
-  document.getElementById('song-content').style.fontSize = fontSize + 'px';
-  localStorage.setItem('fontSize', fontSize);
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('fontSize');
-  if (saved) {
-    fontSize = parseInt(saved);
-    document.getElementById('song-content').style.fontSize = fontSize + 'px';
-  }
-});
-
-function backToList() {
-  document.getElementById('song-list').style.display = 'block';
-  document.getElementById('song-display').style.display = 'none';
-}
-
-document.getElementById('search').addEventListener('input', e => {
-  const query = e.target.value.toLowerCase();
-  const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
-  renderSongList(filtered);
-});
 
 parseXML();
