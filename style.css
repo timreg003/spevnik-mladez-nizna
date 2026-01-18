@@ -1,80 +1,48 @@
-body {
-    font-family: sans-serif;
-    background-color: #121212;
-    color: #e0e0e0;
-    margin: 0;
+body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
+.container { max-width: 700px; margin: auto; }
+h1 { font-size: 1.8em; font-weight: 700; background: linear-gradient(90deg, #00bfff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 20px; }
+
+#search { width: 100%; padding: 14px; font-size: 16px; border: none; box-sizing: border-box; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
+h2 { color: #00bfff; margin-top: 25px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+.liturgia div, #piesne-list div { background: #1e1e1e; padding: 14px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+.liturgia div:hover, #piesne-list div:hover { background: #2a2a2a; border-left: 3px solid #00bfff; }
+
+.song-header-card { background: linear-gradient(145deg, #1e1e1e, #141414); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; text-align: center; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.control-group small { color: #888; text-transform: uppercase; font-size: 10px; }
+
+.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+button { background: #1e1e1e; border: none; color: #fff; padding: 10px 15px; cursor: pointer; font-size: 14px; }
+button:active { background: #00bfff; color: #000; }
+
+.back-btn { background: none; color: #aaa; font-size: 18px; margin-bottom: 10px; border: none; cursor: pointer; }
+
+#song-content { 
+    background: #1a1a1a; 
+    padding: 40px 15px; 
+    border-radius: 12px; 
+    line-height: 2.8; 
+    white-space: pre-wrap; 
+    margin-top: 10px; 
+    font-size: 17px; 
+    text-align: center; 
+    color: #fff;
 }
 
-#song-list, #song-detail {
-    max-width: 800px;
-    margin: 0 auto;
+.chord { 
+    color: #00bfff; 
+    font-weight: bold; 
+    position: relative; 
+    top: -1.1em; 
+    margin-right: 2px;
+    font-size: 0.85em; 
+    display: inline-block; 
+    height: 0; 
 }
 
-/* HLAVNÝ PANEL HORE */
-.top-controls {
-    background: #1f1f1f;
-    padding: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 2px solid #333;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-}
-
-.top-controls button {
-    background: #333;
-    color: white;
-    border: 1px solid #444;
-    padding: 8px 12px;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-.song-title-header {
-    width: 100%;
-    text-align: center;
-    color: #00bfff;
-    font-size: 20px;
-    font-weight: bold;
-    margin: 5px 0;
-}
-
-/* ZOZNAM */
-.section-title {
-    color: #00bfff;
-    padding: 15px;
-    font-weight: bold;
-    text-transform: uppercase;
-    background: #1a1a1a;
-}
-
-.song-item {
-    padding: 15px;
-    border-bottom: 1px solid #222;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.song-number { color: #00bfff; margin-right: 15px; font-weight: bold; }
-
-/* TEXT PIESNE A AKORDY */
-#song-content {
-    padding: 20px;
-    white-space: pre-wrap;
-    font-family: 'Courier New', Courier, monospace;
-    line-height: 2.5;
-}
-
-.chord {
-    color: #00bfff;
-    font-weight: bold;
-    position: relative;
-    display: inline-block;
-    height: 0;
-    width: 0;
-    vertical-align: top;
-    top: -1.2em;
-}
+.feedback-section { margin-top: 50px; padding: 20px; background: #1a1a1a; border-radius: 15px; border: 1px solid #333; text-align: center; }
+.custom-form { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+.custom-form input, .custom-form textarea { background: #121212; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+.submit-btn { background: #00bfff; color: #000; font-weight: bold; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
