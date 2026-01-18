@@ -1,4 +1,3 @@
-/* ZÁKLADNÉ NASTAVENIA */
 body { 
     margin: 0; 
     font-family: 'Inter', sans-serif; 
@@ -19,16 +18,12 @@ h1 {
     -webkit-background-clip: text; 
     -webkit-text-fill-color: transparent; 
     text-align: center; 
-    margin-bottom: 20px; 
 }
 
-/* VYHĽADÁVANIE */
 #search { 
     width: 100%; 
     padding: 14px; 
     font-size: 16px; 
-    border: none; 
-    box-sizing: border-box; 
     border-radius: 12px; 
     background: #1e1e1e; 
     color: #fff; 
@@ -37,31 +32,16 @@ h1 {
     outline: none; 
 }
 
-/* ZOZNAMY */
 #piesne-list div, #playlists-section div { 
     background: #1e1e1e; 
     padding: 12px 14px; 
     margin-bottom: 6px; 
     border-radius: 10px; 
     cursor: pointer; 
-    transition: 0.2s; 
-    border: 1px solid transparent;
 }
 
-#piesne-list div:hover { 
-    background: #2a2a2a; 
-    border-left: 3px solid #00bfff; 
-}
+h2 { color: #00bfff; margin-top: 15px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
 
-h2 { 
-    color: #00bfff; 
-    margin-top: 15px; 
-    font-size: 1.3em; 
-    border-bottom: 1px solid #333; 
-    padding-bottom: 5px; 
-}
-
-/* OVLÁDACÍ PANEL V DETAILE */
 .controls { 
     display: flex; 
     justify-content: space-around; 
@@ -69,62 +49,23 @@ h2 {
     padding: 10px; 
     border-radius: 12px; 
     margin-bottom: 10px; 
-    flex-wrap: wrap; 
     gap: 10px;
     border: 1px solid #333;
 }
 
-.control-group { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 5px; 
-    align-items: center; 
-}
+.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.control-group small { color: #888; text-transform: uppercase; font-size: 10px; }
 
-.control-group small { 
-    color: #888; 
-    text-transform: uppercase; 
-    font-size: 10px; 
-}
+.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+button { background: #1e1e1e; border: none; color: #fff; padding: 8px 12px; cursor: pointer; }
 
-.btn-row { 
-    display: flex; 
-    background: #1e1e1e; 
-    border-radius: 8px; 
-    overflow: hidden; 
-    border: 1px solid #333; 
-}
+.back-btn { background: none; color: #aaa; font-size: 16px; border: none; cursor: pointer; margin-bottom: 10px; }
 
-button { 
-    background: #1e1e1e; 
-    border: none; 
-    color: #fff; 
-    padding: 8px 12px; 
-    cursor: pointer; 
-    font-size: 14px; 
-}
-
-button:active { 
-    background: #00bfff; 
-    color: #000; 
-}
-
-.back-btn { 
-    background: none; 
-    color: #aaa; 
-    font-size: 16px; 
-    margin-bottom: 10px; 
-    border: none; 
-    cursor: pointer; 
-    padding: 5px 0;
-}
-
-/* TEXT PIESNE - OPRAVENÉ VÝŠKY */
 #song-content { 
     background: #1a1a1a; 
-    padding: 15px; /* Zmenšené zo 40px na 15px */
+    padding: 20px 15px; 
     border-radius: 12px; 
-    line-height: 1.6; /* Zúžené riadkovanie pre lepšiu prehľadnosť */
+    line-height: 3.2; /* Väčšie riadkovanie pre akordy */
     white-space: pre-wrap; 
     margin-top: 10px; 
     font-size: 17px; 
@@ -136,47 +77,13 @@ button:active {
     color: #00bfff; 
     font-weight: bold; 
     position: relative; 
-    top: -1.1em; 
-    margin-right: 2px;
-    display: inline-block;
-    height: 0; /* Pomáha udržať text piesne pokope */
+    top: -1.0em; /* Akord je kúsok nižšie */
+    margin-right: 4px;
+    font-size: 0.95em; /* Väčšie akordy */
+    display: inline-block; 
+    height: 0; 
 }
 
-/* FEEDBACK FORMULÁR */
-.feedback-section { 
-    margin-top: 30px; 
-    padding-top: 20px; 
-    border-top: 1px solid #333; 
-}
-
-.custom-form { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-}
-
-.custom-form input, .custom-form textarea { 
-    background: #1e1e1e; 
-    border: 1px solid #333; 
-    color: #fff; 
-    padding: 10px; 
-    border-radius: 8px; 
-    outline: none; 
-}
-
-.submit-btn { 
-    background: #00bfff; 
-    color: #000; 
-    font-weight: bold; 
-    border: none; 
-    padding: 12px; 
-    border-radius: 8px; 
-    cursor: pointer; 
-}
-
-/* RESPONZIVITA */
-@media (max-width: 500px) {
-    h1 { font-size: 1.4em; }
-    .controls { flex-direction: column; align-items: stretch; }
-    .btn-row { justify-content: center; }
-}
+.custom-form { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.custom-form input, .custom-form textarea { background: #1e1e1e; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; }
+.submit-btn { background: #00bfff; color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; }
