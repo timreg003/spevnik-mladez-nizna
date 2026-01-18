@@ -12,41 +12,54 @@ let adminPassword = "";
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
 
 async function parseXML() {
-  try {
-    const res = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
-    const xmlText = await res.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(xmlText, 'application/xml');
-    const songNodes = xml.getElementsByTagName('song');
-    
-    songs = Array.from(songNodes).map(song => {
-      const getVal = (t) => song.getElementsByTagName(t)[0]?.textContent.trim() || "";
-      const st = getVal('songtext');
-      const firstChord = st.match(/\[([A-H][#b]?[m]?)\]/);
-      return {
-        id: getVal('ID'),
-        title: getVal('title') || "Bez názvu",
-        displayId: getVal('author') || "",
-        text: st,
-        origText: st,
-        originalKey: firstChord ? firstChord[1] : "?"
-      };
-    });
-    renderAllSongs();
-    loadPlaylistHeaders();
-  } catch (err) {
-    document.getElementById('piesne-list').innerText = "Chyba načítania: " + err;
-  }
+  const res = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
+  const xmlText = await res.text();
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(xmlText, 'application/xml');
+  const songNodes = xml.getElementsByTagName('song');
+  
+  songs = Array.from(songNodes).map(song => {
+    const getVal = (t) => song.getElementsByTagName(t)[0]?.textContent.trim() || "";
+    const st = getVal('songtext');
+    const firstChord = st.match(/\[([A-H][#b]?[m]?)\]/);
+    return {
+      id: getVal('ID'),
+      title: getVal('title') || "Bez názvu",
+      displayId: getVal('author') || "",
+      text: st,
+      origText: st,
+      originalKey: firstChord ? firstChord[1] : "?"
+    };
+  });
+  renderAllSongs();
+  loadPlaylistHeaders();
 }
 
 function renderAllSongs() {
   const container = document.getElementById('piesne-list');
+  
+  // Radenie: Čísla -> M... -> Text
   const sorted = [...songs].sort((a, b) => {
-    const numA = parseInt(a.displayId) || 9999;
-    const numB = parseInt(b.displayId) || 9999;
-    return numA - numB;
+    const idA = a.displayId;
+    const idB = b.displayId;
+    const isNumA = /^\d+$/.test(idA);
+    const isNumB = /^\d+$/.test(idB);
+    const isMA = idA.startsWith('M');
+    const isMB = idB.startsWith('M');
+
+    if (isNumA && !isNumB) return -1;
+    if (!isNumA && isNumB) return 1;
+    if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
+    
+    if (isMA && !isMB) return -1;
+    if (!isMA && isMB) return 1;
+    if (isMA && isMB) return parseInt(idA.substring(1)) - parseInt(idB.substring(1));
+    
+    return idA.localeCompare(idB);
   });
   
+  currentModeList = sorted; 
+
   container.innerHTML = sorted.map(s => {
     const isSel = selectedSongIds.includes(s.id);
     const action = isAdmin ? `addToSelection('${s.id}')` : `openSongById('${s.id}', 'all')`;
@@ -59,7 +72,7 @@ function renderAllSongs() {
 }
 
 function openSongById(id, mode) {
-    if (mode === "all") { currentMode = "all"; currentModeList = songs; }
+    if (mode === "all") currentMode = "all";
     const s = songs.find(x => x.id === id);
     if (!s) return;
     currentSong = JSON.parse(JSON.stringify(s));
@@ -73,40 +86,39 @@ function openSongById(id, mode) {
 }
 
 function renderSong() {
-  let text = currentSong.text;
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B', 'H'];
+  const trans = (c, step) => c.replace(/[A-H][#b]?/g, m => {
+    let n = (m==='Bb'||m==='Hb') ? 'B' : m;
+    let i = notes.indexOf(n);
+    if (i===-1) return m;
+    let ni = (i + step) % 12; while(ni<0) ni+=12;
+    return notes[ni];
+  });
+
+  // Vždy transponujeme z ORIGINÁLNEHO textu o celkový počet krokov
+  let text = currentSong.origText;
+  if (transposeStep !== 0) {
+    text = text.replace(/\[(.*?)\]/g, (m, c) => `[${trans(c, transposeStep)}]`);
+  }
+
   if (!chordsVisible) text = text.replace(/\[.*?\]/g, '');
   else text = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
+
   const contentEl = document.getElementById('song-content');
   contentEl.innerHTML = text;
   contentEl.style.fontSize = fontSize + "px";
   document.getElementById('transpose-val').innerText = (transposeStep > 0 ? "+" : "") + transposeStep;
 }
 
-function navigateSong(step) {
-    const list = (currentMode === "playlist") ? currentPlaylist : currentModeList;
-    const currIdx = list.findIndex(s => s.id === currentSong.id);
-    const nextIdx = currIdx + step;
-    if (nextIdx >= 0 && nextIdx < list.length) openSongById(list[nextIdx].id);
-}
-
 function transposeSong(step) {
   const newStep = transposeStep + step;
   if (newStep >= -12 && newStep <= 12) {
     transposeStep = newStep;
-    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B', 'H'];
-    const trans = (c) => c.replace(/[A-H][#b]?/g, m => {
-      let n = (m==='Bb'||m==='Hb') ? 'B' : m;
-      let i = notes.indexOf(n);
-      if (i===-1) return m;
-      let ni = (i+step)%12; while(ni<0) ni+=12;
-      return notes[ni];
-    });
-    currentSong.text = currentSong.origText.replace(/\[(.*?)\]/g, (m, c) => `[${trans(c)}]`);
     renderSong();
   }
 }
 
-function resetTranspose() { transposeStep = 0; currentSong.text = currentSong.origText; renderSong(); }
+function resetTranspose() { transposeStep = 0; renderSong(); }
 function closeSong() { document.getElementById('song-list').style.display = 'block'; document.getElementById('song-detail').style.display = 'none'; }
 function changeFontSize(s) { fontSize += s; renderSong(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
@@ -143,12 +155,16 @@ function savePlaylist() {
   const name = document.getElementById('playlist-name').value;
   if (!name || !selectedSongIds.length) return alert("Zadaj názov!");
   const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}&content=${selectedSongIds.join(',')}`;
-  window.open(url, '_blank', 'width=1,height=1');
+  
+  const win = window.open(url, '_blank', 'width=1,height=1');
   setTimeout(() => { 
+    if(win) win.close();
     alert("Uložené!"); 
     selectedSongIds = []; isAdmin = false; 
     document.getElementById('admin-panel').style.display = 'none';
-    loadPlaylistHeaders(); renderAllSongs();
+    // Načítame znova po uložení
+    setTimeout(loadPlaylistHeaders, 1000); 
+    renderAllSongs();
   }, 2000);
 }
 
@@ -169,13 +185,21 @@ async function openPlaylist(name) {
   const idsText = await res.text();
   const ids = idsText.split(',');
   currentPlaylist = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
+  currentModeList = currentPlaylist;
   currentMode = "playlist";
   document.getElementById('piesne-list').innerHTML = `<button onclick="renderAllSongs();" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; color:#00bfff; border-radius:10px; border:1px solid #333; font-weight:bold;">⬅ Späť na všetky piesne</button>` + 
   currentPlaylist.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="background:#1e1e1e; padding:12px; margin-bottom:6px; border-radius:10px;"><span style="color:#00bfff; font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
 }
 
+function navigateSong(step) {
+    const list = currentModeList;
+    const currIdx = list.findIndex(s => s.id === currentSong.id);
+    const nextIdx = currIdx + step;
+    if (nextIdx >= 0 && nextIdx < list.length) openSongById(list[nextIdx].id);
+}
+
 function deletePlaylist(name) {
-  if(confirm("Zmazať?")) fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}`).then(() => loadPlaylistHeaders());
+  if(confirm("Zmazať?")) fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}`).then(() => setTimeout(loadPlaylistHeaders, 1000));
 }
 
 document.addEventListener('DOMContentLoaded', parseXML);
