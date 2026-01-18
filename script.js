@@ -1,11 +1,10 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
 
 let songs = [], filteredSongs = [], currentSong = null;
-let currentModeList = []; // Tu budeme ukladať aktuálny zoznam (buď všetko alebo playlist)
+let currentModeList = []; 
 let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [], adminPassword = "";
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
-// Domček len ako návrat
 function smartReset() {
     closeSong();
     filterSongs();
@@ -32,10 +31,10 @@ function processXML(xmlText) {
         const text = s.getElementsByTagName('songtext')[0]?.textContent.trim() || "";
         const rawId = s.getElementsByTagName('author')[0]?.textContent.trim() || "";
         
-        // Formátovanie zobrazenia čísla (odstránenie núl na začiatku)
         let displayId = rawId;
         if (rawId.startsWith('M')) {
-            displayId = "M " + rawId.substring(1).replace(/^0+/, '');
+            // TU JE ZMENA: Namiesto "M" vypíšeme "Mariánska"
+            displayId = "Mariánska " + rawId.substring(1).replace(/^0+/, '');
         } else if (/^\d+$/.test(rawId)) {
             displayId = rawId.replace(/^0+/, '');
         }
@@ -49,27 +48,23 @@ function processXML(xmlText) {
         };
     });
 
-    // RADENIE PIESNÍ
     songs.sort((a, b) => {
         const isNumA = /^\d+$/.test(a.originalId), isNumB = /^\d+$/.test(b.originalId);
         const isMarA = a.originalId.startsWith('M'), isMarB = b.originalId.startsWith('M');
 
-        // 1. Číselné id (001, 002...)
         if (isNumA && isNumB) return parseInt(a.originalId) - parseInt(b.originalId);
         if (isNumA && !isNumB) return -1;
         if (!isNumA && isNumB) return 1;
 
-        // 2. Mariánske id (M01, M02...)
         if (isMarA && isMarB) return a.originalId.localeCompare(b.originalId);
         if (isMarA && !isMarB) return -1;
         if (!isMarA && isMarB) return 1;
 
-        // 3. Ostatné (textové id)
         return a.originalId.localeCompare(b.originalId);
     });
 
     filteredSongs = [...songs];
-    currentModeList = [...songs]; // Na začiatku sme v režime "všetky"
+    currentModeList = [...songs];
     renderAllSongs();
     loadPlaylistHeaders();
 }
@@ -82,7 +77,6 @@ function renderAllSongs() {
         </div>`).join('');
 }
 
-// PLAYLISTY
 function loadPlaylistHeaders() {
     fetch(`${SCRIPT_URL}?action=list`)
     .then(r => r.json())
@@ -117,7 +111,6 @@ function openPlaylist(name) {
 
 function processOpenPlaylist(name, t) {
     const ids = t.split(',');
-    // Tu nastavíme currentModeList na piesne v playliste
     currentModeList = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
     
     document.getElementById('piesne-list').innerHTML = `
@@ -129,15 +122,9 @@ function processOpenPlaylist(name, t) {
     window.scrollTo(0,0);
 }
 
-// OTVORENIE PIESNE
 function openSongById(id, source) {
     const s = songs.find(x => x.id === id); if (!s) return;
-    
-    // Ak otvárame z "all" (zoznamu), nastavíme navigáciu na všetky piesne
-    if (source === 'all') {
-        currentModeList = [...songs];
-    }
-    // Ak otvárame z "playlist", currentModeList už je nastavený vo funkcii processOpenPlaylist
+    if (source === 'all') { currentModeList = [...songs]; }
     
     currentSong = JSON.parse(JSON.stringify(s));
     transposeStep = 0;
@@ -177,7 +164,6 @@ function navigateSong(d) {
     const idx = currentModeList.findIndex(s => s.id === currentSong.id);
     const n = currentModeList[idx + d]; 
     if (n) {
-        // Pri navigácii šípkami nemeníme currentModeList, len otvoríme ďalšiu v poradí
         currentSong = JSON.parse(JSON.stringify(n));
         transposeStep = 0;
         document.getElementById('transpose-val').innerText = "0";
@@ -193,7 +179,6 @@ function resetTranspose() { transposeStep = 0; document.getElementById('transpos
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function changeFontSize(d) { fontSize += d; renderSong(); }
 
-// ADMIN FUNKCIE
 function unlockAdmin() { let p = prompt('Heslo:'); if (p === "qwer") { adminPassword = p; isAdmin = true; document.getElementById('admin-panel').style.display = 'block'; renderAllSongs(); loadPlaylistHeaders(); } }
 function addToSelection(id) { if(!selectedSongIds.includes(id)) selectedSongIds.push(id); renderEditor(); }
 function clearSelection() { selectedSongIds = []; document.getElementById('playlist-name').value = ""; renderEditor(); }
@@ -216,7 +201,6 @@ function deletePlaylist(name) {
     window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`, '_blank','width=300,height=200');
 }
 
-// Odosielanie chyby
 document.getElementById('error-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('form-submit-btn');
