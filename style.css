@@ -24,11 +24,6 @@ button:active { background: #00bfff; color: black; }
 .admin-btn { padding: 10px; font-size: 1.3em; color: #00bfff; cursor: pointer; }
 
 .error-report { margin-top: 40px; padding: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; text-align: left; }
-.error-report input, .error-report textarea { width: 100%; background: #222; border: 1px solid #333; color: white; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; }
+.error-report textarea { width: 100%; background: #222; border: 1px solid #333; color: white; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; }
 
 hr { border: 0; border-top: 1px solid #333; margin: 20px 0; }
-
-/* mobilné akordy – nižšie a modré */
-@media (max-width: 600px) {
-  .chord { top: -0.9em; color: #00bfff !important; }
-}
