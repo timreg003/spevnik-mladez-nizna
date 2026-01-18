@@ -1,7 +1,7 @@
 let songs = [], filteredSongs = [], currentSong = null, currentModeList = [], selectedSongIds = [];
 let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, adminPassword = "";
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwF5BmjnJsRJmHpCIo4aU0v55CPh4LjrVD8xpeJktRAf4eT5dZyZkd1bZCmMlpq5_bfmw/exec';
 const FORMSPREE_URL = 'https://formspree.io/f/mvzzkwlw';
 
 function formatSongId(id) { return /^\d+$/.test(id) ? parseInt(id).toString() : id; }
