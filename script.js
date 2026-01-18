@@ -1,20 +1,18 @@
 let songs = [];
 let currentSong = null;
 let transposeStep = 0;
-let fontSize = 18;
+let fontSize = 20;
 let chordsVisible = true;
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec'; 
 
 function init() {
-    // 1. Skúsime pamäť tabletu
     const cached = localStorage.getItem('spevnik_data');
     if (cached) {
         songs = JSON.parse(cached);
         renderList(songs);
     }
 
-    // 2. Načítame čerstvé dáta
     fetch(SCRIPT_URL + "?t=" + Date.now())
         .then(res => res.text())
         .then(xmlText => {
@@ -25,24 +23,26 @@ function init() {
             const newSongs = Array.from(songNodes).map(song => {
                 const getVal = (t) => song.getElementsByTagName(t)[0]?.textContent.trim() || "";
                 const author = getVal('author');
+                const title = getVal('title').toLowerCase();
                 
-                let sortPriority = 4; // Ostatné
-                let sortNum = parseInt(author) || 0;
+                let sortPriority = 4;
+                let litOrder = 99;
 
-                if (author === "999") {
-                    sortPriority = 1; // Liturgia
-                } else if (/^\d+$/.test(author)) {
-                    sortPriority = 2; // Piesne (čísla)
-                } else if (author.startsWith('M')) {
-                    sortPriority = 3; // Mariánske
-                    sortNum = parseInt(author.replace(/\D/g, '')) || 0;
-                }
+                // FIXNÉ PORADIE LITURGIE
+                if (title.includes("zmiluj sa")) { sortPriority = 1; litOrder = 1; }
+                else if (title.includes("aleluja")) { sortPriority = 1; litOrder = 2; }
+                else if (title.includes("svätý")) { sortPriority = 1; litOrder = 3; }
+                else if (title.includes("otče náš")) { sortPriority = 1; litOrder = 4; }
+                else if (title.includes("baránok") || title.includes("baranok")) { sortPriority = 1; litOrder = 5; }
+                else if (/^\d+$/.test(author)) { sortPriority = 2; }
+                else if (author.startsWith('M')) { sortPriority = 3; }
 
                 return {
                     id: getVal('ID'),
                     displayId: author,
                     sortPriority: sortPriority,
-                    sortNum: sortNum,
+                    litOrder: litOrder,
+                    sortNum: parseInt(author.replace(/\D/g, '')) || 0,
                     title: getVal('title'),
                     text: getVal('songtext')
                 };
@@ -50,6 +50,7 @@ function init() {
 
             newSongs.sort((a, b) => {
                 if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
+                if (a.sortPriority === 1) return a.litOrder - b.litOrder;
                 return a.sortNum - b.sortNum || a.title.localeCompare(b.title, 'sk');
             });
 
@@ -62,27 +63,27 @@ function init() {
 function renderList(list) {
     const container = document.getElementById('piesne-list');
     let html = "";
+    const sections = [
+        { name: "Liturgia", p: 1, showNum: false },
+        { name: "Piesne", p: 2, showNum: true },
+        { name: "Mariánske", p: 3, showNum: true },
+        { name: "Ostatné", p: 4, showNum: true }
+    ];
 
-    const l = list.filter(s => s.sortPriority === 1);
-    const p = list.filter(s => s.sortPriority === 2);
-    const m = list.filter(s => s.sortPriority === 3);
-    const o = list.filter(s => s.sortPriority === 4);
-
-    if (l.length) html += `<div class="section-title">Liturgia</div>` + gen(l);
-    if (p.length) html += `<div class="section-title">Piesne</div>` + gen(p);
-    if (m.length) html += `<div class="section-title">Mariánske</div>` + gen(m);
-    if (o.length) html += `<div class="section-title">Ostatné</div>` + gen(o);
-    
+    sections.forEach(sec => {
+        const filtered = list.filter(s => s.sortPriority === sec.p);
+        if (filtered.length) {
+            html += `<div class="section-title">${sec.name}</div>`;
+            html += filtered.map(s => {
+                const idx = songs.findIndex(x => x.id === s.id);
+                return `<div class="song-item" onclick="openSong(${idx})">
+                    ${sec.showNum ? `<span class="song-number">${s.displayId}.</span>` : ''} 
+                    <span class="song-title-text">${s.title}</span>
+                </div>`;
+            }).join('');
+        }
+    });
     container.innerHTML = html;
-}
-
-function gen(items) {
-    return items.map(s => {
-        const idx = songs.findIndex(x => x.id === s.id);
-        return `<div class="song-item" onclick="openSong(${idx})">
-            <span class="song-number">${s.displayId}.</span> ${s.title}
-        </div>`;
-    }).join('');
 }
 
 function openSong(index) {
@@ -92,7 +93,7 @@ function openSong(index) {
     transposeStep = 0;
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
-    document.getElementById('song-title').innerText = s.displayId + ". " + s.title;
+    document.getElementById('song-title').innerText = s.title;
     document.getElementById('transpose-val').innerText = "0";
     draw();
     window.scrollTo(0,0);
@@ -124,11 +125,4 @@ function toggleChords() { chordsVisible = !chordsVisible; draw(); }
 function closeSong() { document.getElementById('song-list').style.display = 'block'; document.getElementById('song-detail').style.display = 'none'; }
 function nav(d) { openSong(currentSong.idx + d); }
 
-document.addEventListener('DOMContentLoaded', () => {
-    init();
-    document.getElementById('search').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
-        const filtered = songs.filter(s => s.title.toLowerCase().includes(q) || s.displayId.includes(q));
-        renderList(filtered);
-    });
-});
+document.addEventListener('DOMContentLoaded', init);
