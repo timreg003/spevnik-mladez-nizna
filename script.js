@@ -4,6 +4,7 @@ let currentIndex = 0;
 let transposeStep = 0;
 let fontSize = 17;
 let chordsVisible = true;
+let currentGroup = 'piesne'; // 'liturgia' alebo 'piesne'
 
 function parseXML() {
   fetch('export.zpk.xml')
@@ -34,7 +35,10 @@ function displayPiesne(list) {
   list.forEach((song, index) => {
     const div = document.createElement('div');
     div.textContent = song.title;
-    div.onclick = () => showSong(song, index);
+    div.onclick = () => {
+      currentGroup = 'piesne';
+      showSong(song, index);
+    };
     listDiv.appendChild(div);
   });
 }
@@ -50,12 +54,31 @@ function showSong(song, index) {
 }
 
 function showSongByTitle(title) {
-  const song = songs.find(s => s.title.toLowerCase() === title.toLowerCase());
-  if (song) {
-    const index = songs.indexOf(song);
-    showSong(song, index);
-  } else {
+  const matches = songs.filter(s => s.title.toLowerCase() === title.toLowerCase());
+  if (matches.length === 0) {
     alert('Pieseň nebola nájdená.');
+    return;
+  }
+  if (matches.length === 1) {
+    currentGroup = 'liturgia';
+    const index = songs.indexOf(matches[0]);
+    showSong(matches[0], index);
+  } else {
+    // Viac piesní – zobrazíme ich ako zoznam
+    const listDiv = document.getElementById('song-list');
+    listDiv.innerHTML = `<h2>Výber piesne: ${title}</h2>`;
+    matches.forEach((song, idx) => {
+      const div = document.createElement('div');
+      div.textContent = `${song.title} (${idx + 1})`;
+      div.onclick = () => {
+        currentGroup = 'liturgia';
+        const globalIndex = songs.indexOf(song);
+        showSong(song, globalIndex);
+      };
+      listDiv.appendChild(div);
+    });
+    document.getElementById('song-display').style.display = 'none';
+    document.getElementById('song-list').style.display = 'block';
   }
 }
 
@@ -96,41 +119,35 @@ function toggleChords() {
   renderSong(currentSong.text);
 }
 
+function getCurrentGroupSongs() {
+  const liturgiaTitles = ['Pane zmiluj sa', 'Aleluja', 'Baránok', 'Svätý', 'Otče náš'];
+  if (currentGroup === 'liturgia') {
+    return songs.filter(s => liturgiaTitles.includes(s.title));
+  }
+  return songs.filter(s => !liturgiaTitles.includes(s.title));
+}
+
 function navigateSong(direction) {
-  const newIndex = currentIndex + direction;
-  if (newIndex >= 0 && newIndex < songs.length) {
-    showSong(songs[newIndex], newIndex);
+  const group = getCurrentGroupSongs();
+  const indexInGroup = group.indexOf(currentSong);
+  const newIndex = indexInGroup + direction;
+  if (newIndex >= 0 && newIndex < group.length) {
+    const newSong = group[newIndex];
+    const globalIndex = songs.indexOf(newSong);
+    showSong(newSong, globalIndex);
   }
 }
 
 function backToList() {
   document.getElementById('song-list').style.display = 'block';
   document.getElementById('song-display').style.display = 'none';
+  parseXML(); // obnoví pôvodný zoznam
 }
 
 document.getElementById('search').addEventListener('input', e => {
   const query = e.target.value.toLowerCase();
   const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
   displayPiesne(filtered);
-});
-
-document.getElementById('feedback-form').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const songTitle = currentSong.title;
-  const fromName = this.from_name.value;
-  const message = this.message.value;
-
-  emailjs.send("service_3v6xw9p", "template_d5gfd0a", {
-    song_title: songTitle,
-    from_name: fromName,
-    message: message,
-    to_email: "timotejreguly@gmail.com"
-  }).then(() => {
-    alert('Ďakujeme za správu!');
-    this.reset();
-  }, () => {
-    alert('Chyba pri odosielaní.');
-  });
 });
 
 window.addEventListener('DOMContentLoaded', () => {
