@@ -41,8 +41,8 @@
         <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
         <input type="text" id="playlist-name" placeholder="Názov nového playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; outline: none;">
         <div style="display: flex; gap: 10px;">
-            <button onclick="savePlaylist()" style="flex: 2; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-            <button onclick="clearSelection()" style="flex: 1; background:#333; color:white; padding:12px; border-radius:8px; border:none;">ZMAZAŤ</button>
+            <button onclick="savePlaylist()" style="flex: 2; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none; cursor:pointer;">ULOŽIŤ PLAYLIST</button>
+            <button onclick="clearSelection()" style="flex: 1; background:#333; color:white; padding:12px; border-radius:8px; border:none; cursor:pointer;">ZMAZAŤ</button>
         </div>
       </div>
 
@@ -51,7 +51,8 @@
 
     <div id="song-detail" style="display:none;">
       <div style="text-align:center; margin-bottom:15px;">
-        <h2 id="render-title"></h2>
+        <h2 id="render-title"></h2><br>
+        <small id="render-key" style="color:#666; font-style:italic; font-size: 0.9em;"></small>
       </div>
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
       <div class="controls">
@@ -80,6 +81,15 @@
         </div>
       </div>
       <div id="song-content"></div>
+      <div id="error-form-container" style="margin-top: 40px; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+        <form id="error-form">
+          <input type="hidden" name="_subject" id="form-subject">
+          <input type="text" name="meno" placeholder="Vaše meno" required style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; outline: none;">
+          <textarea name="sprava" placeholder="Popíšte chybu..." required style="width:100%; height:100px; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; font-family:inherit; outline: none;"></textarea>
+          <button type="submit" id="form-submit-btn" style="width:100%; background:#333; color:#00bfff; font-weight:bold; padding:12px; border-radius:8px; border:1px solid #00bfff; cursor:pointer;">ODOSLAŤ OPRAVU</button>
+        </form>
+        <div id="form-status" style="display:none; text-align:center; padding:15px; color:#00ff00; font-weight:bold;">Odoslané!</div>
+      </div>
     </div>
   </div>
   <script src="script.js"></script>
