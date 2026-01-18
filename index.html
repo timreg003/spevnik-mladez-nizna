@@ -1,83 +1,64 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mládežnícky spevník NIŽNÁ</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Môj Spevník</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Mládežnícky spevník NIŽNÁ</h1>
-
     <div id="song-list">
-      <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" />
-      
-      <h2>Liturgia</h2>
-      <div class="liturgia">
-        <div onclick="openLiturgieSong('Pane zmiluj sa')">Pane zmiluj sa</div>
-        <div onclick="openLiturgieSong('Aleluja')">Aleluja</div>
-        <div onclick="openLiturgieSong('Svätý')">Svätý</div>
-        <div onclick="openLiturgieSong('Otče náš')">Otče náš</div>
-        <div onclick="openLiturgieSong('Baránok')">Baránok</div>
-      </div>
+        <header>
+            <h1>Spevník</h1>
+            <div class="controls">
+                <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo...">
+                <button onclick="unlockAdmin()" id="admin-btn">🔒</button>
+            </div>
+        </header>
 
-      <h2>Piesne</h2>
-      <div id="piesne-list">Načítavam z Google Disku...</div>
+        <section id="playlists-section">
+            <h3>Aktuálne playlisty</h3>
+            <div id="playlists-container">Načítavam playlisty...</div>
+        </section>
+
+        <div id="admin-panel" style="display:none; background: #222; padding: 10px; border: 1px solid #444; margin: 10px;">
+            <h4>Vytvoriť playlist</h4>
+            <div id="current-selection-list"></div>
+            <input type="text" id="playlist-name" placeholder="Názov (napr. Nedeľa 10:00)">
+            <button onclick="savePlaylist()" id="save-btn">Uložiť pre všetkých</button>
+            <button onclick="clearSelection()" style="background:red">Zrušiť výber</button>
+        </div>
+
+        <div id="piesne-list">Náčítavam z Google Disku...</div>
     </div>
 
     <div id="song-detail" style="display:none;">
-      <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť</button>
-      
-      <div class="song-header-card">
-        <h2 id="song-title"></h2>
-        <small id="base-key-display" style="color: #00bfff; font-style: italic;"></small>
-      </div>
-
-      <div class="controls">
-        <div class="control-group">
-          <small>Pieseň</small>
-          <div class="btn-row">
-            <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
-            <button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <small>Tónina: <span id="transpose-val">0</span></small>
-          <div class="btn-row">
-            <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
-            <button onclick="resetTranspose()"><i class="fas fa-undo"></i></button>
-            <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <small>Zobrazenie</small>
-          <div class="btn-row">
-            <button onclick="toggleChords()"><i class="fas fa-eye"></i></button>
+        <header>
+            <button onclick="closeSong()" class="btn-back">← Späť</button>
+            <h2 id="song-title"></h2>
+            <div class="transpose-controls">
+                <button onclick="transposeSong(-1)">-1</button>
+                <span id="transpose-val">0</span>
+                <button onclick="transposeSong(1)">+1</button>
+                <button onclick="resetTranspose()">Reset</button>
+            </div>
+        </header>
+        
+        <div id="song-content"></div>
+        
+        <div class="font-controls">
             <button onclick="changeFontSize(-1)">A-</button>
             <button onclick="changeFontSize(1)">A+</button>
-          </div>
+            <button onclick="toggleChords()">Akordy</button>
+            <span id="base-key-display"></span>
         </div>
-      </div>
 
-      <div id="song-content"></div>
-
-      <div class="feedback-section">
-        <p>Ak si našiel/la chybu napíš, opravím :)</p>
-        <form id="my-form" class="custom-form">
-          <input type="hidden" name="_subject" id="email-subject">
-          <input type="text" name="Meno" placeholder="Tvoje meno" required>
-          <textarea name="Správa" placeholder="Nájdená chyba..." required></textarea>
-          <button type="submit" id="submit-btn" class="submit-btn">Odoslať opravu</button>
-          <p id="form-status"></p>
-        </form>
-      </div>
+        <div class="nav-buttons">
+            <button onclick="navigateSong(-1)">← Predchádzajúca</button>
+            <button onclick="navigateSong(1)">Nasledujúca →</button>
+        </div>
     </div>
-  </div>
-  <script src="script.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>
