@@ -1,166 +1,195 @@
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #121212;
-  color: #e0e0e0;
-  padding: 20px;
+let songs = [];
+let currentSong = null;
+let transposeStep = 0;
+let fontSize = 17;
+let playlist = [];
+let currentPlaylistIndex = -1;
+
+const PLAYLIST_DURATION = 144 * 60 * 60 * 1000; // 144 hodín
+
+// === NAČÍTANIE A AKTUALIZÁCIA PLAYLISTU ===
+function loadPlaylist() {
+  const saved = localStorage.getItem('playlist');
+  const savedTime = localStorage.getItem('playlistTime');
+  const savedName = localStorage.getItem('playlistName');
+  const now = Date.now();
+
+  if (saved && savedTime) {
+    const age = now - parseInt(savedTime);
+    if (age < PLAYLIST_DURATION) {
+      playlist = JSON.parse(saved);
+      renderPublicPlaylist();
+      document.getElementById('public-playlist-section').style.display = 'block';
+      return;
+    } else {
+      localStorage.removeItem('playlist');
+      localStorage.removeItem('playlistTime');
+      localStorage.removeItem('playlistName');
+    }
+  }
+  document.getElementById('public-playlist-section').style.display = 'none';
 }
 
-.container {
-  max-width: 700px;
-  margin: auto;
+function renderPublicPlaylist() {
+  const list = document.getElementById('public-playlist-list');
+  list.innerHTML = '';
+  const name = localStorage.getItem('playlistName') || 'Verejný playlist';
+  document.getElementById('public-playlist-title').textContent = name;
+
+  playlist.forEach(song => {
+    const li = document.createElement('li');
+    li.innerHTML = `${song.title}`;
+    li.style.cursor = 'pointer';
+    li.onclick = () => openPublicPlaylist();
+    list.appendChild(li);
+  });
 }
 
-h1 {
-  font-size: 2.2em;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #00bfff, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center;
-  margin-bottom: 25px;
+function removePublicPlaylist() {
+  if (confirm('Odstrániť verejný playlist?')) {
+    localStorage.removeItem('playlist');
+    localStorage.removeItem('playlistTime');
+    localStorage.removeItem('playlistName');
+    document.getElementById('public-playlist-section').style.display = 'none';
+  }
 }
 
-h2 {
-  font-size: 1.4em;
-  margin-bottom: 10px;
-  color: #aaa;
+function openPublicPlaylist() {
+  if (playlist.length === 0) return;
+  currentPlaylistIndex = 0;
+  showSongFromPlaylist(0);
 }
 
-#search {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #1e1e1e;
-  color: #fff;
-  margin-bottom: 20px;
+function showSongFromPlaylist(index) {
+  if (index < 0 || index >= playlist.length) return;
+  const song = songs.find(s => s.title === playlist[index].title);
+  if (!song) return;
+  currentPlaylistIndex = index;
+  showSong(song);
 }
 
-#public-playlist-section {
-  background: #1e1e1e;
-  padding: 14px;
-  margin-bottom: 20px;
-  border-radius: 8px;
+function prevSong() {
+  const currentIndex = songs.findIndex(s => s.title === currentSong.title);
+  if (currentIndex > 0) {
+    showSong(songs[currentIndex - 1]);
+  }
 }
 
-#public-playlist-section button {
-  background: #2a2a2a;
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: 10px;
+function nextSong() {
+  const currentIndex = songs.findIndex(s => s.title === currentSong.title);
+  if (currentIndex < songs.length - 1) {
+    showSong(songs[currentIndex + 1]);
+  }
 }
 
-#public-playlist-section button:hover {
-  background: #3a3a3a;
+function prevInPlaylist() {
+  if (currentPlaylistIndex > 0) {
+    currentPlaylistIndex--;
+    showSongFromPlaylist(currentPlaylistIndex);
+  }
 }
 
-#public-playlist-list {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0 0 0;
+function nextInPlaylist() {
+  if (currentPlaylistIndex < playlist.length - 1) {
+    currentPlaylistIndex++;
+    showSongFromPlaylist(currentPlaylistIndex);
+  }
 }
 
-#public-playlist-list li {
-  padding: 6px 0;
-  border-bottom: 1px solid #2a2a2a;
-  cursor: pointer;
+// === VYTVORENIE NOVÉHO PLAYLISTU ===
+function startNewPlaylist() {
+  const name = prompt('Názov nového playlistu (napr. nedeľa-29-6):');
+  if (!name || !name.trim()) return;
+
+  const selected = [];
+  let more = true;
+  while (more) {
+    const title = prompt('Zadaj názov piesne (alebo nechaj prázdne pre ukončenie):');
+    if (!title || !title.trim()) { more = false; break; }
+    const found = songs.find(s => s.title.toLowerCase() === title.toLowerCase().trim());
+    if (found) {
+      selected.push({ title: found.title });
+    } else {
+      alert('Pieseň nebola nájdená – skús znova.');
+    }
+  }
+
+  if (selected.length === 0) { alert('Neboli vybrané žiadne piesne'); return; }
+
+  playlist = selected;
+  localStorage.setItem('playlist', JSON.stringify(playlist));
+  localStorage.setItem('playlistName', name.trim());
+  localStorage.setItem('playlistTime', Date.now().toString());
+
+  renderPublicPlaylist();
+  document.getElementById('public-playlist-section').style.display = 'block';
+  alert('Playlist vytvorený!');
 }
 
-#public-playlist-list li:hover {
-  background: #2a2a2a;
+function addToExistingPlaylist() {
+  if (playlist.length === 0) { alert('Nie je žiadny existujúci playlist'); return; }
+  const more = true;
+  while (more) {
+    const title = prompt('Zadaj názov piesne (alebo nechaj prázdne pre ukončenie):');
+    if (!title || !title.trim()) { break; }
+    const found = songs.find(s => s.title.toLowerCase() === title.toLowerCase().trim());
+    if (found) {
+      playlist.push({ title: found.title });
+    } else {
+      alert('Pieseň nebola nájdená – skús znova.');
+    }
+  }
+  localStorage.setItem('playlist', JSON.stringify(playlist));
+  localStorage.setItem('playlistTime', Date.now().toString());
+  renderPublicPlaylist();
+  alert('Pieseň pridaná!');
 }
 
-#playlist-creator {
-  margin-bottom: 20px;
+// === NAČÍTANIE PLAYLISTU Z XML ===
+function parseXML() {
+  fetch('export.zpk.xml')
+    .then(res => res.text())
+    .then(xmlText => {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, 'application/xml');
+      const songNodes = xml.querySelectorAll('song');
+      const all = Array.from(songNodes).map(song => ({
+        title: song.querySelector('title').textContent.trim(),
+        text: song.querySelector('songtext').textContent.trim()
+      }));
+
+      const text = all.filter(s => !/^\d+(\.\d+)?$/.test(s.title));
+      const num  = all.filter(s =>  /^\d+(\.\d+)?$/.test(s.title));
+      text.sort((a, b) => a.title.localeCompare(b.title, 'sk'));
+      num.sort((a, b) => parseFloat(a.title) - parseFloat(b.title));
+      songs = [...text, ...num];
+
+      renderSongList(songs);
+      loadPlaylist();
+      renderPublicPlaylist();
+    });
 }
 
-#playlist-creator button {
-  background: #00bfff;
-  border: none;
-  color: #121212;
-  padding: 10px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
+function renderSongList(list) {
+  const listDiv = document.getElementById('song-list');
+  listDiv.innerHTML = '';
+  list.forEach(song => {
+    const div = document.createElement('div');
+    div.innerHTML = `${song.title}`;
+    div.style.cursor = 'pointer';
+    div.onclick = () => showSong(song);
+    div.style.fontSize = '19px';
+    div.style.lineHeight = '1.9';
+    div.style.padding = '14px';
+    div.style.borderBottom = '1px solid #2a2a2a';
+    div.style.borderRadius = '8px';
+    div.style.marginBottom = '10px';
+    div.style.background = '#1e1e1e';
+    div.style.transition = 'background 0.2s';
+    div.onmouseenter = () => div.style.background = '#2a2a2a';
+    div.onmouseleave = () => div.style.background = '#1e1e1e';
+    listDiv.appendChild(div);
+  });
 }
 
-#playlist-creator button:hover {
-  background: #ffffff;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 16px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.back-btn:hover {
-  color: #fff;
-}
-
-.nav-bar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.nav-bar button {
-  background: #1e1e1e;
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.nav-bar button:hover {
-  background: #2a2a2a;
-}
-
-.transpose-bar,
-.zoom-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.transpose-bar button,
-.zoom-bar button {
-  background: #1e1e1e;
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.transpose-bar span,
-.zoom-bar span {
-  color: #aaa;
-}
-
-pre {
-  white-space: pre-wrap;
-  font-family: inherit;
-  font-size: 17px;
-  line-height: 1.8;
-}
-
-.chord {
-  color: #00bfff;
-  font-weight: 600;
-  position: relative;
-  top: -0.3em;
-  font-size: 0.95em;
-}
+parseXML();
