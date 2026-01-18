@@ -4,11 +4,11 @@ let transposeStep = 0;
 let fontSize = 17;
 let chordsVisible = true;
 
-const FILE_ID = '1AyQnmtBzJhTWTPkHzXiqUKYyhRTUA0ZY'; 
-const URL = `https://corsproxy.io/?https://docs.google.com/uc?export=download&id=${FILE_ID}`;
+// Tvoja URL z Google Apps Script, ktorá automaticky nájde najnovší súbor
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
 
 function parseXML() {
-  fetch(URL)
+  fetch(SCRIPT_URL)
     .then(res => res.text())
     .then(xmlText => {
       const parser = new DOMParser();
@@ -20,6 +20,7 @@ function parseXML() {
         const titleVal = song.querySelector('title')?.textContent.trim() || "Bez názvu";
         const songText = song.querySelector('songtext')?.textContent.trim() || "";
 
+        // Automatická dedukcia tóniny z prvého akordu
         const firstChordMatch = songText.match(/\[(.*?)\]/);
         const deducedKey = firstChordMatch ? firstChordMatch[1] : "";
 
@@ -27,11 +28,12 @@ function parseXML() {
         let sortPriority = 1; 
         let internalSortNum = 0;
 
+        // Logika pre Mariánske piesne (M001 -> Mariánska 1)
         if (authorVal.toUpperCase().startsWith('M')) {
           const num = parseInt(authorVal.replace(/\D/g, '')) || 0;
           displayId = "Mariánska " + num;
           sortPriority = 2;
-          internalSortNum = num; // Na radenie mariánskych 1, 2, 3...
+          internalSortNum = num; 
         } else if (authorVal !== "" && /^\d+$/.test(authorVal)) {
           sortPriority = 1;
           internalSortNum = parseInt(authorVal);
@@ -51,7 +53,7 @@ function parseXML() {
         };
       });
 
-      // LOGIKA RADENIA
+      // Radenie: Čísla -> Mariánske vzostupne -> Textové ID
       songs.sort((a, b) => {
         if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
         if (a.sortPriority === 1 || a.sortPriority === 2) return a.sortNum - b.sortNum;
@@ -61,7 +63,8 @@ function parseXML() {
       displayPiesne(songs);
     })
     .catch(err => {
-      document.getElementById('piesne-list').innerText = "Chyba pripojenia. Skús obnoviť stránku.";
+      console.error("Chyba:", err);
+      document.getElementById('piesne-list').innerText = "Chyba pri načítaní dát zo skriptu.";
     });
 }
 
@@ -86,6 +89,7 @@ function openSongByIndex(index) {
   document.getElementById('song-title').textContent = s.displayId + ". " + s.title;
   document.getElementById('email-subject').value = "Chyba v piesni: " + s.title;
   
+  // Zobrazenie vydedukovanej tóniny
   document.getElementById('base-key-display').textContent = s.baseKey ? "Pôvodná tónina: " + s.baseKey : "Pôvodná tónina: Nezistená";
   
   renderSong();
@@ -143,7 +147,6 @@ function closeSong() {
 function changeFontSize(step) { fontSize += step; renderSong(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 
-// FORMULÁR A VYHĽADÁVANIE
 document.addEventListener('DOMContentLoaded', () => {
   parseXML();
   document.getElementById('search').addEventListener('input', (e) => {
@@ -158,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   });
 
+  // Formulár na nahlasovanie chýb
   const f = document.getElementById("my-form");
   if (f) {
     f.addEventListener("submit", function(e) {
