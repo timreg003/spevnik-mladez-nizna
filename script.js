@@ -5,7 +5,7 @@ let transposeStep = 0;
 let fontSize = 17;
 let chordsVisible = true;
 let currentGroup = 'piesne';
-let baseKey = 'C'; // základná tónina – určíme z prvého akordu
+let baseKey = 'C';
 
 function parseXML() {
   fetch('export.zpk.xml')
@@ -49,7 +49,6 @@ function showSong(song, index) {
   currentIndex = index;
   transposeStep = 0;
 
-  // Urč základnú tóninu z prvého akordu
   const firstChord = song.text.match(/\[(.*?)\]/);
   baseKey = firstChord ? firstChord[1].match(/[A-G][#b]?/)?.[0] || 'C' : 'C';
 
@@ -60,24 +59,14 @@ function showSong(song, index) {
   renderSong(song.text);
 }
 
-function showAllByTitle(title) {
+function openLiturgieSong(title) {
   const matches = songs.filter(s => s.title.toLowerCase() === title.toLowerCase());
   if (matches.length === 0) return;
 
   currentGroup = 'liturgia';
-  const listDiv = document.getElementById('song-list');
-  listDiv.innerHTML = `<h2>${title}</h2>`;
-  matches.forEach((song, idx) => {
-    const div = document.createElement('div');
-    div.textContent = `${song.title} (${idx + 1})`;
-    div.onclick = () => {
-      const globalIndex = songs.indexOf(song);
-      showSong(song, globalIndex);
-    };
-    listDiv.appendChild(div);
-  });
-  document.getElementById('song-display').style.display = 'none';
-  document.getElementById('song-list').style.display = 'block';
+  const song = matches[0];
+  const globalIndex = songs.indexOf(song);
+  showSong(song, globalIndex);
 }
 
 function renderSong(text) {
@@ -126,7 +115,9 @@ function toggleChords() {
 function getCurrentGroupSongs() {
   const poradie = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
   if (currentGroup === 'liturgia') {
-    return poradie.map(title => songs.find(s => s.title.toLowerCase() === title.toLowerCase())).filter(Boolean);
+    return poradie
+      .map(title => songs.find(s => s.title.toLowerCase() === title.toLowerCase()))
+      .filter(Boolean);
   }
   const liturgiaTitles = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
   return songs.filter(s => !liturgiaTitles.includes(s.title));
