@@ -55,7 +55,6 @@ function filterSongs() {
     renderAllSongs();
 }
 
-/* --- EDITOR PLAYLISTU --- */
 function addToSelection(id) {
     selectedSongIds.push(id);
     renderEditor();
@@ -96,7 +95,6 @@ function clearSelection() {
     renderEditor();
 }
 
-/* --- OVLÁDANIE --- */
 function openSongById(id) {
     const found = songs.find(s => s.id === id);
     if (!found) return;
@@ -147,7 +145,6 @@ function resetTranspose() { transposeStep = 0; document.getElementById('transpos
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function changeFontSize(dir) { fontSize += dir; renderSong(); }
 
-/* --- PLAYLISTY & ADMIN --- */
 function unlockAdmin() {
     const p = prompt('Heslo:');
     if (p === "qwer") {
