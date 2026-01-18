@@ -45,6 +45,11 @@ function displayPiesne(list) {
 function showSong(song) {
   currentSong = song;
   transposeStep = 0;
+
+  // NASTAVENIE PREDMETU PRE FORMULÁR
+  const subjectInput = document.getElementById('email-subject');
+  if(subjectInput) subjectInput.value = "Oprava piesne: " + song.title;
+
   const firstChordMatch = song.text.match(/\[(.*?)\]/);
   baseKey = firstChordMatch ? firstChordMatch[1].match(/[A-H][#b]?/)?.[0] || 'C' : 'C';
 
@@ -92,7 +97,6 @@ function transposeSong(direction) {
   }
 }
 
-// NOVÁ FUNKCIA: RESET TRANSPOZÍCIE
 function resetTranspose() {
   transposeStep = 0;
   updateTransposeDisplay();
