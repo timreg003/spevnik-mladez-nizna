@@ -15,7 +15,6 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
 async function parseXML() {
     try {
-        // ODSTRÁNENÉ ?t=Date.now() pre rýchlejšie načítanie
         const res = await fetch(SCRIPT_URL);
         const xmlText = await res.text();
         const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
@@ -46,7 +45,7 @@ function renderAllSongs() {
     el.innerHTML = filteredSongs.map(s => `
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding:12px;" onclick="openSongById('${s.id}')">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-            ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:30px; height:30px; border:none; cursor:pointer;">+</button>` : ''}
+            ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:30px; height:30px; border:none;">+</button>` : ''}
         </div>`).join('');
 }
 
@@ -56,28 +55,9 @@ function filterSongs() {
     renderAllSongs();
 }
 
+/* --- EDITOR PLAYLISTU --- */
 function addToSelection(id) {
     selectedSongIds.push(id);
-    renderEditor();
-}
-
-function clearSelection() {
-    selectedSongIds = [];
-    document.getElementById('playlist-name').value = "";
-    renderEditor();
-}
-
-function moveSong(index, direction) {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= selectedSongIds.length) return;
-    const temp = selectedSongIds[index];
-    selectedSongIds[index] = selectedSongIds[newIndex];
-    selectedSongIds[newIndex] = temp;
-    renderEditor();
-}
-
-function removeFromSelection(index) {
-    selectedSongIds.splice(index, 1);
     renderEditor();
 }
 
@@ -89,16 +69,34 @@ function renderEditor() {
     }
     container.innerHTML = selectedSongIds.map((id, index) => {
         const s = songs.find(x => x.id === id);
-        return `
-        <div style="display:flex; align-items:center; background:#1e1e1e; margin-bottom:2px; padding:5px; border-radius:4px; gap:5px; border-bottom: 1px solid #333;">
+        return `<div style="display:flex; align-items:center; background:#1e1e1e; margin-bottom:2px; padding:5px; border-radius:4px; gap:5px; border-bottom: 1px solid #333;">
             <span style="flex-grow:1; font-size:13px; color:white;">${s ? s.title : id}</span>
-            <button onclick="moveSong(${index}, -1)" style="padding:4px; background:#333; color:white; border:none; border-radius:4px;"><i class="fas fa-chevron-up"></i></button>
-            <button onclick="moveSong(${index}, 1)" style="padding:4px; background:#333; color:white; border:none; border-radius:4px;"><i class="fas fa-chevron-down"></i></button>
-            <button onclick="removeFromSelection(${index})" style="padding:4px; background:#ff4444; color:white; border:none; border-radius:4px;"><i class="fas fa-times"></i></button>
+            <button onclick="moveSong(${index}, -1)" style="padding:4px; background:#333;"><i class="fas fa-chevron-up"></i></button>
+            <button onclick="moveSong(${index}, 1)" style="padding:4px; background:#333;"><i class="fas fa-chevron-down"></i></button>
+            <button onclick="removeFromSelection(${index})" style="padding:4px; background:#ff4444;"><i class="fas fa-times"></i></button>
         </div>`;
     }).join('');
 }
 
+function moveSong(idx, dir) {
+    let target = idx + dir;
+    if (target < 0 || target >= selectedSongIds.length) return;
+    [selectedSongIds[idx], selectedSongIds[target]] = [selectedSongIds[target], selectedSongIds[idx]];
+    renderEditor();
+}
+
+function removeFromSelection(idx) {
+    selectedSongIds.splice(idx, 1);
+    renderEditor();
+}
+
+function clearSelection() {
+    selectedSongIds = [];
+    document.getElementById('playlist-name').value = "";
+    renderEditor();
+}
+
+/* --- OVLÁDANIE --- */
 function openSongById(id) {
     const found = songs.find(s => s.id === id);
     if (!found) return;
@@ -149,6 +147,7 @@ function resetTranspose() { transposeStep = 0; document.getElementById('transpos
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function changeFontSize(dir) { fontSize += dir; renderSong(); }
 
+/* --- PLAYLISTY & ADMIN --- */
 function unlockAdmin() {
     const p = prompt('Heslo:');
     if (p === "qwer") {
@@ -163,13 +162,13 @@ function unlockAdmin() {
 function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert('Zadaj názov a pridaj piesne');
-    window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`, '_blank','width=1,height=1');
+    window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`, '_blank','width=300,height=200');
     setTimeout(loadPlaylistHeaders, 2000);
 }
 
 function deletePlaylist(name) {
     if (!confirm(`Vymazať playlist "${name}"?`)) return;
-    window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`, '_blank','width=1,height=1');
+    window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`, '_blank','width=300,height=200');
     setTimeout(loadPlaylistHeaders, 2000);
 }
 
