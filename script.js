@@ -3,200 +3,239 @@ let currentSong = null;
 let transposeStep = 0;
 let fontSize = 17;
 let chordsVisible = true;
+let isAdmin = false;
+let selectedSongIds = [];
+let adminPassword = "";
 
-// Pridaný unikátny parameter (?t=...), aby sa obišla cache a tablet načítal vždy nové dáta
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec' + '?t=' + new Date().getTime();
+const SCRIPT_URL = 'TVOJA_URL_Z_GOOGLE_SCRIPTu'; // <--- SEM DAJ SVOJU URL!
 
-function parseXML() {
-  fetch(SCRIPT_URL)
-    .then(res => res.text())
-    .then(xmlText => {
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(xmlText, 'application/xml');
-      
-      const songNodes = xml.getElementsByTagName('song');
-      
-      if (songNodes.length === 0) {
-        document.getElementById('piesne-list').innerText = "V XML sa nenašli žiadne piesne.";
-        return;
-      }
+// 1. NAČÍTANIE PIESNÍ A PLAYLISTOV
+function init() {
+    fetch(SCRIPT_URL)
+        .then(res => res.text())
+        .then(xmlText => {
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(xmlText, 'application/xml');
+            const songNodes = xml.getElementsByTagName('song');
+            
+            songs = Array.from(songNodes).map(song => {
+                const getVal = (t) => song.getElementsByTagName(t)[0]?.textContent.trim() || "";
+                const author = getVal('author');
+                let sortPriority = 3;
+                let sortNum = 0;
+                let displayId = author;
 
-      songs = Array.from(songNodes).map(song => {
-        const getVal = (tagName) => song.getElementsByTagName(tagName)[0]?.textContent.trim() || "";
-        
-        const titleVal = getVal('title') || "Bez názvu";
-        const authorVal = getVal('author') || "";
-        const songText = getVal('songtext') || "";
+                if (author.startsWith('M')) {
+                    sortPriority = 2;
+                    sortNum = parseInt(author.replace(/\D/g, '')) || 0;
+                    displayId = "M " + sortNum;
+                } else if (/^\d+$/.test(author)) {
+                    sortPriority = 1;
+                    sortNum = parseInt(author);
+                    displayId = sortNum.toString();
+                }
 
-        const firstChordMatch = songText.match(/\[([A-H][#b]?[m]?)\]/);
-        const deducedKey = firstChordMatch ? firstChordMatch[1] : "";
+                return {
+                    id: getVal('ID'),
+                    displayId: displayId,
+                    sortPriority: sortPriority,
+                    sortNum: sortNum,
+                    title: getVal('title'),
+                    text: getVal('songtext')
+                };
+            });
 
-        let displayId = authorVal;
-        let sortPriority = 1; 
-        let internalSortNum = 0;
+            songs.sort((a, b) => {
+                if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
+                if (a.sortPriority < 3) return a.sortNum - b.sortNum;
+                return a.title.localeCompare(b.title, 'sk');
+            });
 
-        if (authorVal.toUpperCase().startsWith('M')) {
-          const num = parseInt(authorVal.replace(/\D/g, '')) || 0;
-          displayId = "Mariánska " + num;
-          sortPriority = 2;
-          internalSortNum = num; 
-        } else if (authorVal !== "" && /^\d+$/.test(authorVal)) {
-          sortPriority = 1;
-          internalSortNum = parseInt(authorVal);
-          displayId = internalSortNum.toString();
-        } else {
-          sortPriority = 3;
-          displayId = authorVal || "---";
+            renderList(songs);
+            loadPlaylistHeaders();
+        });
+}
+
+// 2. RENDEROVANIE ZOZNAMU
+function renderList(list) {
+    const container = document.getElementById('piesne-list');
+    container.innerHTML = list.map((s, idx) => {
+        // Vyhľadáme index v pôvodnom poli songs pre navigáciu
+        const originalIdx = songs.findIndex(x => x.id === s.id);
+        return `
+        <div class="song-item">
+            <div class="song-info" onclick="openSongByIndex(${originalIdx})">
+                <span class="song-number">${s.displayId}.</span> ${s.title}
+            </div>
+            ${isAdmin ? `<button class="add-btn" onclick="addToSelection('${s.id}')">+</button>` : ''}
+        </div>
+    `}).join('');
+}
+
+// 3. ADMIN FUNKCIE A PLAYLISTY
+function unlockAdmin() {
+    const p = prompt("Zadaj heslo pre úpravy:");
+    if (p) {
+        adminPassword = p;
+        isAdmin = true;
+        document.getElementById('admin-panel').style.display = 'block';
+        renderList(songs); // Refreshne zoznam s pluskami
+    }
+}
+
+function addToSelection(id) {
+    if (!selectedSongIds.includes(id)) {
+        selectedSongIds.push(id);
+        renderSelection();
+    }
+}
+
+function renderSelection() {
+    const container = document.getElementById('current-selection-list');
+    container.innerHTML = selectedSongIds.map((id, idx) => {
+        const s = songs.find(x => x.id === id);
+        return `
+            <div class="selection-item">
+                ${s.title} 
+                <button onclick="moveSelection(${idx}, -1)">↑</button>
+                <button onclick="moveSelection(${idx}, 1)">↓</button>
+                <button onclick="removeFromSelection(${idx})" style="color:red">X</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function moveSelection(idx, dir) {
+    const target = idx + dir;
+    if (target >= 0 && target < selectedSongIds.length) {
+        const temp = selectedSongIds[idx];
+        selectedSongIds[idx] = selectedSongIds[target];
+        selectedSongIds[target] = temp;
+        renderSelection();
+    }
+}
+
+function removeFromSelection(idx) {
+    selectedSongIds.splice(idx, 1);
+    renderSelection();
+}
+
+function savePlaylist() {
+    const name = document.getElementById('playlist-name').value;
+    if (!name || selectedSongIds.length === 0) return alert("Zadaj názov a vyber piesne!");
+    
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = "Ukladám...";
+
+    const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`;
+
+    fetch(url).then(r => r.text()).then(res => {
+        alert(res);
+        btn.disabled = false;
+        btn.textContent = "Uložiť pre všetkých";
+        if (res === "Uložené") {
+            selectedSongIds = [];
+            renderSelection();
+            loadPlaylistHeaders();
         }
-
-        return {
-          displayId: displayId,
-          sortPriority: sortPriority,
-          sortNum: internalSortNum,
-          title: titleVal,
-          baseKey: deducedKey,
-          text: songText
-        };
-      });
-
-      songs.sort((a, b) => {
-        if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
-        if (a.sortPriority === 1 || a.sortPriority === 2) return a.sortNum - b.sortNum;
-        return a.displayId.localeCompare(b.displayId, 'sk');
-      });
-
-      displayPiesne(songs);
-    })
-    .catch(err => {
-      document.getElementById('piesne-list').innerText = "Chyba pri sťahovaní dát.";
     });
 }
 
-function displayPiesne(list) {
-  const listDiv = document.getElementById('piesne-list');
-  if(!listDiv) return;
-  listDiv.innerHTML = list.map((s, index) => `
-    <div onclick='openSongByIndex(${index})'>
-      <span style="color: #00bfff; font-weight: bold; margin-right: 8px;">${s.displayId}.</span> ${s.title}
-    </div>
-  `).join('');
+function loadPlaylistHeaders() {
+    fetch(`${SCRIPT_URL}?action=list`)
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('playlists-container');
+            if (data.length === 0) {
+                container.innerHTML = "Žiadne uložené playlisty.";
+                return;
+            }
+            container.innerHTML = data.map(p => `
+                <div class="playlist-row">
+                    <button onclick="openPlaylist('${p.name}')">📄 ${p.name}</button>
+                    ${isAdmin ? `<button onclick="deletePlaylist('${p.name}')" style="color:red">🗑️</button>` : ''}
+                </div>
+            `).join('');
+        });
 }
 
+function openPlaylist(name) {
+    fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`)
+        .then(r => r.text())
+        .then(idsText => {
+            const ids = idsText.split(',');
+            // Vytvoríme dočasné pole piesní v poradí z playlistu
+            const playlistSongs = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
+            renderList(playlistSongs);
+            alert("Playlist načítaný. Kliknutím na pieseň ju otvoríš.");
+        });
+}
+
+function deletePlaylist(name) {
+    if (confirm(`Naozaj zmazať ${name}?`)) {
+        fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`)
+            .then(() => loadPlaylistHeaders());
+    }
+}
+
+function clearSelection() {
+    selectedSongIds = [];
+    renderSelection();
+}
+
+// LOGIKA ZOBRAZOVANIA (PÔVODNÁ)
 function openSongByIndex(index) {
-  const s = songs[index];
-  if(!s) return;
-  currentSong = { ...s, currentIndex: index };
-  transposeStep = 0;
-  
-  document.getElementById('song-list').style.display = 'none';
-  document.getElementById('song-detail').style.display = 'block';
-  document.getElementById('song-title').textContent = s.displayId + ". " + s.title;
-  document.getElementById('email-subject').value = "Chyba v piesni: " + s.title;
-  document.getElementById('base-key-display').textContent = s.baseKey ? "Pôvodná tónina: " + s.baseKey : "Pôvodná tónina: Nezistená";
-  
-  renderSong();
-  updateTransposeLabel();
-  window.scrollTo(0,0);
+    const s = songs[index];
+    if(!s) return;
+    currentSong = { ...s, currentIndex: index };
+    transposeStep = 0;
+    document.getElementById('song-list').style.display = 'none';
+    document.getElementById('song-detail').style.display = 'block';
+    document.getElementById('song-title').textContent = s.displayId + ". " + s.title;
+    renderSong();
+    window.scrollTo(0,0);
 }
 
 function renderSong() {
-  if(!currentSong) return;
-  let txt = currentSong.text.replace(/\n\s*\n\s*\n/g, '\n\n');
-  txt = txt.replace(/\[(.*?)\]/g, (match, chord) => {
-    if(!chordsVisible) return '';
-    return `<span class="chord">${transposeChord(chord, transposeStep)}</span>`;
-  });
-  document.getElementById('song-content').innerHTML = txt;
-  document.getElementById('song-content').style.fontSize = fontSize + 'px';
-}
-
-function navigateSong(direction) {
-  const nextIdx = currentSong.currentIndex + direction;
-  if (nextIdx >= 0 && nextIdx < songs.length) {
-    openSongByIndex(nextIdx);
-  }
-}
-
-function resetTranspose() { 
-  transposeStep = 0; 
-  updateTransposeLabel(); 
-  renderSong(); 
-}
-
-// Upravená funkcia transpozície s limitom +/- 12
-function transposeSong(step) { 
-  const newStep = transposeStep + step;
-  if (newStep >= -12 && newStep <= 12) {
-    transposeStep = newStep;
-    updateTransposeLabel(); 
-    renderSong(); 
-  }
-}
-
-function updateTransposeLabel() {
-  const el = document.getElementById('transpose-val');
-  if(el) el.textContent = (transposeStep > 0 ? "+" : "") + transposeStep;
+    if(!currentSong) return;
+    let txt = currentSong.text.replace(/\[(.*?)\]/g, (m, c) => {
+        return chordsVisible ? `<span class="chord">${transposeChord(c, transposeStep)}</span>` : '';
+    });
+    document.getElementById('song-content').innerHTML = txt;
+    document.getElementById('song-content').style.fontSize = fontSize + 'px';
 }
 
 function transposeChord(chord, step) {
-  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B', 'H'];
-  return chord.replace(/[A-H][#b]?/g, (match) => {
-    let n = (match === 'Bb' || match === 'Hb') ? 'B' : match;
-    let idx = notes.indexOf(n);
-    if(idx === -1) return match;
-    let newIdx = (idx + step) % 12;
-    while(newIdx < 0) newIdx += 12;
-    return notes[newIdx];
-  });
+    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B', 'H'];
+    return chord.replace(/[A-H][#b]?/g, (match) => {
+        let n = (match === 'Bb' || match === 'Hb') ? 'B' : match;
+        let idx = notes.indexOf(n);
+        if(idx === -1) return match;
+        let newIdx = (idx + step) % 12;
+        while(newIdx < 0) newIdx += 12;
+        return notes[newIdx];
+    });
 }
 
-function openLiturgieSong(name) {
-  const idx = songs.findIndex(x => x.title.toLowerCase().includes(name.toLowerCase()));
-  if(idx !== -1) openSongByIndex(idx);
+function transposeSong(s) { 
+    if (transposeStep + s >= -12 && transposeStep + s <= 12) {
+        transposeStep += s; 
+        document.getElementById('transpose-val').textContent = (transposeStep > 0 ? "+" : "") + transposeStep;
+        renderSong(); 
+    }
 }
-
-function closeSong() {
-  document.getElementById('song-list').style.display = 'block';
-  document.getElementById('song-detail').style.display = 'none';
-}
-
-function changeFontSize(step) { fontSize += step; renderSong(); }
+function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').textContent = "0"; renderSong(); }
+function closeSong() { document.getElementById('song-list').style.display = 'block'; document.getElementById('song-detail').style.display = 'none'; }
+function changeFontSize(s) { fontSize += s; renderSong(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
+function navigateSong(d) { openSongByIndex(currentSong.currentIndex + d); }
 
 document.addEventListener('DOMContentLoaded', () => {
-  parseXML();
-  
-  document.getElementById('search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    const filtered = songs.map((s, i) => ({...s, originalIndex: i}))
-                          .filter(s => s.title.toLowerCase().includes(q) || s.displayId.toLowerCase().includes(q));
-    
-    document.getElementById('piesne-list').innerHTML = filtered.map(s => `
-      <div onclick='openSongByIndex(${s.originalIndex})'>
-        <span style="color: #00bfff; font-weight: bold; margin-right: 8px;">${s.displayId}.</span> ${s.title}
-      </div>
-    `).join('');
-  });
-
-  const f = document.getElementById("my-form");
-  if (f) {
-    f.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const status = document.getElementById("form-status");
-      const btn = document.getElementById("submit-btn");
-      btn.disabled = true;
-      btn.textContent = "Odosielam...";
-      fetch("https://formspree.io/f/mvzzkwlw", {
-        method: "POST",
-        body: new FormData(f),
-        headers: { 'Accept': 'application/json' }
-      }).then(() => {
-        status.style.color = "#00ff00";
-        status.textContent = "✓ Odoslané!";
-        f.reset();
-        btn.disabled = false;
-        btn.textContent = "Odoslať opravu";
-      });
+    init();
+    document.getElementById('search').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const filtered = songs.filter(s => s.title.toLowerCase().includes(q) || s.displayId.toLowerCase().includes(q));
+        renderList(filtered);
     });
-  }
 });
