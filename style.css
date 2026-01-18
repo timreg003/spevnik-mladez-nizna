@@ -2,13 +2,11 @@
 body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
 .container { max-width: 700px; margin: auto; }
 
-/* Zákaz označovania textu modrou farbou */
 #piesne-list, #playlists-section, .controls, .back-btn, .main-title, #render-title, #song-content {
     -webkit-user-select: none;
     user-select: none;
 }
 
-/* Gradient nadpisy vycentrované */
 .main-title, #render-title, .playlist-header-title {
     font-weight: 700;
     background: linear-gradient(90deg, #00bfff, #ffffff);
@@ -32,7 +30,7 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: 
 }
 
 #search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
-#piesne-list div, #playlists-section div { background: #1e1e1e; border-radius: 8px; margin-bottom: 4px; }
+#piesne-list div, #playlists-section div { background: #1e1e1e; border-radius: 8px; margin-bottom: 4px; border-bottom: 1px solid #333; }
 
 .controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; gap: 10px; border: 1px solid #333; }
 .control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
