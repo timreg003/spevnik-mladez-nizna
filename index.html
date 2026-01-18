@@ -10,75 +10,27 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
+<base target="_blank">
 </head>
 <body>
   <div class="container">
-    <h1>Mládežnícky spevník NIŽNÁ</h1>
-
-    <!-- Rozdelenie na 2 časti -->
-    <div class="section-tabs">
-      <button class="tab-button active" onclick="showSection('liturgia')">Liturgia</button>
-      <button class="tab-button" onclick="showSection('piesne')">Piesne</button>
-    </div>
-
-    <!-- Liturgia – v poradí: Pane zmiluj sa, Aleluja, Svätý, Otče náš, Baránok -->
-    <div id="liturgia-section" class="section active">
-      <h2>Liturgia</h2>
-      <div id="liturgia-list"></div>
-      <div id="liturgia-display" style="display:none;">
-        <button onclick="backToLiturgia()" class="back-btn"><i class="fas fa-arrow-left"></i> Späť</button>
-        <h2 id="liturgia-title"></h2>
-        <div class="nav-bar">
-          <button onclick="prevLiturgia()"><i class="fas fa-chevron-left"></i> Predchádzajúca</button>
-          <button onclick="nextLiturgia()"><i class="fas fa-chevron-right"></i> Nasledujúca</button>
-        </div>
-        <div class="transpose-bar">
-          <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
-          <span>Transpozícia</span>
-          <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <div class="zoom-bar">
-          <button onclick="changeFontSize(-1)"><i class="fas fa-minus"></i></button>
-          <span>Text</span>
-          <button onclick="changeFontSize(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <pre id="liturgia-content"></pre>
+    <h1><i class="fas fa-music"></i> Mládežnícky spevník NIŽNÁ</h1>
+    <input type="text" id="search" placeholder="Hľadať pieseň..." />
+    <div id="song-list"></div>
+    <div id="song-display" style="display:none;">
+      <button onclick="backToList()" class="back-btn"><i class="fas fa-arrow-left"></i> Späť</button>
+      <h2 id="song-title"></h2>
+      <div class="transpose-bar">
+        <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
+        <span>Transpozícia</span>
+        <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
       </div>
-    </div>
-
-    <!-- Piesne – všetky ostatné piesne -->
-    <div id="piesne-section" class="section">
-      <h2>Piesne</h2>
-      <input type="text" id="search" placeholder="Hľadať pieseň..." />
-      <div id="song-list"></div>
-      <div id="song-display" style="display:none;">
-        <button onclick="backToList()" class="back-btn"><i class="fas fa-arrow-left"></i> Späť</button>
-        <h2 id="song-title"></h2>
-        <div class="nav-bar">
-          <button onclick="prevSong()"><i class="fas fa-chevron-left"></i> Predchádzajúca</button>
-          <button onclick="nextSong()"><i class="fas fa-chevron-right"></i> Nasledujúca</button>
-        </div>
-        <div class="transpose-bar">
-          <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
-          <span>Transpozícia</span>
-          <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <div class="zoom-bar">
-          <button onclick="changeFontSize(-1)"><i class="fas fa-minus"></i></button>
-          <span>Text</span>
-          <button onclick="changeFontSize(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <pre id="song-content"></pre>
+      <div class="zoom-bar">
+        <button onclick="changeFontSize(-1)"><i class="fas fa-minus"></i></button>
+        <span>Text</span>
+        <button onclick="changeFontSize(1)"><i class="fas fa-plus"></i></button>
       </div>
-    </div>
-
-    <!-- Verejný komentár k piesni -->
-    <div class="comment-section">
-      <h3>Komentár k piesni</h3>
-      <textarea id="comment-input" placeholder="Napíš komentár k tejto piesni..."></textarea>
-      <button onclick="saveComment()"><i class="fas fa-save"></i> Uložiť komentár</button>
-      <button onclick="toggleChords()"><i class="fas fa-eye"></i> Zobraziť/Skryť akordy</button>
-      <div id="comment-display"></div>
+      <pre id="song-content"></pre>
     </div>
   </div>
   <script src="script.js"></script>
