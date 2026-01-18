@@ -11,6 +11,11 @@ let adminPassword = "";
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
 
+function formatSongId(id) {
+    if (/^\d+$/.test(id)) return parseInt(id).toString();
+    return id;
+}
+
 async function parseXML() {
   try {
     const res = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
@@ -33,7 +38,6 @@ async function parseXML() {
       };
     });
     
-    // RADENIE: 1. Čísla, 2. M1, M2..., 3. Text
     songs.sort((a, b) => {
         const idA = a.displayId;
         const idB = b.displayId;
@@ -57,7 +61,6 @@ async function parseXML() {
 
     renderAllSongs();
     loadPlaylistHeaders();
-    // Pravidelná kontrola nových playlistov každé 4 sekundy
     setInterval(loadPlaylistHeaders, 4000);
   } catch (e) { console.error(e); }
 }
@@ -69,7 +72,7 @@ function renderAllSongs() {
     const isSel = selectedSongIds.includes(s.id);
     const action = isAdmin ? `addToSelection('${s.id}')` : `openSongById('${s.id}', 'all')`;
     return `<div onclick="${action}" style="display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:6px; background:#1e1e1e; border-radius:10px; cursor:pointer; ${isSel ? 'border: 1px solid #00bfff;' : ''}">
-        <div><span style="color: #00bfff; font-weight: bold; margin-right: 8px;">${s.displayId}.</span> ${s.title}</div>
+        <div><span style="color: #00bfff; font-weight: bold; margin-right: 8px;">${formatSongId(s.displayId)}.</span> ${s.title}</div>
         ${isAdmin ? `<i class="fas ${isSel ? 'fa-check-circle' : 'fa-plus-circle'}" style="color:#00bfff"></i>` : ''}
       </div>`;
   }).join('');
@@ -83,7 +86,7 @@ function openSongById(id, mode) {
     transposeStep = 0;
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
-    document.getElementById('render-title').innerText = (currentSong.displayId ? currentSong.displayId + '. ' : '') + currentSong.title;
+    document.getElementById('render-title').innerText = (currentSong.displayId ? formatSongId(currentSong.displayId) + '. ' : '') + currentSong.title;
     document.getElementById('render-key').innerText = "Pôvodná tónina: " + currentSong.originalKey;
     renderSong();
     window.scrollTo(0,0);
@@ -151,7 +154,7 @@ function savePlaylist() {
   const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}&content=${selectedSongIds.join(',')}`;
   window.open(url, '_blank', 'width=1,height=1');
   setTimeout(() => { 
-    alert("Odoslané! Ak sa program neobjaví hneď, počkaj 5 sekúnd."); 
+    alert("Odoslané!"); 
     selectedSongIds = []; isAdmin = false; 
     document.getElementById('admin-panel').style.display = 'none';
     renderAllSongs();
@@ -164,11 +167,11 @@ async function loadPlaylistHeaders() {
     const data = await res.json();
     const container = document.getElementById('playlists-section');
     if (!data.length) { container.innerHTML = ""; return; }
-    container.innerHTML = "<h2>Dnešný program</h2>" + data.map(p => `
+    container.innerHTML = "<h2>PLAYLIST</h2>" + data.map(p => `
       <div style="background:#1e1e1e; border:1px solid #333; padding:12px; margin-bottom:8px; border-radius:10px; cursor:pointer; display:flex; justify-content:space-between;" onclick="openPlaylist('${p.name}')">
         <span>📄 ${p.name}</span>
         ${isAdmin ? `<i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:red"></i>` : ''}
-      </div>`).join('');
+      </div>`).join('') + "<hr>";
   } catch(e) {}
 }
 
@@ -180,7 +183,7 @@ async function openPlaylist(name) {
   currentModeList = list;
   currentMode = "playlist";
   document.getElementById('piesne-list').innerHTML = `<button onclick="renderAllSongs();" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; color:#00bfff; border-radius:10px; border:1px solid #333; font-weight:bold;">⬅ Späť na všetky piesne</button>` + 
-  list.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="background:#1e1e1e; padding:12px; margin-bottom:6px; border-radius:10px;"><span style="color:#00bfff; font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
+  list.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="background:#1e1e1e; padding:12px; margin-bottom:6px; border-radius:10px;"><span style="color:#00bfff; font-weight:bold;">${formatSongId(s.displayId)}.</span> ${s.title}</div>`).join('');
 }
 
 function navigateSong(step) {
@@ -191,7 +194,11 @@ function navigateSong(step) {
 }
 
 function deletePlaylist(name) {
-  if(confirm("Zmazať?")) fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}`).then(() => loadPlaylistHeaders());
+  if(confirm("Naozaj chceš zmazať playlist '" + name + "'?")) {
+    const url = `${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}`;
+    const win = window.open(url, '_blank', 'width=1,height=1');
+    setTimeout(() => { if(win) win.close(); loadPlaylistHeaders(); }, 1500);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', parseXML);
