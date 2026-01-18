@@ -23,7 +23,7 @@
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
         <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Vytvoriť program</h3>
         <div id="selected-list" style="margin-bottom:10px; font-size:14px;"></div>
-        <input type="text" id="playlist-name" placeholder="Názov programu" style="width:100%; padding:10px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+        <input type="text" id="playlist-name" placeholder="Názov programu" style="width:100%; padding:10px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; outline:none;">
         <button onclick="savePlaylist()" style="width:100%; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none; cursor:pointer;">ULOŽIŤ PROGRAM</button>
       </div>
 
@@ -31,7 +31,7 @@
     </div>
 
     <div id="song-detail" style="display:none;">
-      <div id="top-header" style="text-align:center; margin-bottom:15px;">
+      <div style="text-align:center; margin-bottom:15px;">
         <h2 id="render-title" style="margin:0; color:#00bfff; font-size:1.6em; border:none;"></h2>
         <small id="render-key" style="color:#666; font-style:italic;"></small>
       </div>
@@ -64,18 +64,10 @@
         </div>
       </div>
 
-      <div id="song-content" style="padding: 10px 0; line-height: 1.6;"></div>
+      <div id="song-content"></div>
 
       <div class="feedback-section">
         <form id="my-form" class="custom-form">
           <input type="hidden" name="_subject" id="email-subject">
           <input type="text" name="Meno" placeholder="Tvoje meno" required>
-          <textarea name="Správa" placeholder="Nájdená chyba..." required></textarea>
-          <button type="submit" id="submit-btn" class="submit-btn">Odoslať opravu</button>
-        </form>
-      </div>
-    </div>
-  </div>
-  <script src="script.js"></script>
-</body>
-</html>
+          <textarea name="Správa
