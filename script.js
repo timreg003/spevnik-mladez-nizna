@@ -10,7 +10,7 @@ let isAdmin = false;
 let selectedSongIds = [];
 let adminPassword = "";
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwF5BmjnJsRJmHpCIo4aU0v55CPh4LjrVD8xpeJktRAf4eT5dZyZkd1bZCmMlpq5_bfmw/exec';
 
 function formatSongId(id) {
     if (/^\d+$/.test(id)) return parseInt(id).toString();
