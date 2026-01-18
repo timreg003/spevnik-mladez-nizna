@@ -43,11 +43,11 @@ function renderAllSongs() {
     const el = document.getElementById('piesne-list');
     currentModeList = filteredSongs;
     el.innerHTML = filteredSongs.map(s => {
-        const isSelected = selectedSongIds.includes(s.id) ? 'border: 1px solid #00bfff;' : '';
+        const isSelected = selectedSongIds.includes(s.id) ? 'border: 1px solid #00bfff;' : 'border-bottom: 1px solid #333;';
         return `
-        <div style="display:flex; justify-content:space-between; align-items:center; ${isSelected}" onclick="openSongById('${s.id}')">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; ${isSelected}" onclick="openSongById('${s.id}')">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-            ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#333; color:white; border-radius:4px; padding:4px 8px;">+</button>` : ''}
+            ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold;">+</button>` : ''}
         </div>`;
     }).join('');
 }
@@ -64,12 +64,10 @@ function openSongById(id) {
     currentSong = JSON.parse(JSON.stringify(found));
     transposeStep = 0;
     document.getElementById('transpose-val').innerText = "0";
-    
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
     document.getElementById('render-title').innerText = currentSong.displayId + '. ' + currentSong.title;
     document.getElementById('render-key').innerText = 'Tónina: ' + currentSong.originalKey;
-    
     renderSong();
     window.scrollTo(0,0);
 }
@@ -81,11 +79,8 @@ function closeSong() {
 
 function renderSong() {
     let text = currentSong.origText;
-    if (transposeStep !== 0) {
-        text = text.replace(/\[(.*?)\]/g, (match, chord) => `[${transposeChord(chord, transposeStep)}]`);
-    }
+    if (transposeStep !== 0) text = text.replace(/\[(.*?)\]/g, (match, chord) => `[${transposeChord(chord, transposeStep)}]`);
     if (!chordsVisible) text = text.replace(/\[.*?\]/g, '');
-    
     const content = document.getElementById('song-content');
     content.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
     content.style.fontSize = fontSize + 'px';
@@ -93,8 +88,7 @@ function renderSong() {
 
 function transposeChord(chord, step) {
     return chord.replace(/[A-H][#b]?/g, (note) => {
-        let n = note === 'B' ? 'B' : (note === 'H' ? 'H' : note);
-        let idx = scale.indexOf(n);
+        let idx = scale.indexOf(note);
         if (idx === -1) return note;
         let newIdx = (idx + step) % 12;
         while (newIdx < 0) newIdx += 12;
@@ -114,16 +108,8 @@ function resetTranspose() {
     renderSong();
 }
 
-function toggleChords() {
-    chordsVisible = !chordsVisible;
-    renderSong();
-}
-
-function changeFontSize(dir) {
-    fontSize += dir;
-    renderSong();
-}
-
+function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
+function changeFontSize(dir) { fontSize += dir; renderSong(); }
 function navigateSong(dir) {
     const index = currentModeList.findIndex(s => s.id === currentSong.id);
     const next = currentModeList[index + dir];
@@ -132,14 +118,12 @@ function navigateSong(dir) {
 
 function unlockAdmin() {
     const p = prompt('Heslo:');
-    if (p === "qwer") { // Overenie zjednoteného hesla
+    if (p === "qwer") {
         adminPassword = p;
         isAdmin = true;
         document.getElementById('admin-panel').style.display = 'block';
         renderAllSongs();
-        alert('Admin prístup povolený');
-    } else if (p !== null) {
-        alert('Nesprávne heslo');
+        loadPlaylistHeaders();
     }
 }
 
@@ -147,17 +131,20 @@ function addToSelection(id) {
     const idx = selectedSongIds.indexOf(id);
     if (idx === -1) selectedSongIds.push(id);
     else selectedSongIds.splice(idx, 1);
-    
-    const selDiv = document.getElementById('selected-list');
-    selDiv.innerText = selectedSongIds.length > 0 ? "Vybraté: " + selectedSongIds.join(', ') : "Žiadne vybraté piesne";
+    document.getElementById('selected-list').innerText = "Vybraté: " + selectedSongIds.length;
     renderAllSongs();
 }
 
 function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
-    if (!name || !selectedSongIds.length) return alert('Chýba názov alebo piesne');
-    window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`,
-      '_blank','width=1,height=1');
+    if (!name || !selectedSongIds.length) return alert('Zadaj názov a vyber piesne');
+    window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`, '_blank','width=1,height=1');
+    setTimeout(loadPlaylistHeaders, 2000);
+}
+
+function deletePlaylist(name) {
+    if (!confirm(`Naozaj vymazať playlist "${name}"?`)) return;
+    window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`, '_blank','width=1,height=1');
     setTimeout(loadPlaylistHeaders, 2000);
 }
 
@@ -166,12 +153,14 @@ function loadPlaylistHeaders() {
         .then(r => r.json())
         .then(d => {
             const sect = document.getElementById('playlists-section');
-            if (!d || d.length === 0) return;
-            sect.innerHTML = '<h2>PROGRAMY</h2>' + d.map(p => 
-                `<div onclick="openPlaylist('${p.name}')">📄 ${p.name}</div>`
-            ).join('');
-        })
-        .catch(() => {});
+            if (!d || d.length === 0) { sect.innerHTML = ""; return; }
+            sect.innerHTML = '<h2>PLAYLISTY</h2>' + d.map(p => `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding:10px;">
+                    <span onclick="openPlaylist('${p.name}')" style="cursor:pointer; flex-grow:1;">📄 ${p.name}</span>
+                    ${isAdmin ? `<i class="fas fa-trash" onclick="deletePlaylist('${p.name}')" style="color:#ff4444; cursor:pointer; padding:5px;"></i>` : ''}
+                </div>
+            `).join('');
+        });
 }
 
 function openPlaylist(name) {
@@ -181,9 +170,9 @@ function openPlaylist(name) {
             const ids = t.split(',');
             currentModeList = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
             document.getElementById('piesne-list').innerHTML = 
-                `<div style="color:#00bfff; margin-bottom:10px; font-weight:bold;">Zobrazený program: ${name} <button onclick="location.reload()" style="background:none; color:#ff4444; border:1px solid #ff4444; margin-left:10px; padding:2px 5px; border-radius:4px;">Zrušiť</button></div>` +
+                `<div style="padding:10px; color:#00bfff; font-weight:bold; border-bottom:2px solid #00bfff;">Playlist: ${name} <button onclick="location.reload()" style="float:right; background:none; color:red; border:1px solid red; padding:2px 5px; border-radius:4px;">X</button></div>` +
                 currentModeList.map(s => `
-                <div onclick="openSongById('${s.id}')">
+                <div onclick="openSongById('${s.id}')" style="padding:12px; border-bottom:1px solid #333;">
                     <span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}
                 </div>`).join('');
         });
