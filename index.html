@@ -35,6 +35,10 @@
       <button onclick="backToList()" class="back-btn"><i class="fas fa-arrow-left"></i> Späť</button>
       <h2 id="song-title"></h2>
 
+      <div class="transpose-display">
+        Základná tónina: <span id="base-key">C</span> | Transpozícia: <span id="transpose-offset">0</span>
+      </div>
+
       <div class="controls">
         <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i> Predchádzajúca</button>
         <button onclick="toggleChords()"><i class="fas fa-guitar"></i> <span id="chord-toggle-text">Skryť akordy</span></button>
