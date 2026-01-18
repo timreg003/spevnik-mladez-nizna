@@ -9,7 +9,7 @@ h2 { color: #00bfff; margin-top: 25px; font-size: 1.3em; }
 .liturgia div:hover, #piesne-list div:hover { background: #2a2a2a; border-left: 3px solid #00bfff; }
 
 .song-header-card { background: linear-gradient(145deg, #1e1e1e, #161616); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 15px; border: 1px solid #333; }
-.song-header-card h2 { margin: 0 0 10px 0; color: #fff; font-size: 1.5em; }
+.song-header-card h2 { margin: 0 0 10px 0; color: #fff; font-size: 1.5em; background: none; -webkit-text-fill-color: #fff; }
 .song-meta { display: flex; justify-content: center; align-items: center; gap: 15px; color: #00bfff; font-weight: 600; }
 
 .reset-btn { background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.8em; cursor: pointer; transition: 0.2s; }
@@ -24,7 +24,7 @@ button:active { background: #00bfff; color: #000; }
 
 .back-btn { background: none; color: #aaa; font-size: 18px; margin-bottom: 10px; }
 
-#song-content { background: #1a1a1a; padding: 25px; border-radius: 12px; line-height: 1.7; white-space: pre-wrap; margin-top: 10px; border-left: 4px solid #00bfff; }
+#song-content { background: #1a1a1a; padding: 25px; border-radius: 12px; line-height: 1.7; white-space: pre-wrap; margin-top: 10px; border-left: 4px solid #00bfff; font-size: 17px; }
 .chord { color: #00bfff; font-weight: bold; position: relative; top: -0.6em; margin-right: 2px; font-size: 0.9em; display: inline-block; height: 0; }
 
 .feedback-section { margin-top: 50px; padding: 20px; background: #1a1a1a; border-radius: 15px; border: 1px solid #333; text-align: center; }
@@ -32,6 +32,5 @@ button:active { background: #00bfff; color: #000; }
 .custom-form { display: flex; flex-direction: column; gap: 10px; }
 .custom-form input, .custom-form textarea { background: #121212; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-family: inherit; font-size: 15px; }
 .custom-form textarea { height: 80px; resize: none; }
-.custom-form input:focus, .custom-form textarea:focus { border-color: #00bfff; outline: none; }
-.submit-btn { background: #00bfff !important; color: #000 !important; font-weight: 700 !important; padding: 12px !important; border-radius: 8px !important; text-transform: uppercase; cursor: pointer; border: none; }
-.submit-btn:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; }
+.submit-btn { background: #00bfff !important; color: #000 !important; font-weight: 700; padding: 12px; border-radius: 8px; cursor: pointer; border: none; text-transform: uppercase; }
+.submit-btn:disabled { background: #444 !important; color: #888 !important; }
