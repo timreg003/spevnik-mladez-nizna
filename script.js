@@ -78,15 +78,28 @@ function renderSong(text) {
 }
 
 function transposeChord(chord, steps) {
-  const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const root = chord.match(/[A-G][#b]?/);
+  const chromaticH = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
+  const chromaticB = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+  // H → B (pre transpozíciu)
+  let normalized = chord.replace(/H/g, 'B').replace(/Bb/g, 'A#');
+
+  const root = normalized.match(/[A-G][#b]?/);
   if (!root) return chord;
+
   const rootOnly = root[0];
-  const suffix = chord.replace(rootOnly, '');
-  const index = chromatic.indexOf(rootOnly);
+  const suffix = normalized.replace(rootOnly, '');
+
+  const index = chromaticB.indexOf(rootOnly);
   if (index === -1) return chord;
+
   const newIndex = (index + steps + 12) % 12;
-  return chromatic[newIndex] + suffix;
+  const newRootB = chromaticB[newIndex];
+
+  // B → H (pre výstup)
+  const finalRoot = newRootB === 'B' ? 'H' : newRootB;
+
+  return finalRoot + suffix;
 }
 
 function transposeSong(direction) {
