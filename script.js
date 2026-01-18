@@ -6,7 +6,7 @@ let chordsVisible = true;
 let currentGroup = 'piesne';
 let baseKey = 'C';
 
-// XML NAČÍTANIE
+// 1. NAČÍTANIE XML (Základná funkcia)
 function parseXML() {
   fetch('export.zpk.xml')
     .then(res => res.text())
@@ -15,20 +15,20 @@ function parseXML() {
       const xml = parser.parseFromString(xmlText, 'application/xml');
       const songNodes = xml.querySelectorAll('song');
       
-      let allSongs = Array.from(songNodes).map(song => ({
+      let all = Array.from(songNodes).map(song => ({
         title: song.querySelector('title')?.textContent.trim() || "Bez názvu",
         text: song.querySelector('songtext')?.textContent.trim() || ""
       }));
 
-      const textSongs = allSongs.filter(s => !/^\d+(\.\d+)?$/.test(s.title));
-      const numSongs  = allSongs.filter(s =>  /^\d+(\.\d+)?$/.test(s.title));
-      textSongs.sort((a, b) => a.title.localeCompare(b.title, 'sk'));
-      numSongs.sort((a, b) => parseFloat(a.title) - parseFloat(b.title));
+      const textS = all.filter(s => !/^\d+(\.\d+)?$/.test(s.title));
+      const numS  = all.filter(s =>  /^\d+(\.\d+)?$/.test(s.title));
+      textS.sort((a, b) => a.title.localeCompare(b.title, 'sk'));
+      numS.sort((a, b) => parseFloat(a.title) - parseFloat(b.title));
       
-      songs = [...textSongs, ...numSongs];
+      songs = [...textS, ...numS];
       displayPiesne(songs);
     })
-    .catch(err => console.error("Chyba pri načítaní XML:", err));
+    .catch(err => console.error("Chyba načítania:", err));
 }
 
 function displayPiesne(list) {
@@ -43,13 +43,13 @@ function displayPiesne(list) {
   });
 }
 
-// ZOBRAZENIE PIESNE
+// 2. OVLÁDANIE PIESNE
 function showSong(song) {
   currentSong = song;
   transposeStep = 0;
 
-  const subjectInput = document.getElementById('email-subject');
-  if(subjectInput) subjectInput.value = "Oprava piesne: " + song.title;
+  const subj = document.getElementById('email-subject');
+  if(subj) subj.value = "Oprava: " + song.title;
 
   const firstChordMatch = song.text.match(/\[(.*?)\]/);
   baseKey = firstChordMatch ? firstChordMatch[1].match(/[A-H][#b]?/)?.[0] || 'C' : 'C';
@@ -57,23 +57,18 @@ function showSong(song) {
   document.getElementById('song-list').style.display = 'none';
   document.getElementById('song-display').style.display = 'block';
   document.getElementById('song-title').textContent = song.title;
-  
-  // Reset formulára pri prepnutí piesne
   document.getElementById('form-status').textContent = "";
   
   chordsVisible = true;
-  const btn = document.getElementById('chord-btn');
-  if(btn) { btn.innerHTML = '<i class="fas fa-eye"></i>'; btn.style.color = '#fff'; }
-
   updateTransposeDisplay();
   renderSong(song.text);
   window.scrollTo(0, 0);
 }
 
 function renderSong(text) {
-  const contentDiv = document.getElementById('song-content');
-  if (!contentDiv) return;
-  contentDiv.innerHTML = text.replace(/\[(.*?)\]/g, (match, chord) => {
+  const content = document.getElementById('song-content');
+  if (!content) return;
+  content.innerHTML = text.replace(/\[(.*?)\]/g, (match, chord) => {
     const transposed = transposeChord(chord, transposeStep);
     return chordsVisible ? `<span class="chord">${transposed}</span>` : '';
   });
@@ -92,13 +87,10 @@ function transposeChord(chord, steps) {
   return scale[(index + steps + 120) % 12] + suffix;
 }
 
-function transposeSong(direction) {
-  let next = transposeStep + direction;
-  if (next >= -12 && next <= 12) {
-    transposeStep = next;
-    updateTransposeDisplay();
-    renderSong(currentSong.text);
-  }
+function transposeSong(dir) {
+  transposeStep = Math.max(-12, Math.min(12, transposeStep + dir));
+  updateTransposeDisplay();
+  renderSong(currentSong.text);
 }
 
 function resetTranspose() {
@@ -107,19 +99,14 @@ function resetTranspose() {
   renderSong(currentSong.text);
 }
 
-function openLiturgieSong(title) {
-  const s = songs.find(s => s.title.toLowerCase() === title.toLowerCase());
-  if (s) { currentGroup = 'liturgia'; showSong(s); }
-}
-
-function navigateSong(direction) {
-  const lit = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
+function navigateSong(dir) {
+  const litTitles = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
   let group = currentGroup === 'liturgia' 
-    ? lit.map(t => songs.find(s => s.title.toLowerCase() === t.toLowerCase())).filter(Boolean)
-    : songs.filter(s => !lit.map(p => p.toLowerCase()).includes(s.title.toLowerCase()));
+    ? litTitles.map(t => songs.find(s => s.title.toLowerCase() === t.toLowerCase())).filter(Boolean)
+    : songs.filter(s => !litTitles.map(p => p.toLowerCase()).includes(s.title.toLowerCase()));
   
   let idx = group.indexOf(currentSong);
-  if (idx !== -1 && group[idx + direction]) showSong(group[idx + direction]);
+  if (idx !== -1 && group[idx + dir]) showSong(group[idx + dir]);
 }
 
 function backToList() {
@@ -131,7 +118,6 @@ function toggleChords() {
   chordsVisible = !chordsVisible;
   const btn = document.getElementById('chord-btn');
   btn.innerHTML = chordsVisible ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
-  btn.style.color = chordsVisible ? '#fff' : '#555';
   renderSong(currentSong.text);
 }
 
@@ -145,52 +131,56 @@ function changeFontSize(delta) {
   document.getElementById('song-content').style.fontSize = fontSize + 'px';
 }
 
-// VYHĽADÁVANIE A AJAX FORMULÁR
+function openLiturgieSong(title) {
+  const s = songs.find(s => s.title.toLowerCase() === title.toLowerCase());
+  if (s) { currentGroup = 'liturgia'; showSong(s); }
+}
+
+// 3. INICIALIZÁCIA A FORMULÁR
 document.addEventListener('DOMContentLoaded', () => {
   parseXML();
-  
-  const sInput = document.getElementById('search');
-  if(sInput) {
-    sInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
-      displayPiesne(filtered);
+
+  // Vyhľadávanie
+  const sInp = document.getElementById('search');
+  if(sInp) {
+    sInp.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      displayPiesne(songs.filter(s => s.title.toLowerCase().includes(q)));
     });
   }
 
-  // ODOSIELANIE FORMULÁRA
-  const form = document.getElementById("my-form");
-  if (form) {
-    form.addEventListener("submit", async function(event) {
-      event.preventDefault();
+  // Odosielanie formulára (AJAX)
+  const f = document.getElementById("my-form");
+  if (f) {
+    f.addEventListener("submit", function(e) {
+      e.preventDefault();
       const status = document.getElementById("form-status");
-      const button = document.getElementById("submit-btn");
-      const data = new FormData(event.target);
+      const btn = document.getElementById("submit-btn");
+      const data = new FormData(f);
 
-      button.disabled = true;
-      button.textContent = "Odosielam...";
-      status.textContent = "";
+      btn.disabled = true;
+      btn.textContent = "Odosielam...";
 
       fetch("https://formspree.io/f/mvzzkwlw", {
         method: "POST",
         body: data,
         headers: { 'Accept': 'application/json' }
-      }).then(response => {
-        if (response.ok) {
+      }).then(res => {
+        if (res.ok) {
           status.style.color = "#00ff00";
-          status.textContent = "✓ Správa bola odoslaná!";
-          form.reset();
-          button.textContent = "Odoslať opravu";
-          button.disabled = false;
+          status.textContent = "✓ Odoslané!";
+          f.reset();
         } else {
           status.style.color = "#ff4444";
           status.textContent = "Chyba pri odosielaní.";
-          button.disabled = false;
         }
-      }).catch(error => {
+        btn.disabled = false;
+        btn.textContent = "Odoslať opravu";
+      }).catch(() => {
         status.style.color = "#ff4444";
         status.textContent = "Problém so spojením.";
-        button.disabled = false;
+        btn.disabled = false;
+        btn.textContent = "Odoslať opravu";
       });
     });
   }
