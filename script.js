@@ -3,7 +3,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDF
 let songs = [], filteredSongs = [], currentSong = null, currentModeList = [], transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [], adminPassword = "";
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
-// AUTOMATICKÝ RESET (bez otázok)
 async function smartReset() {
     if (!navigator.onLine) {
         closeSong();
@@ -12,7 +11,6 @@ async function smartReset() {
         window.scrollTo(0,0);
         return;
     }
-    
     localStorage.clear();
     if ('caches' in window) {
         const names = await caches.keys();
@@ -29,34 +27,51 @@ async function parseXML() {
     try {
         const res = await fetch(SCRIPT_URL);
         const xmlText = await res.text();
-        localStorage.setItem('offline_spevnik', xmlText);
-        processXML(xmlText);
+        if (xmlText.trim().startsWith('<')) {
+            localStorage.setItem('offline_spevnik', xmlText);
+            processXML(xmlText);
+        } else { throw new Error("Invalid XML"); }
     } catch (e) {
         const saved = localStorage.getItem('offline_spevnik');
         if (saved) processXML(saved);
+        else document.getElementById('piesne-list').innerText = "Chyba pripojenia.";
     }
 }
 
 function processXML(xmlText) {
     const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
     const nodes = xml.getElementsByTagName('song');
+    if (nodes.length === 0) return;
+
     songs = [...nodes].map(s => {
         const text = s.getElementsByTagName('songtext')[0]?.textContent.trim() || "";
         const rawId = s.getElementsByTagName('author')[0]?.textContent.trim() || "";
         let displayId = rawId.startsWith('M') ? "Mariánska " + rawId.substring(1).replace(/^0+/, '') : rawId;
-        return { id: s.getElementsByTagName('ID')[0]?.textContent.trim(), title: s.getElementsByTagName('title')[0]?.textContent.trim(), originalId: rawId, displayId: displayId, origText: text };
+        return { 
+            id: s.getElementsByTagName('ID')[0]?.textContent.trim(), 
+            title: s.getElementsByTagName('title')[0]?.textContent.trim() || "Bez názvu", 
+            originalId: rawId, 
+            displayId: displayId, 
+            origText: text 
+        };
     });
+
     songs.sort((a, b) => {
         const isNumA = /^\d+$/.test(a.originalId), isNumB = /^\d+$/.test(b.originalId);
         if (isNumA && isNumB) return parseInt(a.originalId) - parseInt(b.originalId);
         return a.originalId.localeCompare(b.originalId);
     });
-    filteredSongs = [...songs]; currentModeList = [...songs];
-    renderAllSongs(); loadPlaylistHeaders();
+
+    filteredSongs = [...songs];
+    currentModeList = [...songs];
+    renderAllSongs();
+    loadPlaylistHeaders();
 }
 
 function renderAllSongs() {
-    document.getElementById('piesne-list').innerHTML = filteredSongs.map(s => `
+    const listEl = document.getElementById('piesne-list');
+    if (filteredSongs.length === 0) { listEl.innerText = "Nenašli sa žiadne piesne."; return; }
+    listEl.innerHTML = filteredSongs.map(s => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom: 1px solid #333;" onclick="openSongById('${s.id}')">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
             ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:30px; height:30px; border:none;">+</button>` : ''}
