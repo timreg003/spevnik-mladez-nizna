@@ -3,7 +3,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDF
 let songs = [], filteredSongs = [], currentSong = null, currentModeList = [], transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [], adminPassword = "";
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
-// INTELIGENTNÝ RESET
+// AUTOMATICKÝ RESET (bez otázok)
 async function smartReset() {
     if (!navigator.onLine) {
         closeSong();
@@ -12,7 +12,7 @@ async function smartReset() {
         window.scrollTo(0,0);
         return;
     }
-    if (!confirm("Vynútiť aktualizáciu spevníka? (Prečistí sa pamäť a načítajú zmeny)")) return;
+    
     localStorage.clear();
     if ('caches' in window) {
         const names = await caches.keys();
