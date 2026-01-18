@@ -1,30 +1,24 @@
-body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
-.container { max-width: 700px; margin: auto; position: relative; }
-h1 { font-size: 1.8em; font-weight: 700; text-align: center; background: linear-gradient(90deg, #00bfff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+/* Ponechávam tvoju štruktúru, len jemne fixujem .chord pre čitateľnosť */
+#song-content { 
+    background: #1a1a1a; 
+    padding: 25px 15px; 
+    border-radius: 12px; 
+    line-height: 3.2; /* Zväčšené z 2.8 na 3.2 pre lepšie odsadenie na mobile */
+    white-space: pre-wrap; 
+    margin-top: 10px; 
+    font-size: 17px; 
+    text-align: center; 
+    color: #fff; 
+    border: 1px solid #222; 
+}
 
-/* Domček vpravo hore */
-.home-btn { position: absolute; top: 0; right: 0; font-size: 1.6em; color: #00bfff; cursor: pointer; padding: 10px; z-index: 1000; }
-.home-btn:active { transform: scale(0.9); opacity: 0.7; }
-
-#search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; box-sizing: border-box; }
-#piesne-list div, #playlists-section div { background: #1e1e1e; padding: 12px; margin-bottom: 6px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
-
-h2 { color: #00bfff; margin-top: 15px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
-.controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #333; gap: 5px; }
-.control-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.control-group small { color: #888; text-transform: uppercase; font-size: 10px; font-weight: bold; }
-.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
-button { background: #1e1e1e; border: none; color: #fff; padding: 10px 14px; cursor: pointer; }
-button:active { background: #00bfff; color: black; }
-.back-btn { background: none; color: #aaa; font-size: 16px; border: none; cursor: pointer; margin-bottom: 10px; }
-
-#song-content { background: #1a1a1a; padding: 25px 15px; border-radius: 12px; line-height: 2.8; white-space: pre-wrap; margin-top: 10px; font-size: 17px; text-align: center; color: #fff; border: 1px solid #222; }
-.chord { color: #00bfff !important; font-weight: bold; position: relative; top: -1.1em; display: inline-block; height: 0; margin-right: 3px; font-size: 0.95em; }
-
-.admin-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px; margin-bottom: 5px; border-radius: 8px; border: 1px solid #444; }
-.admin-btn { padding: 10px; font-size: 1.3em; color: #00bfff; cursor: pointer; }
-
-.error-report { margin-top: 40px; padding: 15px; background: #161616; border-radius: 12px; border: 1px solid #222; text-align: left; }
-.error-report textarea { width: 100%; background: #222; border: 1px solid #333; color: white; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: none; font-family: inherit; }
-
-hr { border: 0; border-top: 1px solid #333; margin: 20px 0; }
+.chord { 
+    color: #00bfff !important; /* Explicitne modrá */
+    font-weight: bold; 
+    position: relative; 
+    top: -1.3em; /* O kúsok vyššie ako si mal (bolo -1.1) */
+    display: inline-block; 
+    height: 0; 
+    margin-right: 3px; 
+    font-size: 0.9em; 
+}
