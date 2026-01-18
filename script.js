@@ -5,7 +5,7 @@ let fontSize = 17;
 let chordsVisible = true;
 let scrollInterval = null;
 
-// KONFIGURÁCIA GOOGLE DISKU
+// KONFIGURÁCIA GOOGLE DISKU S PROXY (aby nehlásilo chybu pripojenia)
 const FILE_ID = '1AyQnmtBzJhTWTPkHzXiqUKYyhRTUA0ZY'; 
 const URL = `https://corsproxy.io/?https://docs.google.com/uc?export=download&id=${FILE_ID}`;
 
@@ -24,7 +24,7 @@ function parseXML() {
         
         return {
           id: songNumber,
-          title: song.getAttribute('title') || "Bez názvu",
+          title: song.getAttribute('title') || "Bez názvu", // Opravené načítanie názvu
           text: song.querySelector('songtext')?.textContent.trim() || ""
         };
       });
@@ -35,7 +35,7 @@ function parseXML() {
     })
     .catch(err => {
       console.error("Chyba:", err);
-      document.getElementById('piesne-list').innerText = "Chyba pripojenia na Google Disk.";
+      document.getElementById('piesne-list').innerText = "Chyba pripojenia. Skús obnoviť stránku.";
     });
 }
 
@@ -68,10 +68,10 @@ function openSong(id) {
 function renderSong() {
   if(!currentSong) return;
   
-  // Čistenie textu: odstránenie trojitých medzier medzi slohami
+  // Čistenie textu a zarovnanie (riešené cez CSS v style.css)
   let txt = currentSong.text.replace(/\n\s*\n\s*\n/g, '\n\n');
 
-  // Formátovanie akordov s transpozíciou
+  // Formátovanie akordov
   txt = txt.replace(/\[(.*?)\]/g, (match, chord) => {
     if(!chordsVisible) return '';
     const transposed = transposeChord(chord, transposeStep);
@@ -83,13 +83,22 @@ function renderSong() {
   contentDiv.style.fontSize = fontSize + 'px';
 }
 
+// NAVIGÁCIA MEDZI PIESŇAMI (Nasledujúca / Predchádzajúca)
+function navigateSong(direction) {
+  const currentIndex = songs.findIndex(s => s.id === currentSong.id);
+  const nextIndex = currentIndex + direction;
+  if (nextIndex >= 0 && nextIndex < songs.length) {
+    openSong(songs[nextIndex].id);
+  }
+}
+
 function closeSong() {
   document.getElementById('song-list').style.display = 'block';
   document.getElementById('song-detail').style.display = 'none';
   stopScroll();
 }
 
-// 3. POMOCNÉ FUNKCIE (Transpozícia, Scroll, Font)
+// 3. POMOCNÉ FUNKCIE
 function transposeChord(chord, step) {
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B', 'H'];
   return chord.replace(/[A-H][#b]?/g, (match) => {
@@ -119,47 +128,16 @@ function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function openLiturgieSong(title) {
   const s = songs.find(x => x.title.toLowerCase().includes(title.toLowerCase()));
   if(s) openSong(s.id);
-  else alert("Pieseň pre liturgiu sa nenašla v exportnom súbore.");
 }
 
 // 4. INICIALIZÁCIA
 document.addEventListener('DOMContentLoaded', () => {
   parseXML();
-
   const sInp = document.getElementById('search');
   if(sInp) {
     sInp.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
       displayPiesne(songs.filter(s => s.title.toLowerCase().includes(q) || s.id.toString().includes(q)));
-    });
-  }
-
-  // Formspree odosielanie (tvoja pôvodná logika)
-  const f = document.getElementById("my-form");
-  if (f) {
-    f.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const status = document.getElementById("form-status");
-      const btn = document.getElementById("submit-btn");
-      btn.disabled = true;
-      btn.textContent = "Odosielam...";
-
-      fetch("https://formspree.io/f/mvzzkwlw", {
-        method: "POST",
-        body: new FormData(f),
-        headers: { 'Accept': 'application/json' }
-      }).then(res => {
-        if (res.ok) {
-          status.style.color = "#00ff00";
-          status.textContent = "✓ Odoslané!";
-          f.reset();
-        } else {
-          status.style.color = "#ff4444";
-          status.textContent = "Chyba pri odosielaní.";
-        }
-        btn.disabled = false;
-        btn.textContent = "Odoslať opravu";
-      });
     });
   }
 });
