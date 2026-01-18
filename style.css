@@ -1,15 +1,112 @@
-body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
-.container { max-width: 700px; margin: auto; }
-h1 { font-size: 1.8em; font-weight: 700; background: linear-gradient(90deg, #00bfff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
-#search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
-#piesne-list div, #playlists-section div { background: #1e1e1e; padding: 12px 14px; margin-bottom: 6px; border-radius: 10px; cursor: pointer; }
-h2 { color: #00bfff; margin-top: 15px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
-.controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; gap: 10px; border: 1px solid #333; }
-.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
-.control-group small { color: #888; text-transform: uppercase; font-size: 10px; }
-.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
-button { background: #1e1e1e; border: none; color: #fff; padding: 8px 12px; cursor: pointer; }
-.back-btn { background: none; color: #aaa; font-size: 16px; border: none; cursor: pointer; margin-bottom: 10px; }
-#song-content { background: #1a1a1a; padding: 20px 15px; border-radius: 12px; line-height: 3.5; white-space: pre-wrap; margin-top: 10px; font-size: 17px; text-align: center; color: #fff; }
-.chord { color: #00bfff; font-weight: bold; position: relative; top: -1.0em; margin-right: 4px; font-size: 0.95em; display: inline-block; height: 0; }
-hr { border: 0; border-top: 1px solid #333; margin: 20px 0; }
+body { 
+    margin: 0; 
+    font-family: 'Inter', sans-serif; 
+    background: #121212; 
+    color: #e0e0e0; 
+    padding: 15px; 
+}
+
+.container { 
+    max-width: 700px; 
+    margin: auto; 
+}
+
+h1 { 
+    font-size: 1.8em; 
+    font-weight: 700; 
+    background: linear-gradient(90deg, #00bfff, #ffffff); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    text-align: center; 
+}
+
+#search { 
+    width: 100%; 
+    padding: 14px; 
+    font-size: 16px; 
+    border-radius: 12px; 
+    background: #1e1e1e; 
+    color: #fff; 
+    margin-bottom: 20px; 
+    border: 1px solid #333; 
+    outline: none; 
+}
+
+#piesne-list div, #playlists-section div { 
+    background: #1e1e1e; 
+    padding: 12px 14px; 
+    margin-bottom: 6px; 
+    border-radius: 10px; 
+    cursor: pointer; 
+}
+
+h2 { 
+    color: #00bfff; 
+    margin-top: 15px; 
+    font-size: 1.3em; 
+    border-bottom: 1px solid #333; 
+    padding-bottom: 5px; 
+}
+
+.controls { 
+    display: flex; 
+    justify-content: space-around; 
+    background: #1a1a1a; 
+    padding: 10px; 
+    border-radius: 12px; 
+    margin-bottom: 10px; 
+    gap: 10px; 
+    border: 1px solid #333; 
+}
+
+.control-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 5px; 
+    align-items: center; 
+}
+
+.control-group small { 
+    color: #888; 
+    text-transform: uppercase; 
+    font-size: 10px; 
+}
+
+.btn-row { 
+    display: flex; 
+    background: #1e1e1e; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 1px solid #333; 
+}
+
+button { 
+    background: #1e1e1e; 
+    border: none; 
+    color: #fff; 
+    padding: 8px 12px; 
+    cursor: pointer; 
+}
+
+.back-btn { 
+    background: none; 
+    color: #aaa; 
+    font-size: 16px; 
+    border: none; 
+    cursor: pointer; 
+    margin-bottom: 10px; 
+}
+
+#song-content { 
+    background: #1a1a1a; 
+    padding: 20px 15px; 
+    border-radius: 12px; 
+    line-height: 3.5; 
+    white-space: pre-wrap; 
+    margin-top: 10px; 
+    font-size: 17px; 
+    text-align: center; 
+    color: #fff; 
+}
+
+.chord {
