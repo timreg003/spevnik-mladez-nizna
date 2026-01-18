@@ -1,7 +1,7 @@
 let songs = [], filteredSongs = [], currentSong = null, currentModeList = [], selectedSongIds = [];
 let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, adminPassword = "";
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEfu4yOq0BE4gcr4hOaElvVCNzvmZOSgmbeyy4gOqfIxAhBjRgzDPixYNXbn9_UoXbsw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwF5BmjnJsRJmHpCIo4aU0v55CPh4LjrVD8xpeJktRAf4eT5dZyZkd1bZCmMlpq5_bfmw/exec';
 const FORMSPREE_URL = 'https://formspree.io/f/mvzzkwlw';
 
 function formatSongId(id) { 
@@ -27,15 +27,11 @@ async function parseXML() {
             };
         });
 
-        // RADENIE: Čísla -> Mariánske -> Text
+        // Radenie: Čísla -> Mariánska -> Text
         songs.sort((a, b) => {
-            const idA = a.displayId;
-            const idB = b.displayId;
-            const isNumA = /^\d+$/.test(idA);
-            const isNumB = /^\d+$/.test(idB);
-            const isMarA = idA.startsWith('M');
-            const isMarB = idB.startsWith('M');
-
+            const idA = a.displayId; const idB = b.displayId;
+            const isNumA = /^\d+$/.test(idA); const isNumB = /^\d+$/.test(idB);
+            const isMarA = idA.startsWith('M'); const isMarB = idB.startsWith('M');
             if (isNumA && !isNumB) return -1;
             if (!isNumA && isNumB) return 1;
             if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
@@ -47,10 +43,7 @@ async function parseXML() {
         filteredSongs = [...songs];
         renderAllSongs();
         loadPlaylistHeaders();
-    } catch (e) { 
-        console.error(e);
-        document.getElementById('piesne-list').innerText = "Chyba pripojenia."; 
-    }
+    } catch (e) { document.getElementById('piesne-list').innerText = "Chyba pripojenia."; }
 }
 
 function renderAllSongs() {
@@ -103,8 +96,7 @@ function openSongById(id, mode) {
     document.getElementById('song-detail').style.display = 'block';
     document.getElementById('render-title').innerText = formatSongId(currentSong.displayId) + ". " + currentSong.title;
     document.getElementById('render-key').innerText = "Tónina: " + currentSong.originalKey;
-    document.getElementById('error-msg').value = ""; 
-    document.getElementById('error-name').value = "";
+    document.getElementById('error-msg').value = ""; document.getElementById('error-name').value = "";
     renderSong();
     window.scrollTo(0,0);
 }
@@ -144,20 +136,13 @@ async function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert("Názov chýba!");
     const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}&content=${selectedSongIds.join(',')}`;
-    try {
-        const r = await fetch(url);
-        alert("Uložené!");
-        location.reload();
-    } catch(e) { alert("Chyba pri ukladaní."); }
+    try { await fetch(url); alert("Uložené!"); location.reload(); } catch(e) { alert("Chyba pri ukladaní."); }
 }
 
 async function deletePlaylist(name) {
     if(!confirm("Zmazať "+name+"?")) return;
     const url = `${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(adminPassword)}`;
-    try {
-        await fetch(url);
-        loadPlaylistHeaders();
-    } catch(e) { alert("Zmazané."); }
+    try { await fetch(url); loadPlaylistHeaders(); } catch(e) { alert("Zmazané."); }
 }
 
 async function openPlaylist(name) {
@@ -178,11 +163,10 @@ function sendErrorReport() {
     fetch(FORMSPREE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pieseň: currentSong.title, od: name, správa: msg })
+        body: JSON.stringify({ pieseň: currentSong.title, meno: name, správa: msg })
     }).then(() => {
         alert("Nahlásené. Vďaka!");
-        document.getElementById('error-msg').value = "";
-        document.getElementById('error-name').value = "";
+        document.getElementById('error-msg').value = ""; document.getElementById('error-name').value = "";
     }).finally(() => {
         btn.innerText = "ODOSLAŤ"; btn.disabled = false;
     });
