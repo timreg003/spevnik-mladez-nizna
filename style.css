@@ -19,8 +19,9 @@ h1 {
 }
 
 #search {
-  width: 100%; padding: 12px; font-size: 16px; border: none; box-sizing: border-box;
-  border-radius: 10px; background: #1e1e1e; color: #fff; margin-bottom: 20px;
+  width: 100%; padding: 14px; font-size: 16px; border: none; box-sizing: border-box;
+  border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px;
+  border: 1px solid #333;
 }
 
 h2 { color: #00bfff; margin-top: 25px; font-size: 1.3em; }
@@ -30,56 +31,37 @@ h2 { color: #00bfff; margin-top: 25px; font-size: 1.3em; }
   border-radius: 10px; cursor: pointer; transition: 0.2s;
 }
 
-.liturgia div:hover, #piesne-list div:hover { background: #2a2a2a; }
+.liturgia div:hover, #piesne-list div:hover { background: #2a2a2a; border-left: 3px solid #00bfff; }
 
-/* ŠTÝLOVÁ HLAVIČKA PIESNE */
 .song-header-card {
   background: linear-gradient(145deg, #1e1e1e, #161616);
   padding: 20px; border-radius: 15px; text-align: center;
   margin-bottom: 15px; border: 1px solid #333;
 }
 
-.song-header-card h2 { margin: 0 0 8px 0; color: #fff; font-size: 1.5em; }
+.song-header-card h2 { margin: 0 0 8px 0; color: #fff; font-size: 1.5em; background: none; -webkit-text-fill-color: #fff; }
 
-.song-meta {
-  display: flex; justify-content: center; gap: 20px;
-  color: #00bfff; font-weight: 600; font-size: 0.9em;
-}
+.song-meta { display: flex; justify-content: center; gap: 20px; color: #00bfff; font-weight: 600; }
 
-/* OVLÁDACIA MRIEŽKA */
-.action-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 8px; margin-bottom: 20px;
-}
-
+.action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
 .control-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .control-group small { color: #666; font-size: 0.65em; text-transform: uppercase; }
 
-.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
 
-button {
-  background: #1e1e1e; border: none; color: #fff; padding: 10px;
-  cursor: pointer; transition: 0.2s; font-size: 14px;
-}
-
+button { background: #1e1e1e; border: none; color: #fff; padding: 10px; cursor: pointer; }
 button:active { background: #00bfff; color: #000; }
 
 .back-btn { background: none; color: #aaa; font-size: 18px; margin-bottom: 10px; }
 
-/* TEXT PIESNE */
 #song-content {
-  background: #1a1a1a; padding: 20px; border-radius: 12px;
+  background: #1a1a1a; padding: 25px; border-radius: 12px;
   line-height: 1.7; white-space: pre-wrap; margin-top: 10px;
-  border-left: 4px solid #00bfff;
+  border-left: 4px solid #00bfff; font-variant-ligatures: none;
 }
 
-.chord { color: #00bfff; font-weight: bold; position: relative; top: -0.6em; margin-right: 2px; font-size: 0.9em; }
+.chord { color: #00bfff; font-weight: bold; position: relative; top: -0.6em; margin-right: 2px; font-size: 0.9em; display: inline-block; height: 0; }
 
-/* GOOGLE FORMULAR */
 .feedback-section { margin-top: 40px; text-align: center; border-top: 1px solid #333; padding-top: 20px; }
 .feedback-section p { color: #00bfff; font-weight: 600; margin-bottom: 15px; }
-
-.form-container {
-  border: 5px solid #000; border-radius: 15px; overflow: hidden;
-  background: #fff; box-shadow: 0 0 15px rgba(0, 191, 255, 0.1);
-}
+.form-container { border: 5px solid #000; border-radius: 15px; overflow: hidden; background: #fff; }
