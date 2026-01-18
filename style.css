@@ -14,8 +14,6 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: 
     -webkit-text-fill-color: transparent;
     display: block;
     text-align: center;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .main-title { font-size: 1.8em; margin: 0; }
@@ -26,14 +24,13 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: 
     margin-top: 25px;
     margin-bottom: 15px;
     text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 #search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
 #piesne-list div, #playlists-section div { background: #1e1e1e; border-radius: 8px; margin-bottom: 4px; border-bottom: 1px solid #333; }
 
 .controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; gap: 10px; border: 1px solid #333; }
-.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; font-size: 11px; }
 .btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
 button { background: #1e1e1e; border: none; color: #fff; padding: 10px 14px; cursor: pointer; }
 
