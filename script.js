@@ -20,38 +20,41 @@ function parseXML() {
         const titleVal = song.querySelector('title')?.textContent.trim() || "Bez názvu";
         const songText = song.querySelector('songtext')?.textContent.trim() || "";
 
-        // DEDUKCIA TÓNINY: Nájdeme prvý výskyt akordu v hranatých zátvorkách [ ]
         const firstChordMatch = songText.match(/\[(.*?)\]/);
         const deducedKey = firstChordMatch ? firstChordMatch[1] : "";
 
         let displayId = authorVal;
-        let sortPriority = 1; // 1: Čísla, 2: Mariánske (M), 3: Textové ID
+        let sortPriority = 1; 
+        let internalSortNum = 0;
 
         if (authorVal.toUpperCase().startsWith('M')) {
-          const num = authorVal.replace(/\D/g, '');
-          displayId = "Mariánska " + (parseInt(num) || num);
+          const num = parseInt(authorVal.replace(/\D/g, '')) || 0;
+          displayId = "Mariánska " + num;
           sortPriority = 2;
-        } else if (authorVal !== "" && !/^\d+$/.test(authorVal)) {
+          internalSortNum = num; // Na radenie mariánskych 1, 2, 3...
+        } else if (authorVal !== "" && /^\d+$/.test(authorVal)) {
+          sortPriority = 1;
+          internalSortNum = parseInt(authorVal);
+        } else {
           sortPriority = 3;
-        } else if (authorVal === "") {
-          sortPriority = 3;
-          displayId = "---";
+          displayId = authorVal || "---";
         }
 
         return {
           authorRaw: authorVal,
           displayId: displayId,
           sortPriority: sortPriority,
+          sortNum: internalSortNum,
           title: titleVal,
-          baseKey: deducedKey, // Vydedukovaná tónina
+          baseKey: deducedKey,
           text: songText
         };
       });
 
-      // RADENIE: Čísla -> Mariánske -> Textové na koniec
+      // LOGIKA RADENIA
       songs.sort((a, b) => {
         if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
-        if (a.sortPriority === 1) return parseInt(a.authorRaw) - parseInt(b.authorRaw);
+        if (a.sortPriority === 1 || a.sortPriority === 2) return a.sortNum - b.sortNum;
         return a.displayId.localeCompare(b.displayId, 'sk');
       });
 
@@ -81,8 +84,8 @@ function openSongByIndex(index) {
   document.getElementById('song-list').style.display = 'none';
   document.getElementById('song-detail').style.display = 'block';
   document.getElementById('song-title').textContent = s.displayId + ". " + s.title;
+  document.getElementById('email-subject').value = "Chyba v piesni: " + s.title;
   
-  // Zobrazenie vydedukovanej tóniny
   document.getElementById('base-key-display').textContent = s.baseKey ? "Pôvodná tónina: " + s.baseKey : "Pôvodná tónina: Nezistená";
   
   renderSong();
@@ -108,18 +111,8 @@ function navigateSong(direction) {
   }
 }
 
-function resetTranspose() {
-  transposeStep = 0;
-  updateTransposeLabel();
-  renderSong();
-}
-
-function transposeSong(step) {
-  transposeStep += step;
-  updateTransposeLabel();
-  renderSong();
-}
-
+function resetTranspose() { transposeStep = 0; updateTransposeLabel(); renderSong(); }
+function transposeSong(step) { transposeStep += step; updateTransposeLabel(); renderSong(); }
 function updateTransposeLabel() {
   const el = document.getElementById('transpose-val');
   if(el) el.textContent = (transposeStep > 0 ? "+" : "") + transposeStep;
@@ -150,6 +143,7 @@ function closeSong() {
 function changeFontSize(step) { fontSize += step; renderSong(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 
+// FORMULÁR A VYHĽADÁVANIE
 document.addEventListener('DOMContentLoaded', () => {
   parseXML();
   document.getElementById('search').addEventListener('input', (e) => {
@@ -163,4 +157,32 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `).join('');
   });
+
+  const f = document.getElementById("my-form");
+  if (f) {
+    f.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const status = document.getElementById("form-status");
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Odosielam...";
+
+      fetch("https://formspree.io/f/mvzzkwlw", {
+        method: "POST",
+        body: new FormData(f),
+        headers: { 'Accept': 'application/json' }
+      }).then(res => {
+        if (res.ok) {
+          status.style.color = "#00ff00";
+          status.textContent = "✓ Odoslané!";
+          f.reset();
+        } else {
+          status.style.color = "#ff4444";
+          status.textContent = "Chyba pri odosielaní.";
+        }
+        btn.disabled = false;
+        btn.textContent = "Odoslať opravu";
+      });
+    });
+  }
 });
