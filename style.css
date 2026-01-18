@@ -1,128 +1,174 @@
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #121212;
-  color: #e0e0e0;
-  padding: 20px;
+let songs = [];
+let currentSong = null;
+let currentIndex = 0;
+let transposeStep = 0;
+let fontSize = 17;
+let chordsVisible = true;
+let currentGroup = 'piesne';
+let baseKey = 'C';
+
+function parseXML() {
+  fetch('export.zpk.xml')
+    .then(res => res.text())
+    .then(xmlText => {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, 'application/xml');
+      const songNodes = xml.querySelectorAll('song');
+      const all = Array.from(songNodes).map(song => ({
+        title: song.querySelector('title').textContent.trim(),
+        text: song.querySelector('songtext').textContent.trim()
+      }));
+
+      const text = all.filter(s => !/^\d+(\.\d+)?$/.test(s.title));
+      const num  = all.filter(s =>  /^\d+(\.\d+)?$/.test(s.title));
+
+      text.sort((a, b) => a.title.localeCompare(b.title, 'sk'));
+      num.sort((a, b) => parseFloat(a.title) - parseFloat(b.title));
+
+      songs = [...text, ...num];
+      displayPiesne(songs);
+    });
 }
 
-.container {
-  max-width: 700px;
-  margin: auto;
+function displayPiesne(list) {
+  const listDiv = document.getElementById('piesne-list');
+  listDiv.innerHTML = '';
+  list.forEach((song, index) => {
+    const div = document.createElement('div');
+    div.textContent = song.title;
+    div.onclick = () => {
+      currentGroup = 'piesne';
+      showSong(song, index);
+    };
+    listDiv.appendChild(div);
+  });
 }
 
-h1 {
-  font-size: 2.2em;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #00bfff, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center;
-  margin-bottom: 25px;
+function showSong(song, index) {
+  currentSong = song;
+  currentIndex = index;
+  transposeStep = 0;
+
+  const firstChord = song.text.match(/\[(.*?)\]/);
+  // Regex upravený na A-H
+  baseKey = firstChord ? firstChord[1].match(/[A-H][#b]?/)?.[0] || 'C' : 'C';
+
+  document.getElementById('song-list').style.display = 'none';
+  document.getElementById('song-display').style.display = 'block';
+  document.getElementById('song-title').textContent = song.title;
+  updateTransposeDisplay();
+  renderSong(song.text);
 }
 
-#search {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #1e1e1e;
-  color: #fff;
-  margin-bottom: 20px;
+function openLiturgieSong(title) {
+  const matches = songs.filter(s => s.title.toLowerCase() === title.toLowerCase());
+  if (matches.length === 0) return;
+
+  currentGroup = 'liturgia';
+  const song = matches[0];
+  const globalIndex = songs.indexOf(song);
+  showSong(song, globalIndex);
 }
 
-h2 {
-  margin-top: 30px;
-  font-size: 1.4em;
-  color: #00bfff;
+function renderSong(text) {
+  let content = text.replace(/\[(.*?)\]/g, (match, chord) => {
+    const transposed = transposeChord(chord, transposeStep);
+    return chordsVisible ? `<span class="chord">${transposed}</span>` : '';
+  });
+  document.getElementById('song-content').innerHTML = content;
 }
 
-.liturgia div,
-#piesne-list div {
-  background: #1e1e1e;
-  padding: 14px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
+// FUNKCIA S POUŽITÍM KRÍŽIKOV A SLOVENSKÉHO "H"
+function transposeChord(chord, steps) {
+  if (steps === 0) return chord;
+
+  // Stupnica definovaná len pomocou krížikov
+  // C, Cis, D, Dis, E, F, Fis, G, Gis, A, Ais (naše B), H
+  const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
+
+  const rootMatch = chord.match(/([A-H][#b]?)/);
+  if (!rootMatch) return chord;
+
+  const root = rootMatch[1];
+  const suffix = chord.substring(root.length);
+
+  // Prevod všetkých možných zápisov na index v našej "krížikovej" stupnici
+  const mapToSharp = {
+    'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#', 'B': 'A#', 'Hb': 'A#'
+  };
+
+  let normalizedRoot = mapToSharp[root] || root;
+
+  let index = chromaticScale.indexOf(normalizedRoot);
+  if (index === -1) return chord;
+
+  const newIndex = (index + steps + 12) % 12;
+  const newRoot = chromaticScale[newIndex];
+
+  return newRoot + suffix;
 }
 
-.liturgia div:hover,
-#piesne-list div:hover {
-  background: #2a2a2a;
+function transposeSong(direction) {
+  transposeStep += direction;
+  updateTransposeDisplay();
+  renderSong(currentSong.text);
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 20px;
-  cursor: pointer;
-  margin-bottom: 10px;
+function updateTransposeDisplay() {
+  document.getElementById('base-key').textContent = baseKey;
+  document.getElementById('transpose-offset').textContent = transposeStep > 0 ? `+${transposeStep}` : transposeStep;
 }
 
-.back-btn:hover {
-  color: #fff;
+function changeFontSize(delta) {
+  fontSize = Math.max(12, Math.min(28, fontSize + delta));
+  document.getElementById('song-content').style.fontSize = fontSize + 'px';
+  localStorage.setItem('fontSize', fontSize);
 }
 
-.controls {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
+function toggleChords() {
+  chordsVisible = !chordsVisible;
+  document.getElementById('chord-toggle-text').textContent = chordsVisible ? 'Skryť akordy' : 'Zobraziť akordy';
+  renderSong(currentSong.text);
 }
 
-.controls button {
-  background: #1e1e1e;
-  border: none;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 6px;
-  cursor: pointer;
+function getCurrentGroupSongs() {
+  const poradie = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
+  if (currentGroup === 'liturgia') {
+    return poradie
+      .map(title => songs.find(s => s.title.toLowerCase() === title.toLowerCase()))
+      .filter(Boolean);
+  }
+  const liturgiaTitles = ['Pane zmiluj sa', 'Aleluja', 'Svätý', 'Otče náš', 'Baránok'];
+  return songs.filter(s => !liturgiaTitles.includes(s.title));
 }
 
-.transpose-display {
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #aaa;
+function navigateSong(direction) {
+  const group = getCurrentGroupSongs();
+  const indexInGroup = group.indexOf(currentSong);
+  const newIndex = indexInGroup + direction;
+  if (newIndex >= 0 && newIndex < group.length) {
+    const newSong = group[newIndex];
+    const globalIndex = songs.indexOf(newSong);
+    showSong(newSong, globalIndex);
+  }
 }
 
-.transpose-bar,
-.zoom-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+function backToList() {
+  document.getElementById('song-list').style.display = 'block';
+  document.getElementById('song-display').style.display = 'none';
 }
 
-.transpose-bar button,
-.zoom-bar button {
-  background: #1e1e1e;
-  border: none;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
+document.getElementById('search').addEventListener('input', e => {
+  const query = e.target.value.toLowerCase();
+  const filtered = songs.filter(s => s.title.toLowerCase().includes(query));
+  displayPiesne(filtered);
+});
 
-.transpose-bar span,
-.zoom-bar span {
-  color: #aaa;
-}
-
-pre {
-  white-space: pre-wrap;
-  font-family: inherit;
-  font-size: 17px;
-  line-height: 1.8;
-}
-
-.chord {
-  color: #00bfff;
-  font-weight: 600;
-  position: relative;
-  top: -0.3em;
-  font-size: 0.95em;
-}
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('fontSize');
+  if (saved) {
+    fontSize = parseInt(saved);
+    document.getElementById('song-content').style.fontSize = fontSize + 'px';
+  }
+  parseXML();
+});
