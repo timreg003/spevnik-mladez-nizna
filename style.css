@@ -1,40 +1,270 @@
-body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
-.container { max-width: 700px; margin: auto; }
-h1 { font-size: 1.8em; font-weight: 700; background: linear-gradient(90deg, #00bfff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 20px; }
-
-#search { width: 100%; padding: 14px; font-size: 16px; border: none; box-sizing: border-box; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; }
-h2 { color: #00bfff; margin-top: 25px; font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-.liturgia div, #piesne-list div { background: #1e1e1e; padding: 14px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-.liturgia div:hover, #piesne-list div:hover { background: #2a2a2a; border-left: 3px solid #00bfff; }
-
-.song-header-card { background: linear-gradient(145deg, #1e1e1e, #141414); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; text-align: center; }
-.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
-.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
-.control-group small { color: #888; text-transform: uppercase; font-size: 10px; }
-
-.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
-button { background: #1e1e1e; border: none; color: #fff; padding: 10px 15px; cursor: pointer; font-size: 14px; }
-button:active { background: #00bfff; color: #000; }
-
-.back-btn { background: none; color: #aaa; font-size: 18px; margin-bottom: 10px; border: none; cursor: pointer; }
-
-#song-content { 
-    background: #1a1a1a; 
-    padding: 35px 15px; 
-    border-radius: 12px; 
-    line-height: 2.6; 
-    white-space: pre-wrap; 
-    margin-top: 10px; 
-    font-size: 17px; 
-    text-align: center; 
-    color: #fff;
+/* Základné nastavenia */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* AKORDY POSUNUTÉ VYŠŠIE */
-.chord { color: #00bfff; font-weight: bold; margin: 0 2px; position: relative; top: -0.5em; font-size: 0.9em; display: inline-block; height: 0; }
+/* Hlavička */
+header {
+    background-color: #1f1f1f;
+    padding: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid #333;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
 
-.feedback-section { margin-top: 50px; padding: 20px; background: #1a1a1a; border-radius: 15px; border: 1px solid #333; text-align: center; }
-.custom-form { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-.custom-form input, .custom-form textarea { background: #121212; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
-.submit-btn { background: #00bfff; color: #000; font-weight: bold; padding: 12px; border-radius: 8px; border: none; cursor: pointer; }
+h1, h2, h3, h4 {
+    margin: 0;
+    color: #ffffff;
+}
+
+/* Ovládacie prvky v hlavičke */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+input[type="text"] {
+    flex-grow: 1;
+    background: #2c2c2c;
+    border: 1px solid #444;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+button {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+button:active {
+    background: #555;
+}
+
+#admin-btn {
+    background: #444;
+    font-size: 18px;
+}
+
+/* Sekcia Playlisty */
+#playlists-section {
+    background: #1a1a1a;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 12px;
+    border: 1px dashed #444;
+}
+
+#playlists-container {
+    margin-top: 10px;
+}
+
+.playlist-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.playlist-row button {
+    background: #2c2c2c;
+    border: 1px solid #444;
+    flex-grow: 1;
+    text-align: left;
+    padding: 12px;
+}
+
+/* Admin panel pre tvorbu playlistu */
+#admin-panel {
+    background: #1f1f1f;
+    margin: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #00bfff;
+}
+
+.selection-item {
+    background: #2c2c2c;
+    padding: 10px;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.selection-item button {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+#save-btn {
+    background: #0088cc;
+    border: none;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px;
+}
+
+/* Zoznam piesní */
+#piesne-list {
+    padding: 10px;
+}
+
+.song-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #222;
+    padding: 5px 0;
+}
+
+.song-info {
+    flex-grow: 1;
+    padding: 15px 10px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.song-number {
+    color: #00bfff;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.add-btn {
+    background: #00bfff;
+    border: none;
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+/* Detail piesne */
+#song-detail {
+    padding-bottom: 100px;
+}
+
+#song-title {
+    padding: 10px 15px;
+    font-size: 22px;
+    background: #121212;
+    text-align: center;
+}
+
+.transpose-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    background: #1f1f1f;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+#transpose-val {
+    font-size: 20px;
+    font-weight: bold;
+    color: #00bfff;
+    min-width: 40px;
+    text-align: center;
+}
+
+#song-content {
+    padding: 20px;
+    white-space: pre-wrap;
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.4;
+}
+
+/* Akordy */
+.chord {
+    color: #fbbf24; /* Zlatistá farba pre akordy */
+    font-weight: bold;
+    display: inline-block;
+    height: 0;
+    vertical-align: top;
+    position: relative;
+    top: -1.2em;
+    margin-right: 2px;
+    font-size: 0.9em;
+}
+
+/* Spodné ovládanie (A+, A-, Chords) */
+.font-controls {
+    position: fixed;
+    bottom: 60px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 101;
+}
+
+.font-controls button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    background: #333;
+    border: 1px solid #444;
+}
+
+#base-key-display {
+    position: fixed;
+    bottom: 70px;
+    left: 10px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Navigácia medzi piesňami */
+.nav-buttons {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    background: #1f1f1f;
+    border-top: 1px solid #333;
+}
+
+.nav-buttons button {
+    flex: 1;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    font-size: 16px;
+}
+
+.nav-buttons button:first-child {
+    border-right: 1px solid #333;
+}
+
+/* Špeciálne pre tlačidlo Späť */
+.btn-back {
+    font-size: 18px;
+    background: transparent;
+    border: none;
+    color: #00bfff;
+}
