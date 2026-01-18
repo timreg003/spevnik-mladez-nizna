@@ -22,13 +22,10 @@
 
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
         <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
-        
         <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;">
             <div style="color: #666; text-align: center; padding: 10px;">Žiadne piesne v playliste</div>
         </div>
-
         <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:10px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        
         <div style="display: flex; gap: 10px;">
             <button onclick="savePlaylist()" style="flex: 2; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none; cursor:pointer;">ULOŽIŤ PLAYLIST</button>
             <button onclick="clearSelection()" style="flex: 1; background:#333; color:white; padding:12px; border-radius:8px; border:none; cursor:pointer;">VYMAZAŤ</button>
@@ -46,4 +43,12 @@
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť</button>
       <div class="controls">
         <div class="control-group"><small>Pieseň</small><div class="btn-row"><button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button><button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button></div></div>
-        <div class="control-group"><small>Tónina: <span id="transpose-val">0</span></small><div class="btn-row">
+        <div class="control-group"><small>Tónina: <span id="transpose-val">0</span></small><div class="btn-row"><button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button><button onclick="resetTranspose()"><i class="fas fa-undo"></i></button><button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button></div></div>
+        <div class="control-group"><small>Zobrazenie</small><div class="btn-row"><button onclick="toggleChords()"><i class="fas fa-guitar"></i></button><button onclick="changeFontSize(-1)">A-</button><button onclick="changeFontSize(1)">A+</button></div></div>
+      </div>
+      <div id="song-content"></div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
