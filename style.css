@@ -1,3 +1,15 @@
+/* ✅ Globálne: nech nič v zoznamoch/drag neoznačuje text */
+*{
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea{
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
 body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0e0; padding:15px; }
 .container { max-width:700px; margin:auto; }
 
@@ -13,6 +25,24 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
 
 .main-title { font-size:1.8em; margin:0; }
 #render-title { font-size:1.6em; margin-bottom:5px; }
+
+/* ✅ Toast */
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: #1e1e1e;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  z-index: 999999;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  max-width: 92vw;
+  text-align: center;
+}
 
 .topbar{
   display:flex; align-items:center; justify-content:center;
@@ -104,6 +134,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   border-bottom:1px solid #333;
   color:#fff;
   background:#121212;
+  touch-action: pan-y; /* ✅ aby scroll fungoval normálne */
 }
 .draggable-item:last-child{ border-bottom:none; }
 
@@ -117,7 +148,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   user-select:none;
 }
 
-/* ✅ menšie + tlačidlo */
+/* menšie + tlačidlo */
 .small-plus{
   width:28px; height:28px;
   border:none;
@@ -127,7 +158,6 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   font-weight:900;
   cursor:pointer;
 }
-
 .small-del{
   width:28px; height:28px;
   border:none;
@@ -139,19 +169,6 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
 }
 
 /* bottom buttons rows */
-.btn-row-3{
-  display:flex;
-  gap:10px;
-}
-.btn-row-3 button{
-  flex:1;
-  padding:12px;
-  border-radius:8px;
-  border:none;
-  font-weight:800;
-  cursor:pointer;
-}
-
 .btn-row-2{
   display:flex;
   gap:10px;
@@ -166,7 +183,6 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
 }
 
 .btn-save{ background:#00c853; color:#001b00; }   /* zelená */
-.btn-cancel{ background:#666; color:#fff; }      /* šedá */
 .btn-delete{ background:#ff4444; color:#fff; }   /* červená */
 
 /* SONG DETAIL CONTROLS */
@@ -223,7 +239,6 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
   font-weight:bold;
 }
 
-/* Empty / loading text */
 .dnes-empty{ color:#666; text-align:center; padding:15px; font-size:14px; }
 
 /* Update section */
