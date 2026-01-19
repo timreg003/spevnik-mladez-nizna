@@ -32,6 +32,7 @@ navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
 
 <div style="display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 20px; padding-top: 10px; z-index: 10000;">
 <h1 class="main-title">Mládežnícky spevník NIŽNÁ</h1>
+      <span id="login-text" style="position: absolute; left: 0; font-size: 12px; color: #888; cursor: pointer; padding: 15px;" onclick="toggleLogin()">Prihlásiť</span>
 <i class="fas fa-home" style="position: absolute; right: 0; font-size: 1.5em; color: #00bfff; cursor: pointer; padding: 15px;" onclick="smartReset()"></i>
 </div>
 
@@ -39,89 +40,62 @@ navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
 <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()"/>
 
 <!-- === PIESNE NA DNES === -->
-      <div id="dnes-section-wrapper">
-        <h2 class="playlist-header-title" onclick="openDnesEditor()">Piesne na dnes <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre úpravu)</small></h2>
-        <div id="dnes-section"></div>
-      <div class="section-header" onclick="toggleSection('dnes')">
+<div class="section-header" onclick="toggleSection('dnes')">
         <h2 class="playlist-header-title">Piesne na dnes</h2>
-        <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
+        <h2 class="playlist-header-title" id="dnes-title">Piesne na dnes</h2>
+<i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
 </div>
-
-      <!-- === EDITOR: PIESNE NA DNES === -->
-      <div id="dnes-editor-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
-        <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor – Piesne na dnes</h3>
-        <input type="text" id="dnes-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterDnesSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        <div id="dnes-selected-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-        <div id="dnes-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="saveDnesEditor()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-            <button onclick="clearDnesSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
-            <button onclick="closeDnesEditor()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px;">ZRUŠIŤ EDITOR</button>
-      <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-        <div id="dnes-section"></div>
-        <!-- EDITOR – až pod zoznamom -->
-        <div id="dnes-editor-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
-          <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor – Piesne na dnes</h3>
-          <input type="text" id="dnes-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterDnesSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-          <div id="dnes-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
-          <div id="dnes-selected-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-          <div style="display:flex; gap:10px;">
-              <button onclick="saveDnesEditor()" style="flex:1; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-              <button onclick="closeDnesEditor()" style="flex:1; background:#666; color:white; padding:12px; border-radius:8px; border:none;">ZRUŠIŤ EDITOR</button>
-              <button onclick="clearDnesSelection()" style="flex:1; background:#ff4444; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
-          </div>
+<div id="dnes-section-wrapper" class="section-content" style="display:none;">
+<div id="dnes-section"></div>
+<!-- EDITOR – až pod zoznamom -->
+<div id="dnes-editor-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
+<h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor – Piesne na dnes</h3>
+          <input type="text" id="dnes-name" placeholder="Názov zoznamu (napr. Piatok 16.1.)" maxlength="30" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+<input type="text" id="dnes-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterDnesSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+<div id="dnes-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
+<div id="dnes-selected-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+<div style="display:flex; gap:10px;">
+<button onclick="saveDnesEditor()" style="flex:1; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
+<button onclick="closeDnesEditor()" style="flex:1; background:#666; color:white; padding:12px; border-radius:8px; border:none;">ZRUŠIŤ EDITOR</button>
+<button onclick="clearDnesSelection()" style="flex:1; background:#ff4444; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
+</div>
 </div>
 </div>
 
 <!-- === PLAYLISTY === -->
-      <div id="playlists-wrapper">
-        <h2 class="playlist-header-title" onclick="tryUnlockAdmin()">Playlisty <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre správu)</small></h2>
-        <div id="playlists-section"></div>
-        <div id="playlists-empty" class="dnes-empty" style="display:none;">Žiadne vytvorené playlisty.</div>
-      <div class="section-header" onclick="toggleSection('playlists')">
-        <h2 class="playlist-header-title">Playlisty</h2>
-        <i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
+<div class="section-header" onclick="toggleSection('playlists')">
+<h2 class="playlist-header-title">Playlisty</h2>
+<i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
 </div>
-
-      <!-- === EDITOR: PLAYLISTY === -->
-      <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
-        <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
-        <input type="text" id="playlist-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterPlaylistSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-        <div id="playlist-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
-        <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="savePlaylist()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-            <button onclick="clearSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
-            <button onclick="logoutAdmin()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px;">ZRUŠIŤ EDITOR</button>
-      <div id="playlists-wrapper" class="section-content" style="display:none;">
-        <div id="playlists-section"></div>
-        <!-- EDITOR – až pod zoznamom playlistov -->
-        <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
-          <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
-          <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-          <input type="text" id="playlist-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterPlaylistSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-          <div id="playlist-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
-          <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-          <div style="display:flex; gap:10px;">
-              <button onclick="savePlaylist()" style="flex:1; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-              <button onclick="logoutAdmin()" style="flex:1; background:#666; color:white; padding:12px; border-radius:8px; border:none;">ZRUŠIŤ EDITOR</button>
-              <button onclick="clearSelection()" style="flex:1; background:#ff4444; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
-          </div>
+<div id="playlists-wrapper" class="section-content" style="display:none;">
+<div id="playlists-section"></div>
+<!-- EDITOR – až pod zoznamom playlistov -->
+<div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
+<h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
+<input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+<input type="text" id="playlist-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterPlaylistSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+<div id="playlist-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
+<div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+<div style="display:flex; gap:10px;">
+<button onclick="savePlaylist()" style="flex:1; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
+<button onclick="logoutAdmin()" style="flex:1; background:#666; color:white; padding:12px; border-radius:8px; border:none;">ZRUŠIŤ EDITOR</button>
+<button onclick="clearSelection()" style="flex:1; background:#ff4444; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
+</div>
 </div>
 </div>
 
-      <div id="piesne-list" style="text-align:center; padding:20px; color: #888;">Načítavam...</div>
-
-      <div style="padding: 20px 10px; text-align: center;">
-        <button onclick="hardResetApp()" style="background: transparent; color: #555; border: 1px solid #333; padding: 8px 15px; border-radius: 8px; font-size: 11px;">VYNÚTIŤ AKTUALIZÁCIU A VYMAZAŤ PAMÄŤ</button>
-      <!-- === ZOZNAM PIESNÍ === -->
-      <div class="section-header" onclick="toggleSection('all')">
-        <h2 class="playlist-header-title">ZOZNAM PIESNÍ</h2>
-        <i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
+<!-- === ZOZNAM PIESNÍ === -->
+<div class="section-header" onclick="toggleSection('all')">
+<h2 class="playlist-header-title">ZOZNAM PIESNÍ</h2>
+<i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
 </div>
-      <div id="all-section-wrapper" class="section-content" style="display:none;">
-        <div id="piesne-list"></div>
+<div id="all-section-wrapper" class="section-content" style="display:none;">
+<div id="piesne-list"></div>
+</div>
+
+      <!-- TLAČIDLO AKTUALIZÁCIA – na konci, centrované, modré -->
+      <div style="text-align:center; margin-top: 40px;">
+        <button onclick="hardResetApp()" style="background:#00bfff; color:black; font-weight:bold; padding:12px 24px; border-radius:8px; border:none; cursor:pointer;">AKTUALIZOVAŤ APLIKÁCIU</button>
       </div>
 
 </div>
@@ -167,11 +141,13 @@ navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
 <div id="song-content"></div>
 
 <div id="error-report-container" style="margin: 40px 0 60px 0; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
-<p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel/la si chybu? Napíš, opravím :)</p>
+        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel/la si chybu? Napíš, opravím :)</p>
+        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel/la si chybu? Napíš, opravím :)</p>
 <form id="error-form" onsubmit="submitErrorForm(event)">
 <input type="hidden" name="_subject" value="Chyba v piesni">
 <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
-<textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
+          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
+          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
 <button type="submit" id="submit-btn" style="width:100%; background:#00bfff; color:black; font-weight:bold; border-radius:8px; padding:12px; border:none;">ODOSLAŤ</button>
 </form>
 <p id="form-status" style="display:none; text-align:center; margin-top:10px; font-size:14px; color:#00ff00;">Chyba bola odoslaná!</p>
