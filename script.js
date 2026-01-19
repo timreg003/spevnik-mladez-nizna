@@ -2,7 +2,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDF
 
 let songs = [], filteredSongs = [], currentSong = null;
 let currentModeList = []; 
-let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [], adminPassword = "";
+let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [];
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 let autoscrollInterval = null;
 let currentLevel = 1;
@@ -24,7 +24,7 @@ function smartReset() {
 }
 
 function logoutAdmin() {
-    isAdmin = false; adminPassword = "";
+    isAdmin = false;
     document.getElementById('admin-panel').style.display = 'none';
     selectedSongIds = []; renderAllSongs(); loadPlaylistHeaders();
 }
@@ -38,14 +38,12 @@ async function parseXML() {
     } catch (e) {
         const saved = localStorage.getItem('offline_spevnik');
         if (saved) processXML(saved);
-        else document.getElementById('piesne-list').innerText = "Chyba spojenia.";
     }
 }
 
 function processXML(xmlText) {
     const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
     const nodes = xml.getElementsByTagName('song');
-    if (!nodes.length) return;
     songs = [...nodes].map(s => {
         const text = s.getElementsByTagName('songtext')[0]?.textContent.trim() || "";
         const rawId = s.getElementsByTagName('author')[0]?.textContent.trim() || "";
@@ -55,15 +53,18 @@ function processXML(xmlText) {
         return { id: s.getElementsByTagName('ID')[0]?.textContent.trim(), title: s.getElementsByTagName('title')[0]?.textContent.trim(), originalId: rawId, displayId: displayId, origText: text };
     });
 
+    // SPRÁVNE TRIEDENIE: Čísla -> Mariánske -> Ostatné
     songs.sort((a, b) => {
-        const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
+        const idA = a.originalId.toUpperCase();
+        const idB = b.originalId.toUpperCase();
         const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
         const isMarA = idA.startsWith('M'), isMarB = idB.startsWith('M');
+
         if (isNumA && !isNumB) return -1;
-        if (!isNumA && idB) return 1;
+        if (!isNumA && isNumB) return 1;
         if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
         if (isMarA && !isMarB) return -1;
-        if (isMarB && !isMarA) return 1;
+        if (!isMarA && isMarB) return 1;
         if (isMarA && isMarB) return (parseInt(idA.substring(1)) || 0) - (parseInt(idB.substring(1)) || 0);
         return a.title.localeCompare(b.title, 'sk');
     });
@@ -89,6 +90,7 @@ function openSongById(id, source) {
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
     document.getElementById('render-title').innerText = s.displayId + '. ' + s.title;
+    document.getElementById('form-subject').value = "Chyba v piesni: " + s.displayId + ". " + s.title;
     const firstChordMatch = s.origText.match(/\[(.*?)\]/);
     document.getElementById('original-key-label').innerText = "Pôvodná tónina: " + (firstChordMatch ? firstChordMatch[1] : "-");
     renderSong(); window.scrollTo(0,0);
@@ -215,9 +217,9 @@ async function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert('Zadaj názov');
     const idsToSave = selectedSongIds.join(',');
-    logoutAdmin();
     const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=qwer&content=${idsToSave}`;
-    try { await fetch(url, { mode: 'no-cors' }); alert('Uložené.'); setTimeout(() => { loadPlaylistHeaders(); }, 500); } catch (e) { alert('Chyba.'); }
+    logoutAdmin();
+    try { await fetch(url, { mode: 'no-cors' }); setTimeout(() => { loadPlaylistHeaders(); }, 500); } catch (e) {}
 }
 
 async function cacheAllPlaylists(playlistData) {
