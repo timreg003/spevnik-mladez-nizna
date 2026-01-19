@@ -7,7 +7,7 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
 // Autoscroll nastavenia
 let autoscrollInterval = null;
-let scrollDelay = 80; 
+let currentLevel = 1; // Začíname na rýchlosti 1
 
 function smartReset() {
     stopAutoscroll();
@@ -132,7 +132,12 @@ function openSongById(id, source) {
     if (source === 'all') currentModeList = [...songs];
     currentSong = JSON.parse(JSON.stringify(s));
     transposeStep = 0;
+    
+    // Reset rýchlosti na 1 pri každom otvorení novej piesne
+    currentLevel = 1; 
+    updateSpeedUI();
     stopAutoscroll();
+
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
     const titleStr = s.displayId + '. ' + s.title;
@@ -155,12 +160,7 @@ function navigateSong(d) {
     const idx = currentModeList.findIndex(s => s.id === currentSong.id);
     const n = currentModeList[idx + d]; 
     if (n) {
-        currentSong = JSON.parse(JSON.stringify(n));
-        transposeStep = 0;
-        const titleStr = n.displayId + '. ' + n.title;
-        document.getElementById('render-title').innerText = titleStr;
-        document.getElementById('form-subject').value = "Chyba v piesni: " + titleStr;
-        renderSong(); window.scrollTo(0,0);
+        openSongById(n.id, 'playlist');
     }
 }
 
@@ -177,10 +177,15 @@ function toggleAutoscroll() {
 
 function startScrolling() {
     if (autoscrollInterval) clearInterval(autoscrollInterval);
+    
+    // Logika: Úroveň 1 = najpomalšia (delay 250ms), Úroveň 20 = najrýchlejšia (delay 10ms)
+    let delay = 260 - (currentLevel * 12); 
+    if (delay < 5) delay = 5;
+
     autoscrollInterval = setInterval(() => {
         window.scrollBy(0, 1);
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) stopAutoscroll();
-    }, scrollDelay);
+    }, delay);
 }
 
 function stopAutoscroll() {
@@ -190,12 +195,17 @@ function stopAutoscroll() {
 }
 
 function changeScrollSpeed(delta) {
-    scrollDelay += delta;
-    if (scrollDelay < 10) scrollDelay = 10;
-    if (scrollDelay > 300) scrollDelay = 300;
-    const level = Math.round((310 - scrollDelay) / 10);
-    document.getElementById('speed-label').innerText = "Rýchlosť: " + level;
-    if (autoscrollInterval) startScrolling();
+    currentLevel += delta;
+    if (currentLevel < 1) currentLevel = 1;
+    if (currentLevel > 20) currentLevel = 20;
+    
+    updateSpeedUI();
+    if (autoscrollInterval) startScrolling(); // Reštartuje interval s novým delayom
+}
+
+function updateSpeedUI() {
+    const label = document.getElementById('speed-label');
+    if(label) label.innerText = "Rýchlosť: " + currentLevel;
 }
 
 function transposeChord(c, s) {
