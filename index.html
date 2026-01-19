@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
 
-  <link rel="manifest" href="manifest.json?v=2">
+  <link rel="manifest" href="manifest.json?v=3">
   <meta name="theme-color" content="#00bfff">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=2">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=2">
+  <link rel="apple-touch-icon" href="icon.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=3">
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=2"/>
+  <link rel="stylesheet" href="style.css?v=3"/>
 
   <style>
     * {
@@ -65,13 +65,23 @@
     <div id="song-list">
       <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()"/>
 
-      <!-- === PIESNE NA DNES === -->
       <div id="dnes-section-wrapper" style="border-top: 1px solid #333; margin-top: 20px; text-align:center;">
-        <h2 class="playlist-header-title" style="cursor:pointer;width:100%;display:inline-block;" onclick="openDnesEditor()">Piesne na dnes <small style="font-size:10px;opacity:0.5;">(klikni pre úpravu)</small></h2>
+        <h2 class="playlist-header-title" style="cursor:pointer;width:100%;" onclick="openDnesEditor()">Piesne na dnes <small style="font-size:10px;opacity:0.5;">(klikni pre úpravu)</small></h2>
         <div id="dnes-section"></div>
       </div>
 
-      <!-- === PLAYLISTY === -->
+      <div id="dnes-editor-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
+          <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Upraviť piesne na dnes</h3>
+          <input type="text" id="dnes-search" placeholder="Hľadať pieseň..." autocomplete="off" oninput="filterDnesSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+          <div id="dnes-selected-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+          <div id="dnes-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button onclick="saveDnesEditor()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ ZMENY</button>
+              <button onclick="clearDnesSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
+              <button onclick="closeDnesEditor()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ</button>
+          </div>
+      </div>
+
       <div id="playlists-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
         <h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer;padding:10px 0;text-align:center;width:100%;display:block;">Playlisty <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre správu)</small></h2>
         <div id="playlists-section"></div>
@@ -150,6 +160,6 @@
       </div>
     </div>
   </div>
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
