@@ -5,24 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
 
-  <link rel="manifest" href="manifest.json?v=7">
+  <link rel="manifest" href="manifest.json?v=8">
   <meta name="theme-color" content="#00bfff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=7">
+  <link rel="apple-touch-icon" href="icon.png?v=8">
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=7"/>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
-      });
-    }
-  </script>
+  <link rel="stylesheet" href="style.css?v=8"/>
 </head>
 
 <body>
@@ -51,26 +43,20 @@
   <div id="song-list">
     <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()"/>
 
-    <!-- ===== PIESNE NA DNES ===== -->
+    <!-- PIESNE NA DNES -->
     <div class="section-header" onclick="toggleSection('dnes')">
       <h2 class="playlist-header-title" id="dnes-title">PIESNE NA DNES</h2>
       <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
     </div>
-
     <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-      <div id="dnes-section" class="list-box">
-        <div class="dnes-empty">Načítavam...</div>
-      </div>
+      <div id="dnes-section" class="list-box"><div class="dnes-empty">Načítavam...</div></div>
 
       <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
         <h3 class="editor-title">Editor – Piesne na dnes</h3>
-
         <input type="text" id="dnes-name" placeholder="Názov zoznamu (napr. Piatok 16.1.)" maxlength="40"/>
         <input type="text" id="dnes-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterDnesSearch()"/>
-
         <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
         <div id="dnes-available-list" class="editor-list"></div>
-
         <div class="editor-subtitle">Vytvorený zoznam (ťahaj pre poradie)</div>
         <div id="dnes-selected-editor" class="editor-list"></div>
 
@@ -81,26 +67,20 @@
       </div>
     </div>
 
-    <!-- ===== PLAYLISTY ===== -->
+    <!-- PLAYLISTY -->
     <div class="section-header" onclick="toggleSection('playlists')">
       <h2 class="playlist-header-title">PLAYLISTY</h2>
       <i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
     </div>
-
     <div id="playlists-section-wrapper" class="section-content" style="display:none;">
-      <div id="playlists-section" class="list-box">
-        <div class="dnes-empty">Načítavam...</div>
-      </div>
+      <div id="playlists-section" class="list-box"><div class="dnes-empty">Načítavam...</div></div>
 
       <div id="admin-panel" class="editor-panel" style="display:none;">
         <h3 class="editor-title">Editor playlistu</h3>
-
         <input type="text" id="playlist-name" placeholder="Názov playlistu"/>
         <input type="text" id="playlist-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterPlaylistSearch()"/>
-
         <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
         <div id="playlist-available-list" class="editor-list"></div>
-
         <div class="editor-subtitle">Vytvorený playlist (ťahaj pre poradie)</div>
         <div id="selected-list-editor" class="editor-list"></div>
 
@@ -111,33 +91,29 @@
       </div>
     </div>
 
-    <!-- ===== ZOZNAM PIESNÍ ===== -->
+    <!-- ZOZNAM PIESNÍ -->
     <div class="section-header" onclick="toggleSection('all')">
       <h2 class="playlist-header-title">ZOZNAM PIESNÍ</h2>
       <i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
     </div>
-
     <div id="all-section-wrapper" class="section-content" style="display:none;">
-      <div id="piesne-list" class="list-box">
-        <div class="dnes-empty">Načítavam...</div>
-      </div>
+      <div id="piesne-list" class="list-box"><div class="dnes-empty">Načítavam...</div></div>
     </div>
 
-    <!-- ===== AKTUALIZOVAŤ APLIKÁCIU ===== -->
-    <div class="section-header" onclick="toggleSection('update')">
+    <!-- AKTUALIZOVAŤ APLIKÁCIU -->
+    <div class="section-header" onclick="toggleUpdateSection()">
       <h2 class="playlist-header-title">AKTUALIZOVAŤ APLIKÁCIU</h2>
       <i class="fas fa-chevron-down section-chevron" id="update-chevron"></i>
     </div>
-
     <div id="update-section-wrapper" class="section-content" style="display:none;">
       <div class="update-box">
-        <button class="btn-update" onclick="hardResetApp()">AKTUALIZOVAŤ APLIKÁCIU</button>
+        <button id="btn-update-app" class="btn-update" onclick="hardResetApp()">AKTUALIZOVAŤ APLIKÁCIU</button>
       </div>
     </div>
 
   </div>
 
-  <!-- SONG DETAIL VIEW -->
+  <!-- DETAIL -->
   <div id="song-detail" style="display:none;">
     <h2 id="render-title"></h2>
     <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
@@ -183,26 +159,21 @@
 
     <div id="song-content"></div>
 
-    <!-- ERROR REPORT -->
     <div id="error-report-container">
       <p class="error-title">Našiel/la si chybu? Napíš, opravím :)</p>
-
       <form id="error-form" onsubmit="submitErrorForm(event)">
         <input type="hidden" name="_subject" id="error-subject" value="Chyba v piesni">
         <input type="hidden" name="piesen" id="error-song-hidden" value="">
-
         <input type="text" name="meno" placeholder="Tvoje meno" required>
         <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required></textarea>
-
         <button type="submit" id="submit-btn">ODOSLAŤ</button>
       </form>
-
       <p id="form-status" style="display:none;">Chyba bola odoslaná!</p>
     </div>
   </div>
 
 </div>
 
-<script src="script.js?v=7"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>
