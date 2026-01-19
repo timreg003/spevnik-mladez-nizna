@@ -36,8 +36,8 @@
 
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
         <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
-        <div id="selected-list-editor" style="margin-bottom:15px; max-height: 300px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-        <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; outline: none;">
+        <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
+        <input type="text" id="playlist-name" placeholder="Názov nového playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box; outline: none;">
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button onclick="savePlaylist()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
             <button onclick="clearSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">ZMAZAŤ</button>
@@ -70,9 +70,9 @@
         
         <div class="control-group"><small>Auto-posun</small>
             <div class="btn-row">
-                <button onclick="changeScrollSpeed(-10)"><i class="fas fa-rabbit-running"></i><i class="fas fa-bolt"></i></button>
+                <button onclick="changeScrollSpeed(10)"><i class="fas fa-minus"></i></button>
                 <button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
-                <button onclick="changeScrollSpeed(10)"><i class="fas fa-turtle"></i></button>
+                <button onclick="changeScrollSpeed(-10)"><i class="fas fa-plus"></i></button>
             </div>
             <span id="speed-label" style="font-size: 10px; color: #888; margin-top: 2px;">Rýchlosť: 5</span>
         </div>
@@ -84,13 +84,12 @@
         <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel si chybu? Napíš, opravím :)</p>
         <form id="error-form" onsubmit="submitErrorForm(event)">
           <input type="hidden" name="_subject" id="form-subject" value="Chyba v piesni">
-          <input type="text" id="form-name" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
-          <textarea id="form-msg" name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
+          <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
+          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
           <button type="submit" id="submit-btn" style="width:100%; background:#00bfff; color:black; font-weight:bold; margin-top:10px; border-radius:8px; padding:12px; border:none; cursor:pointer;">ODOSLAŤ</button>
         </form>
         <p id="form-status" style="display:none; text-align:center; margin-top:10px; font-size:14px; color:#00ff00;"></p>
       </div>
-
     </div>
   </div>
   <script src="script.js"></script>
