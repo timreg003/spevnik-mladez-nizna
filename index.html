@@ -4,16 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
-
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon.png">
-
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
-
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -83,7 +80,6 @@
                 <button onclick="changeFontSize(1)">A+</button>
             </div>
         </div>
-        
         <div class="control-group">
             <small>Auto-posun</small>
             <div class="btn-row">
@@ -105,7 +101,7 @@
           <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
           <button type="submit" id="submit-btn" style="width:100%; background:#00bfff; color:black; font-weight:bold; margin-top:10px; border-radius:8px; padding:12px; border:none; cursor:pointer;">ODOSLAŤ</button>
         </form>
-        <p id="form-status" style="display:none; text-align:center; margin-top:10px; font-size:14px; color:#00ff00;"></p>
+        <p id="form-status" style="display:none; text-align:center; margin-top:10px; font-size:14px; color:#00ff00;">Chyba bola odoslaná, ďakujeme!</p>
       </div>
     </div>
   </div>
