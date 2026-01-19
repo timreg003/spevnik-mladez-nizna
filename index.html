@@ -4,121 +4,63 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
-  
   <link rel="manifest" href="manifest.json?v=2">
   <meta name="theme-color" content="#00bfff">
-
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=2">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=2">
-
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css?v=2"/>
-
   <style>
-    /* Globálne zrušenie zoomovania pri rýchlom klikaní na iPhone */
-    button, .chord, .back-btn, i, span, .playlist-header-title {
-      touch-action: manipulation !important;
-    }
+    button, .chord, .back-btn, i, span, .playlist-header-title { touch-action: manipulation !important; }
   </style>
 </head>
 <body>
-
   <div class="container">
-    
     <div id="song-list">
       <h1 class="main-title" onclick="smartReset()" style="cursor:pointer">Mládežnícky spevník NIŽNÁ</h1>
-      
       <div style="margin-top: 20px;">
         <input type="text" id="search" placeholder="Hľadaj pieseň alebo číslo..." oninput="filterSongs()">
       </div>
-
       <div id="today-playlist-container" style="margin-top: 15px;"></div>
-
       <div id="admin-panel" style="display:none; margin-top:20px; padding:15px; background:#1a1a1a; border-radius:12px; border: 2px solid #00bfff;">
         <h3 style="margin-top:0; color:#00bfff;">Editor playlistu</h3>
-        <input type="text" id="playlist-name" placeholder="Názov playlistu (napr. Nedeľa 10:30)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing:border-box; margin-bottom:10px;">
-        
-        <div id="selected-list-editor" style="margin-bottom:10px; max-height: 200px; overflow-y: auto;">
-          </div>
-
+        <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing:border-box; margin-bottom:10px;">
+        <div id="selected-list-editor" style="margin-bottom:10px; max-height: 200px; overflow-y: auto;"></div>
         <div style="display:flex; gap:10px;">
           <button onclick="savePlaylist()" style="flex:1; background:#00bfff; color:black; font-weight:bold; border-radius:8px;">ULOŽIŤ</button>
-          <button onclick="clearSelection()" style="flex:1; background:#333; color:white; border-radius:8px;">VYMAZAŤ VÝBER</button>
+          <button onclick="clearSelection()" style="flex:1; background:#333; color:white; border-radius:8px;">VYMAZAŤ</button>
           <button onclick="logoutAdmin()" style="background:#ff4444; color:white; border-radius:8px;">X</button>
         </div>
       </div>
-
-      <div id="piesne-list" style="margin-top: 20px;">
-        <div style="text-align:center; padding:50px; color:#666;">Načítavam piesne...</div>
-      </div>
-
-      <div id="playlists-section" style="margin-top: 30px; margin-bottom: 50px;">
-        </div>
-      
+      <div id="piesne-list" style="margin-top: 20px;"></div>
+      <div id="playlists-section" style="margin-top: 30px; margin-bottom: 50px;"></div>
       <div style="text-align: center; margin-bottom: 40px;">
          <button onclick="hardResetApp()" style="background: none; color: #444; font-size: 11px; border: none; text-decoration: underline;">Vynútiť aktualizáciu aplikácie</button>
       </div>
     </div>
-
     <div id="song-detail" style="display:none;">
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-chevron-left"></i> SPÄŤ NA ZOZNAM</button>
-      
       <h2 id="render-title"></h2>
       <p id="original-key-label" style="text-align:center; font-size: 12px; color: #666; margin-bottom: 15px;"></p>
-
       <div class="controls">
-        <div class="control-group">
-          <span>Transpozícia</span>
-          <div class="btn-row">
-            <button onclick="transposeSong(-1)">-</button>
-            <button id="transpose-val" onclick="resetTranspose()" style="min-width:40px; font-weight:bold; color:#00bfff;">0</button>
-            <button onclick="transposeSong(1)">+</button>
-          </div>
-        </div>
-        <div class="control-group">
-          <span>Písmo</span>
-          <div class="btn-row">
-            <button onclick="changeFontSize(-1)">-</button>
-            <button onclick="changeFontSize(1)">+</button>
-          </div>
-        </div>
-        <div class="control-group">
-          <span>Akordy</span>
-          <button onclick="toggleChords()" id="chord-toggle-btn" style="border-radius:8px;"><i class="fas fa-guitar"></i></button>
-        </div>
-        <div class="control-group">
-          <span>Posun</span>
-          <div class="btn-row" style="align-items: center;">
-             <button onclick="changeScrollSpeed(-1)">-</button>
-             <button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
-             <button onclick="changeScrollSpeed(1)">+</button>
-          </div>
-          <span id="speed-label" style="font-size: 10px; color: #888; margin-top: 4px; font-weight: bold;">Rýchlosť: 1</span>
-        </div>
+        <div class="control-group"><span>Transpozícia</span><div class="btn-row"><button onclick="transposeSong(-1)">-</button><button id="transpose-val" onclick="resetTranspose()">0</button><button onclick="transposeSong(1)">+</button></div></div>
+        <div class="control-group"><span>Písmo</span><div class="btn-row"><button onclick="changeFontSize(-1)">-</button><button onclick="changeFontSize(1)">+</button></div></div>
+        <div class="control-group"><span>Akordy</span><button onclick="toggleChords()" id="chord-toggle-btn"><i class="fas fa-guitar"></i></button></div>
+        <div class="control-group"><span>Posun</span><div class="btn-row"><button onclick="changeScrollSpeed(-1)">-</button><button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button><button onclick="changeScrollSpeed(1)">+</button></div><span id="speed-label" style="font-size: 10px; color: #888;">Rýchlosť: 1</span></div>
       </div>
       <div id="song-content"></div>
-
       <div id="error-report-container" style="margin: 40px 0 60px 0; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
-        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel si chybu? Napíš, opravím :)</p>
         <form id="error-form" onsubmit="submitErrorForm(event)">
-          <input type="hidden" name="_subject" id="form-subject" value="Chyba v piesni">
-          <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
-          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
-          <button type="submit" id="submit-btn" style="width:100%; padding:12px; background:#00bfff; color:black; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">ODOSLAŤ</button>
+          <input type="text" name="meno" placeholder="Meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; background:#222; color:white;">
+          <textarea name="chyba" placeholder="Chyba..." required style="width:100%; padding:10px; height:80px; border-radius:8px; background:#222; color:white;"></textarea>
+          <button type="submit" id="submit-btn" style="width:100%; padding:12px; background:#00bfff; color:black; border-radius:8px; font-weight:bold;">ODOSLAŤ</button>
         </form>
-        <div id="form-status" style="display:none; color:#00ff00; text-align:center; margin-top:10px; font-weight:bold;">Správa bola odoslaná! Ďakujem.</div>
+        <div id="form-status" style="display:none; color:#00ff00; text-align:center; margin-top:10px;">Odoslané!</div>
       </div>
     </div>
   </div>
-
-  <div id="scroll-to-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; background:#00bfff; color:black; width:45px; height:45px; border-radius:50%; justify-content:center; align-items:center; z-index:1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-    <i class="fas fa-chevron-up"></i>
-  </div>
-
+  <div id="scroll-to-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; background:#00bfff; color:black; width:45px; height:45px; border-radius:50%; justify-content:center; align-items:center;"><i class="fas fa-chevron-up"></i></div>
   <script src="script.js?v=2"></script>
 </body>
 </html>
