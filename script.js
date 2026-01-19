@@ -14,7 +14,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 function smartReset() {
-    stopAutoscroll(); logoutAdmin();
+    stopAutoscroll(); logoutAdmin(); closeDnesEditor();
     document.getElementById('song-detail').style.display = 'none';
     document.getElementById('song-list').style.display = 'block';
     document.getElementById('search').value = "";
@@ -173,7 +173,7 @@ function tryUnlockAdmin() {
         document.getElementById('admin-panel').style.display = 'block';
         selectedSongIds = [];
         document.getElementById('playlist-name').value = "";
-        renderEditor();
+        renderEditor(); filterPlaylistSearch();
         renderAllSongs(); loadPlaylistHeaders();
     }
 }
@@ -203,13 +203,26 @@ function renderEditor() {
     }).join('');
 }
 
+function filterPlaylistSearch() {
+    const t = document.getElementById('playlist-search').value.toLowerCase();
+    const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+    const box = document.getElementById('selected-list-editor');
+    if (!isAdmin) return;
+    const addList = document.getElementById('playlist-available-list');
+    addList.innerHTML = filt.map(s => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #333;color:#fff;">
+            <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
+            <button onclick="addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:26px; height:26px; border:none;">+</button>
+        </div>`).join('');
+}
+
 function editPlaylist(name) {
     const cached = localStorage.getItem('playlist_' + name);
     if (!cached) return;
     selectedSongIds = cached.split(',').filter(x => x);
     document.getElementById('playlist-name').value = name;
     document.getElementById('admin-panel').style.display = 'block';
-    renderEditor(); window.scrollTo(0,0);
+    renderEditor(); filterPlaylistSearch(); window.scrollTo(0,0);
 }
 
 async function savePlaylist() {
@@ -263,13 +276,13 @@ function processOpenPlaylist(name, t) {
 }
 
 /* ============================================================
-   === PLAYLISTY NA DNES – NOVÉ FUNKCIE
+   === PIESNE NA DNES – NOVÝ EDITOR
    ============================================================ */
 function getDnesIds() {
-    return (localStorage.getItem('playlist_dnes') || '').split(',').filter(x => x);
+    return (localStorage.getItem('piesne_dnes') || '').split(',').filter(x => x);
 }
 function setDnesIds(arr) {
-    localStorage.setItem('playlist_dnes', arr.join(','));
+    localStorage.setItem('piesne_dnes', arr.join(','));
     renderDnesSection();
 }
 
@@ -277,7 +290,7 @@ function renderDnesSection() {
     const box = document.getElementById('dnes-section');
     const ids = getDnesIds();
     if (!ids.length) {
-        box.innerHTML = '<div class="dnes-empty">Žiadne vytvorené playlisty.</div>';
+        box.innerHTML = '<div class="dnes-empty">Žiadne piesne.</div>';
         return;
     }
     const items = ids.map((id, idx) => {
@@ -305,19 +318,68 @@ function removeDnes(idx) {
     const arr = getDnesIds(); arr.splice(idx, 1); setDnesIds(arr);
 }
 
-function toggleStar(playlistName) {
-    const arr = getDnesIds();
-    const cached = localStorage.getItem('playlist_' + playlistName);
-    if (!cached) return;
-    const ids = cached.split(',').filter(x => x);
-    const overlap = ids.filter(id => arr.includes(id));
-    let newArr;
-    if (overlap.length) {
-        newArr = arr.filter(id => !ids.includes(id));
-    } else {
-        newArr = [...arr, ...ids];
-    }
-    setDnesIds(newArr);
+function openDnesEditor() {
+    const p = prompt('Zadaj heslo:');
+    if (p !== 'qwer') return;
+    document.getElementById('dnes-editor-panel').style.display = 'block';
+    dnesSelectedIds = [...getDnesIds()];
+    renderDnesEditor();
+    filterDnesSearch();
+    window.scrollTo(0,0);
+}
+
+function closeDnesEditor() {
+    document.getElementById('dnes-editor-panel').style.display = 'none';
+}
+
+let dnesSelectedIds = [];
+
+function renderDnesEditor() {
+    const box = document.getElementById('dnes-selected-editor');
+    if (!dnesSelectedIds.length) { box.innerHTML = '<div style="color:#666;text-align:center;padding:10px;">Prázdny</div>'; return; }
+    box.innerHTML = dnesSelectedIds.map((id, idx) => {
+        const s = songs.find(x => x.id === id);
+        return `<div style="display:flex;align-items:center;background:#1e1e1e;margin-bottom:4px;padding:8px;border-radius:8px;gap:8px;border:1px solid #333;">
+            <span style="flex-grow:1;font-size:13px;color:white;">${s ? s.title : id}</span>
+            <div style="display:flex;gap:4px;">
+                <button onclick="moveDnesEdit(${idx},-1)" style="padding:5px;background:#333;"><i class="fas fa-chevron-up"></i></button>
+                <button onclick="moveDnesEdit(${idx},1)" style="padding:5px;background:#333;"><i class="fas fa-chevron-down"></i></button>
+                <button onclick="removeDnesEdit(${idx})" style="padding:5px;background:#ff4444;"><i class="fas fa-times"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function moveDnesEdit(idx, d) {
+    const n = idx + d; if (n < 0 || n >= dnesSelectedIds.length) return;
+    [dnesSelectedIds[idx], dnesSelectedIds[n]] = [dnesSelectedIds[n], dnesSelectedIds[idx]];
+    renderDnesEditor();
+}
+function removeDnesEdit(idx) {
+    dnesSelectedIds.splice(idx, 1); renderDnesEditor();
+}
+function clearDnesSelection() {
+    dnesSelectedIds = []; renderDnesEditor();
+}
+function saveDnesEditor() {
+    setDnesIds([...dnesSelectedIds]);
+    closeDnesEditor();
+}
+
+function filterDnesSearch() {
+    const t = document.getElementById('dnes-search').value.toLowerCase();
+    const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+    const box = document.getElementById('dnes-available-list');
+    box.innerHTML = filt.map(s => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #333;color:#fff;">
+            <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
+            <button onclick="addToDnesSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:26px; height:26px; border:none;">+</button>
+        </div>`).join('');
+}
+
+function addToDnesSelection(id) {
+    if (!dnesSelectedIds.includes(id)) dnesSelectedIds.push(id);
+    renderDnesEditor();
 }
 
 function movePlaylistInList(name, d) {
@@ -340,7 +402,6 @@ function renderPlaylists(d) {
     empty.style.display = 'none';
     let html = '';
     d.forEach((p, idx) => {
-        const starVisible = isAdmin ? `<button class="star-btn ${getDnesIds().filter(id => (localStorage.getItem('playlist_' + p.name) || '').split(',').includes(id)).length ? 'active' : ''}" onclick="event.stopPropagation(); toggleStar('${p.name}')" title="Pridať / odobrať z 'Playlisty na dnes'"><i class="fas fa-star"></i></button>` : '';
         const moveBtns = isAdmin ? `<div style="display:flex;gap:4px;">
             <button onclick="event.stopPropagation(); movePlaylistInList('${p.name}', -1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-up"></i></button>
             <button onclick="event.stopPropagation(); movePlaylistInList('${p.name}', 1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-down"></i></button>
@@ -348,7 +409,6 @@ function renderPlaylists(d) {
         html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #333;">
             <span style="cursor:pointer;flex-grow:1;display:flex;align-items:center;color:#fff;" onclick="openPlaylist('${p.name}')"><i class="fas fa-music" style="color:#00bfff;width:25px;margin-right:12px;"></i>${p.name}</span>
             <div style="display:flex;gap:12px;align-items:center;">
-                ${starVisible}
                 ${moveBtns}
                 ${isAdmin ? `<i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;padding:10px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;padding:10px;"></i>` : ''}
             </div>
