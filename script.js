@@ -6,7 +6,7 @@ let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, sel
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 let autoscrollInterval = null;
 let currentLevel = 1;
-let currentListSource = 'all';   // 'all' | 'playlist' | 'dnes'
+let currentListSource = 'all';
 
 window.addEventListener('scroll', () => {
     const btn = document.getElementById("scroll-to-top");
@@ -87,7 +87,7 @@ function openSongById(id, source) {
     if (!s) return;
     if (source === 'dnes') currentModeList = dnesList();
     else if (source === 'all') currentModeList = [...songs];
-    else if (source === 'playlist') currentModeList = [...songs];
+    else if (source === 'playlist') currentModeList = currentModeList; // držíme aktuálny playlist
     currentSong = JSON.parse(JSON.stringify(s));
     transposeStep = 0; document.getElementById('transpose-val').innerText = "0";
     currentLevel = 1; updateSpeedUI(); stopAutoscroll();
@@ -287,13 +287,29 @@ function processOpenPlaylist(name, t) {
 }
 
 /* ============================================================
-   === PIESNE NA DNES – NOVÝ EDITOR
+   === PIESNE NA DNES – S ULOŽENÍM NA DISK
    ============================================================ */
 function getDnesIds() {
     return (localStorage.getItem('piesne_dnes') || '').split(',').filter(x => x);
 }
 function setDnesIds(arr) {
     localStorage.setItem('piesne_dnes', arr.join(','));
+    renderDnesSection();
+}
+
+// Uloženie / Načítanie z Google Disku
+async function saveDnesToDrive() {
+    const ids = getDnesIds().join(',');
+    const url = `${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=qwer&content=${encodeURIComponent(ids)}`;
+    await fetch(url, { mode: 'no-cors' });
+}
+
+async function loadDnesFromDrive() {
+    try {
+        const r = await fetch(`${SCRIPT_URL}?action=get&name=PiesneNaDnes`);
+        const t = await r.text();
+        if (t) localStorage.setItem('piesne_dnes', t);
+    } catch(e) {}
     renderDnesSection();
 }
 
@@ -369,6 +385,7 @@ function clearDnesSelection() {
 }
 function saveDnesEditor() {
     setDnesIds([...dnesSelectedIds]);
+    saveDnesToDrive(); // <-- ULOŽENIE NA DISK
     closeDnesEditor();
 }
 
@@ -461,4 +478,7 @@ async function hardResetApp() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', parseXML);
+document.addEventListener('DOMContentLoaded', () => {
+    parseXML();
+    loadDnesFromDrive(); // <-- NAČÍTANIE Z DISKU PRI STARTE
+});
