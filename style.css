@@ -14,8 +14,6 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: 
     -webkit-text-fill-color: transparent;
     display: block;
     text-align: center;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .main-title { font-size: 1.8em; margin: 0; }
@@ -30,37 +28,19 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: 
 }
 
 #search { width: 100%; padding: 14px; font-size: 16px; border-radius: 12px; background: #1e1e1e; color: #fff; margin-bottom: 20px; border: 1px solid #333; outline: none; box-sizing: border-box; }
-#piesne-list div, #playlists-section div { background: #1e1e1e; border-radius: 8px; margin-bottom: 4px; border-bottom: 1px solid #333; }
 
 .controls { display: flex; justify-content: space-around; background: #1a1a1a; padding: 10px; border-radius: 12px; margin-bottom: 10px; gap: 5px; border: 1px solid #333; flex-wrap: wrap; }
-.control-group { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.control-group { display: flex; flex-direction: column; gap: 4px; align-items: center; }
 .btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
 button { background: #1e1e1e; border: none; color: #fff; padding: 10px 14px; cursor: pointer; }
 
-#scroll-btn.active { background: #00bfff; color: black; }
+#scroll-btn.active { background: #00bfff !important; color: black !important; }
 
 .back-btn { background: none; color: #00bfff; font-size: 16px; border: none; cursor: pointer; margin-bottom: 15px; width: 100%; text-align: center; font-weight: 600; }
 #song-content { background: #1a1a1a; padding: 25px 15px; border-radius: 12px; line-height: 2.2; white-space: pre-wrap; margin-top: 10px; font-size: 17px; text-align: center; color: #fff; }
 .chord { color: #00bfff; font-weight: bold; background: #252525; padding: 1px 4px; border-radius: 4px; }
 
-/* Štýly pre položky v editore */
-.editor-item {
-    display: flex;
-    align-items: center;
-    background: #1e1e1e;
-    margin-bottom: 5px;
-    padding: 8px;
-    border-radius: 8px;
-    gap: 10px;
-    border: 1px solid #333;
-}
-.editor-btn-group {
-    display: flex;
-    gap: 5px;
-}
-.editor-btn-group button {
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 4px;
-    background: #2a2a2a;
-}
+.editor-item { display: flex; align-items: center; background: #1e1e1e; margin-bottom: 5px; padding: 8px; border-radius: 8px; gap: 10px; border: 1px solid #333; }
+.editor-btn-group { display: flex; gap: 5px; }
+.editor-btn-group button { padding: 6px 10px; font-size: 12px; border-radius: 4px; background: #2a2a2a; }
+textarea { resize: none; outline: none; }
