@@ -11,6 +11,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* Oprava modrého označovania a focusu na tabletoch */
+    * { -webkit-tap-highlight-color: transparent !important; outline: none !important; }
+    #scroll-to-top { pointer-events: auto !important; }
+  </style>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -21,7 +26,7 @@
 </head>
 <body>
   <div class="container">
-    <button id="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:50px; height:50px; border-radius:50%; background:#00bfff; color:black; border:none; z-index:10001; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 20px; cursor: pointer;">
+    <button id="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:55px; height:55px; border-radius:50%; background:#00bfff; color:black; border:none; z-index:99999; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
         <i class="fas fa-arrow-up"></i>
     </button>
 
