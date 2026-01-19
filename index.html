@@ -12,9 +12,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    /* Oprava modrého označovania a focusu na tabletoch */
     * { -webkit-tap-highlight-color: transparent !important; outline: none !important; }
-    #scroll-to-top { pointer-events: auto !important; }
+    #scroll-to-top { 
+        pointer-events: auto !important; 
+        display: none; 
+        position: fixed; 
+        bottom: 30px; 
+        right: 20px; 
+        width: 60px; 
+        height: 60px; 
+        border-radius: 50%; 
+        background: #00bfff; 
+        color: black; 
+        border: none; 
+        z-index: 2147483647; /* Absolútne najvyššia možná vrstva */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
+        font-size: 24px; 
+        align-items: center; 
+        justify-content: center;
+        touch-action: manipulation;
+    }
   </style>
   <script>
     if ('serviceWorker' in navigator) {
@@ -26,7 +43,7 @@
 </head>
 <body>
   <div class="container">
-    <button id="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:55px; height:55px; border-radius:50%; background:#00bfff; color:black; border:none; z-index:99999; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+    <button id="scroll-to-top" onclick="stopAutoscroll(); window.scrollTo({top: 0, behavior: 'smooth'})">
         <i class="fas fa-arrow-up"></i>
     </button>
 
@@ -37,11 +54,9 @@
 
     <div id="song-list">
       <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()" />
-      
       <div id="playlists-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
         <div id="playlists-section"></div>
       </div>
-
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
         <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
         <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
@@ -52,14 +67,12 @@
             <button onclick="logoutAdmin()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ EDITOR</button>
         </div>
       </div>
-
       <div id="piesne-list" style="text-align:center; padding:20px; color: #888;">Načítavam...</div>
     </div>
 
     <div id="song-detail" style="display:none;">
       <h2 id="render-title"></h2>
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
-      
       <div class="controls">
         <div class="control-group">
             <small>Pieseň</small>
@@ -95,19 +108,7 @@
             <span id="speed-label" style="font-size: 10px; color: #00bfff; margin-top: 4px; font-weight: bold;">Rýchlosť: 1</span>
         </div>
       </div>
-      
       <div id="song-content"></div>
-
-      <div id="error-report-container" style="margin: 40px 0 60px 0; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
-        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel si chybu? Napíš, opravím :)</p>
-        <form id="error-form" onsubmit="submitErrorForm(event)">
-          <input type="hidden" name="_subject" id="form-subject" value="Chyba v piesni">
-          <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
-          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
-          <button type="submit" id="submit-btn" style="width:100%; background:#00bfff; color:black; font-weight:bold; margin-top:10px; border-radius:8px; padding:12px; border:none; cursor:pointer;">ODOSLAŤ</button>
-        </form>
-        <p id="form-status" style="display:none; text-align:center; margin-top:10px; font-size:14px; color:#00ff00;">Chyba bola odoslaná!</p>
-      </div>
     </div>
   </div>
   <script src="script.js"></script>
