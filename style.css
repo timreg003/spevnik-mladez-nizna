@@ -1,4 +1,4 @@
-/* ✅ Globálne: nech nič v zoznamoch/drag neoznačuje text */
+/* Zabráň označovaniu textu pri drag (inputs/textarea môžu) */
 *{
   -webkit-user-select: none;
   user-select: none;
@@ -13,20 +13,6 @@ input, textarea{
 body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0e0; padding:15px; }
 .container { max-width:700px; margin:auto; }
 
-.main-title, #render-title, .playlist-header-title {
-  font-weight:700;
-  background: linear-gradient(90deg,#00bfff,#ffffff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  text-align:center !important;
-  display:block !important;
-  width:100% !important;
-}
-
-.main-title { font-size:1.8em; margin:0; }
-#render-title { font-size:1.6em; margin-bottom:5px; }
-
-/* ✅ Toast */
 .toast{
   position: fixed;
   left: 50%;
@@ -44,23 +30,47 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   text-align: center;
 }
 
+.main-title, #render-title, .playlist-header-title {
+  font-weight:700;
+  background: linear-gradient(90deg,#00bfff,#ffffff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-align:center !important;
+  display:block !important;
+  width:100% !important;
+}
+
+.main-title { font-size:1.8em; margin:0; }
+#render-title { font-size:1.6em; margin-bottom:5px; }
+
+/* HLAVIČKA – pevné 3 zóny, aby nebola natlačená */
 .topbar{
-  display:flex; align-items:center; justify-content:center;
-  position:relative; margin-bottom:20px; padding-top:10px; z-index:10000;
+  display:grid;
+  grid-template-columns: 110px 1fr 60px;
+  align-items:center;
+  position:relative;
+  margin-bottom:20px;
+  padding-top:10px;
+  z-index:10000;
 }
 
 #admin-toggle-btn{
-  position:absolute; left:0;
+  justify-self:start;
   display:flex; align-items:center; gap:10px;
   background:none; border:none; color:#00bfff;
-  cursor:pointer; padding:15px; font-weight:700;
+  cursor:pointer; padding:10px 6px;
+  font-weight:700;
   -webkit-tap-highlight-color:transparent;
 }
 #admin-toggle-btn i{ font-size:24px; }
 #admin-toggle-text{ font-size:14px; }
 
 .home-ico{
-  position:absolute; right:0; font-size:1.5em; color:#00bfff; cursor:pointer; padding:15px;
+  justify-self:end;
+  font-size:1.5em;
+  color:#00bfff;
+  cursor:pointer;
+  padding:10px 6px;
   -webkit-tap-highlight-color:transparent;
 }
 
@@ -82,12 +92,34 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   border:1px solid #333; outline:none; box-sizing:border-box;
 }
 
-/* LIST BOXES */
+/* LIST BOXES – rovnaké pozadie pre dnes/playlisty/zoznam */
 .list-box{
   background:#1a1a1a;
   border:1px solid #333;
   border-radius:12px;
   overflow:hidden;
+}
+
+/* Jednotný riadok piesne – opravuje “odskoky” všade */
+.song-row{
+  display:grid;
+  grid-template-columns: 110px 1fr;
+  gap:10px;
+  padding:12px;
+  border-bottom:1px solid #333;
+  color:#fff;
+  background:#121212;
+}
+.song-row:last-child{ border-bottom:none; }
+.song-id{
+  color:#00bfff;
+  font-weight:900;
+  text-align:right;
+  white-space:nowrap;
+}
+.song-title{
+  word-break: break-word;
+  overflow-wrap:anywhere;
 }
 
 /* EDITOR */
@@ -124,7 +156,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   margin-bottom:10px;
 }
 
-/* Item for drag */
+/* Draggable row (editor + playlist order) */
 .draggable-item{
   display:flex;
   align-items:center;
@@ -134,7 +166,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   border-bottom:1px solid #333;
   color:#fff;
   background:#121212;
-  touch-action: pan-y; /* ✅ aby scroll fungoval normálne */
+  touch-action: pan-y;
 }
 .draggable-item:last-child{ border-bottom:none; }
 
@@ -145,10 +177,8 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   border:1px solid #333;
   border-radius:8px;
   background:#1e1e1e;
-  user-select:none;
 }
 
-/* menšie + tlačidlo */
 .small-plus{
   width:28px; height:28px;
   border:none;
@@ -168,7 +198,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   cursor:pointer;
 }
 
-/* bottom buttons rows */
+/* bottom buttons row */
 .btn-row-2{
   display:flex;
   gap:10px;
@@ -181,9 +211,8 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   font-weight:800;
   cursor:pointer;
 }
-
-.btn-save{ background:#00c853; color:#001b00; }   /* zelená */
-.btn-delete{ background:#ff4444; color:#fff; }   /* červená */
+.btn-save{ background:#00c853; color:#001b00; }
+.btn-delete{ background:#ff4444; color:#fff; }
 
 /* SONG DETAIL CONTROLS */
 .controls{
