@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Mládežnícky spevník NIŽNÁ</title>
 
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=7">
   <meta name="theme-color" content="#00bfff">
 
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png?v=7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -49,6 +49,7 @@
     <div id="section-dnes" class="section-content hidden">
       <div id="dnes-section"></div>
 
+      <!-- EDITOR DNES (len po prihlásení sa odskryje cez JS) -->
       <div id="dnes-editor" class="editor hidden">
         <input id="dnes-name" placeholder="Názov zoznamu na dnes">
         <input id="dnes-search" placeholder="Hľadať pieseň...">
@@ -72,6 +73,7 @@
     <div id="section-playlists" class="section-content hidden">
       <div id="playlists"></div>
 
+      <!-- EDITOR PLAYLIST (len po prihlásení sa odskryje cez JS) -->
       <div id="playlist-editor" class="editor hidden">
         <input id="playlist-name" placeholder="Názov playlistu">
         <input id="playlist-search" placeholder="Hľadať pieseň...">
@@ -114,6 +116,6 @@
 
 </div>
 
-<script src="script.js"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>
