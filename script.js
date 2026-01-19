@@ -19,8 +19,8 @@ function smartReset() {
     document.getElementById('song-list').style.display = 'block';
     document.getElementById('search').value = "";
     currentModeList = [...songs]; filterSongs();
-    loadPlaylistHeaders();                // načíta normálne playlisty
-    renderDnesSection();                  // <— NOVÉ: vykreslí „dnes“ okamžite
+    loadPlaylistHeaders();                // normálne playlisty
+    renderDnesSection();                  // „dnes“
     window.scrollTo(0,0);
 }
 
@@ -171,7 +171,6 @@ function tryUnlockAdmin() {
     if (p === "qwer") {
         isAdmin = true;
         document.getElementById('admin-panel').style.display = 'block';
-        // otvoríme čistý editor (žiadne predvyplnené meno)
         selectedSongIds = [];
         document.getElementById('playlist-name').value = "";
         renderEditor();
@@ -311,7 +310,6 @@ function toggleStar(playlistName) {
     const cached = localStorage.getItem('playlist_' + playlistName);
     if (!cached) return;
     const ids = cached.split(',').filter(x => x);
-    // ak už niečo z toho v „dnes“ je, považujeme to za „odstrániť“, inak pridať
     const overlap = ids.filter(id => arr.includes(id));
     let newArr;
     if (overlap.length) {
@@ -322,19 +320,41 @@ function toggleStar(playlistName) {
     setDnesIds(newArr);
 }
 
+function movePlaylistInList(name, d) {
+    const all = JSON.parse(localStorage.getItem('offline_playlists') || '[]');
+    const idx = all.findIndex(p => p.name === name);
+    const n = idx + d; if (n < 0 || n >= all.length) return;
+    [all[idx], all[n]] = [all[n], all[idx]];
+    localStorage.setItem('offline_playlists', JSON.stringify(all));
+    renderPlaylists(all);
+}
+
 function renderPlaylists(d) {
     const sect = document.getElementById('playlists-section');
-    let html = `<h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer;padding:10px 0;text-align:center;width:100%;display:block;">Playlisty <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre správu)</small></h2>`;
-    if (d && d.length > 0) {
-        html += d.map(p => `<div style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #333;">
+    const empty = document.getElementById('playlists-empty');
+    if (!d || !d.length) {
+        sect.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    let html = '';
+    d.forEach((p, idx) => {
+        const starVisible = isAdmin ? `<button class="star-btn ${getDnesIds().filter(id => (localStorage.getItem('playlist_' + p.name) || '').split(',').includes(id)).length ? 'active' : ''}" onclick="event.stopPropagation(); toggleStar('${p.name}')" title="Pridať / odobrať z 'Playlisty na dnes'"><i class="fas fa-star"></i></button>` : '';
+        const moveBtns = isAdmin ? `<div style="display:flex;gap:4px;">
+            <button onclick="event.stopPropagation(); movePlaylistInList('${p.name}', -1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-up"></i></button>
+            <button onclick="event.stopPropagation(); movePlaylistInList('${p.name}', 1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-down"></i></button>
+        </div>` : '';
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #333;">
             <span style="cursor:pointer;flex-grow:1;display:flex;align-items:center;color:#fff;" onclick="openPlaylist('${p.name}')"><i class="fas fa-music" style="color:#00bfff;width:25px;margin-right:12px;"></i>${p.name}</span>
-            <div style="display:flex;gap:20px;">
-                <button class="star-btn ${getDnesIds().filter(id => (localStorage.getItem('playlist_' + p.name) || '').split(',').includes(id)).length ? 'active' : ''}" onclick="event.stopPropagation(); toggleStar('${p.name}')" title="Pridať / odobrať z 'Playlisty na dnes'"><i class="fas fa-star"></i></button>
+            <div style="display:flex;gap:12px;align-items:center;">
+                ${starVisible}
+                ${moveBtns}
                 ${isAdmin ? `<i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;padding:10px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;padding:10px;"></i>` : ''}
             </div>
-        </div>`).join('');
-    }
-    sect.innerHTML = html + `<div style="border-bottom:1px solid #333;margin-bottom:10px;"></div>`;
+        </div>`;
+    });
+    sect.innerHTML = html;
 }
 
 async function deletePlaylist(n) {
