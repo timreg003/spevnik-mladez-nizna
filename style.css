@@ -1,149 +1,121 @@
-/* ===== ZÁKLAD ===== */
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #121212;
-  color: #e0e0e0;
-  padding: 15px;
-}
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mládežnícky spevník NIŽNÁ</title>
 
-.container {
-  max-width: 700px;
-  margin: auto;
-}
+  <link rel="manifest" href="manifest.json?v=7">
+  <meta name="theme-color" content="#00bfff">
 
-/* ===== HEADER ===== */
-.header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  padding-top: 10px;
-}
+  <link rel="apple-touch-icon" href="icon.png?v=7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-/* ĽAVÁ STRANA – LOGIN */
-.header-left {
-  position: absolute;
-  left: 0;
-}
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-#admin-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #00bfff;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px;
-}
+  <link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
 
-#admin-toggle-btn i {
-  font-size: 20px;
-}
+<div class="container">
 
-/* STRED – NADPIS */
-.main-title {
-  font-size: 1.8em;
-  font-weight: 700;
-  background: linear-gradient(90deg, #00bfff, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-}
+  <!-- HEADER -->
+  <div class="header">
+    <!-- LOGIN VĽAVO -->
+    <div class="header-left">
+      <button id="admin-toggle-btn" onclick="toggleAdminAuth()">
+        <i class="fas fa-user"></i>
+        <span>PRIHLÁSIŤ</span>
+      </button>
+    </div>
 
-/* PRAVÁ STRANA – HOME */
-.header-right {
-  position: absolute;
-  right: 0;
-}
+    <h1 class="main-title">Mládežnícky spevník NIŽNÁ</h1>
 
-.header-right i {
-  font-size: 20px;
-  color: #00bfff;
-  cursor: pointer;
-  padding: 10px;
-}
+    <!-- HOME VPRAVO -->
+    <div class="header-right">
+      <i class="fas fa-home" onclick="smartReset()"></i>
+    </div>
+  </div>
 
-/* ===== SEKČNÉ NADPISY ===== */
-.section {
-  border-top: 1px solid #333;
-  margin-top: 20px;
-  padding-top: 20px;
-}
+  <!-- ===== PIESNE NA DNES ===== -->
+  <div class="section">
+    <h2 class="section-title" onclick="toggleSection('dnes')">
+      <span id="dnes-title">PIESNE NA DNES</span>
+      <i id="arrow-dnes" class="fas fa-chevron-down"></i>
+    </h2>
 
-.section-title {
-  font-weight: 700;
-  font-size: 1.4em;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+    <div id="section-dnes" class="section-content hidden">
+      <div id="dnes-section"></div>
 
-  background: linear-gradient(90deg, #00bfff, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+      <!-- EDITOR DNES (len po prihlásení sa odskryje cez JS) -->
+      <div id="dnes-editor" class="editor hidden">
+        <input id="dnes-name" placeholder="Názov zoznamu na dnes">
+        <input id="dnes-search" placeholder="Hľadať pieseň...">
 
-  text-align: center;
-  width: 100%;
-  margin: 0 0 15px 0;
+        <div id="dnes-all"></div>
+        <div id="dnes-selected"></div>
 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
+        <button>ULOŽIŤ</button>
+        <button>VYMAZAŤ</button>
+      </div>
+    </div>
+  </div>
 
-  cursor: pointer;
-  user-select: none;
-}
+  <!-- ===== PLAYLISTY ===== -->
+  <div class="section">
+    <h2 class="section-title" onclick="toggleSection('playlists')">
+      <span>PLAYLISTY</span>
+      <i id="arrow-playlists" class="fas fa-chevron-down"></i>
+    </h2>
 
-.section-title i {
-  font-size: 0.9em;
-  color: #00bfff;
-}
+    <div id="section-playlists" class="section-content hidden">
+      <div id="playlists"></div>
 
-/* ===== ZBALITEĽNÝ OBSAH ===== */
-.section-content.hidden {
-  display: none;
-}
+      <!-- EDITOR PLAYLIST (len po prihlásení sa odskryje cez JS) -->
+      <div id="playlist-editor" class="editor hidden">
+        <input id="playlist-name" placeholder="Názov playlistu">
+        <input id="playlist-search" placeholder="Hľadať pieseň...">
 
-/* ===== EDITORY ===== */
-.editor {
-  background: #1e1e1e;
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid #00bfff;
-  margin-top: 15px;
-}
+        <div id="playlist-all"></div>
+        <div id="playlist-selected"></div>
 
-.editor.hidden {
-  display: none;
-}
+        <button>ULOŽIŤ</button>
+        <button>VYMAZAŤ</button>
+      </div>
+    </div>
+  </div>
 
-.editor input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 10px;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: white;
-  border-radius: 8px;
-}
+  <!-- ===== ZOZNAM PIESNÍ ===== -->
+  <div class="section">
+    <h2 class="section-title" onclick="toggleSection('songs')">
+      <span>ZOZNAM PIESNÍ</span>
+      <i id="arrow-songs" class="fas fa-chevron-down"></i>
+    </h2>
 
-/* ===== UPDATE ===== */
-.update-box {
-  padding: 10px 0 25px 0;
-  text-align: center;
-}
+    <div id="section-songs" class="section-content hidden">
+      <input id="search" placeholder="Hľadať pieseň...">
+      <div id="song-list"></div>
+    </div>
+  </div>
 
-.update-box button {
-  background: #00bfff;
-  color: black;
-  border: none;
-  padding: 14px 22px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-}
+  <!-- ===== AKTUALIZOVAŤ APLIKÁCIU ===== -->
+  <div class="section">
+    <h2 class="section-title" onclick="toggleSection('update')">
+      <span>AKTUALIZOVAŤ APLIKÁCIU</span>
+      <i id="arrow-update" class="fas fa-chevron-down"></i>
+    </h2>
+
+    <div id="section-update" class="section-content hidden">
+      <div class="update-box">
+        <button onclick="hardResetApp()">AKTUALIZOVAŤ APLIKÁCIU</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js?v=7"></script>
+</body>
+</html>
