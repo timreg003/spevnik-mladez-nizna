@@ -45,11 +45,22 @@ function processXML(xmlText) {
         else if (/^\d+$/.test(rawId)) displayId = rawId.replace(/^0+/, '');
         return { id: s.getElementsByTagName('ID')[0]?.textContent.trim(), title: s.getElementsByTagName('title')[0]?.textContent.trim(), originalId: rawId, displayId: displayId, origText: text };
     });
+
+    // ZORADENIE: čísla → Mariánske → textové
     songs.sort((a, b) => {
         const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
-        if (/^\d+$/.test(idA) && /^\d+$/.test(idB)) return parseInt(idA) - parseInt(idB);
+        const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
+        const isMarA = idA.startsWith('M'), isMarB = idB.startsWith('M');
+
+        if (isNumA && !isNumB) return -1;
+        if (!isNumA && isNumB) return 1;
+        if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
+        if (isMarA && !isMarB) return -1;
+        if (!isMarA && isMarB) return 1;
+        if (isMarA && isMarB) return (parseInt(idA.substring(1)) || 0) - (parseInt(idB.substring(1)) || 0);
         return a.title.localeCompare(b.title, 'sk');
     });
+
     filteredSongs = [...songs]; currentModeList = [...songs];
     renderAllSongs(); loadPlaylistHeaders(); loadDnesFromDrive();
 }
@@ -130,6 +141,17 @@ function changeScrollSpeed(d) {
     updateSpeedUI(); if (autoscrollInterval) startScrolling();
 }
 function updateSpeedUI() { document.getElementById('speed-label').innerText = "Rýchlosť: " + currentLevel; }
+
+function filterSongs() {
+    const t = document.getElementById('search').value.toLowerCase();
+    filteredSongs = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+    renderAllSongs();
+}
+function closeSong() { stopAutoscroll(); document.getElementById('song-list').style.display = 'block'; document.getElementById('song-detail').style.display = 'none'; }
+function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep; renderSong(); }
+function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); }
+function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
+function changeFontSize(d) { fontSize += d; renderSong(); }
 
 /* PIESNE NA DNES - SYNC */
 async function loadDnesFromDrive() {
