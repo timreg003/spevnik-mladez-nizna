@@ -7,7 +7,8 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
 // Autoscroll premenné
 let autoscrollInterval = null;
-let scrollSpeed = 1;
+const SCROLL_SPEED_PX = 1;
+const SCROLL_DELAY_MS = 80; // Zvýšené z 50 na 80 pre pomalší chod
 
 function smartReset() {
     stopAutoscroll();
@@ -97,7 +98,7 @@ function processOpenPlaylist(name, t) {
     currentModeList = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
     document.getElementById('piesne-list').innerHTML = `
     <div style="text-align:center; padding:15px; border-bottom:2px solid #00bfff; margin-bottom:15px;">
-        <h2 class="playlist-header-title" style="font-size:1.3em; margin:0;">${name}</h2>
+        <h2 class="playlist-header-title" style="font-size:1.3em; margin:0; -webkit-text-fill-color: #00bfff;">${name}</h2>
         <button onclick="smartReset()" style="background:none; color:#ff4444; border:1px solid #ff4444; padding:6px 16px; border-radius:20px; cursor:pointer; margin-top:10px; font-weight:bold;">ZAVRIEŤ</button>
     </div>` +
     currentModeList.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="padding:15px; border-bottom: 1px solid #333;"><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
@@ -107,149 +108,4 @@ function processOpenPlaylist(name, t) {
 function openSongById(id, source) {
     const s = songs.find(x => x.id === id); if (!s) return;
     if (source === 'all') { currentModeList = [...songs]; }
-    currentSong = JSON.parse(JSON.stringify(s));
-    transposeStep = 0;
-    stopAutoscroll();
-    document.getElementById('song-list').style.display = 'none';
-    document.getElementById('song-detail').style.display = 'block';
-    document.getElementById('render-title').innerText = s.displayId + '. ' + s.title;
-    renderSong(); window.scrollTo(0,0);
-}
-
-function renderSong() {
-    let text = currentSong.origText;
-    if (transposeStep !== 0) text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
-    if (!chordsVisible) text = text.replace(/\[.*?\]/g, '');
-    const el = document.getElementById('song-content');
-    el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
-    el.style.fontSize = fontSize + 'px';
-}
-
-function navigateSong(d) {
-    stopAutoscroll();
-    const idx = currentModeList.findIndex(s => s.id === currentSong.id);
-    const n = currentModeList[idx + d]; 
-    if (n) {
-        currentSong = JSON.parse(JSON.stringify(n));
-        transposeStep = 0;
-        document.getElementById('render-title').innerText = n.displayId + '. ' + n.title;
-        renderSong(); window.scrollTo(0,0);
-    }
-}
-
-function transposeChord(c, s) {
-    return c.replace(/[A-H][#b]?/g, (n) => {
-        let note = n === 'B' ? 'B' : (n === 'H' ? 'H' : n);
-        let idx = scale.indexOf(note); if (idx === -1) return n;
-        let newIdx = (idx + s) % 12; while (newIdx < 0) newIdx += 12;
-        return scale[newIdx];
-    });
-}
-
-function filterSongs() {
-    const t = document.getElementById('search').value.toLowerCase();
-    filteredSongs = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
-    renderAllSongs();
-}
-
-function closeSong() { stopAutoscroll(); document.getElementById('song-list').style.display = 'block'; document.getElementById('song-detail').style.display = 'none'; }
-function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep > 0 ? "+" : "") + transposeStep; renderSong(); }
-function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); }
-function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
-function changeFontSize(d) { fontSize += d; renderSong(); }
-
-// Autoscroll logika
-function toggleAutoscroll() {
-    const btn = document.getElementById('scroll-btn');
-    if (autoscrollInterval) {
-        stopAutoscroll();
-    } else {
-        btn.innerHTML = '<i class="fas fa-pause"></i>';
-        btn.classList.add('active');
-        autoscrollInterval = setInterval(() => {
-            window.scrollBy(0, scrollSpeed);
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) stopAutoscroll();
-        }, 50);
-    }
-}
-function stopAutoscroll() {
-    if (autoscrollInterval) { clearInterval(autoscrollInterval); autoscrollInterval = null; }
-    const btn = document.getElementById('scroll-btn');
-    if (btn) { btn.innerHTML = '<i class="fas fa-play"></i>'; btn.classList.remove('active'); }
-}
-
-function unlockAdmin() { let p = prompt('Heslo:'); if (p === "qwer") { adminPassword = p; isAdmin = true; document.getElementById('admin-panel').style.display = 'block'; renderAllSongs(); loadPlaylistHeaders(); } }
-
-function addToSelection(id) { if(!selectedSongIds.includes(id)) selectedSongIds.push(id); renderEditor(); }
-function clearSelection() { selectedSongIds = []; document.getElementById('playlist-name').value = ""; renderEditor(); }
-function removeFromSelection(idx) { selectedSongIds.splice(idx, 1); renderEditor(); }
-
-function moveInSelection(index, direction) {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= selectedSongIds.length) return;
-    const temp = selectedSongIds[index];
-    selectedSongIds[index] = selectedSongIds[newIndex];
-    selectedSongIds[newIndex] = temp;
-    renderEditor();
-}
-
-function editPlaylist(name) {
-    const cached = localStorage.getItem('playlist_' + name);
-    if (!cached) return;
-    selectedSongIds = cached.split(',').filter(x => x);
-    document.getElementById('playlist-name').value = name;
-    document.getElementById('admin-panel').style.display = 'block';
-    renderEditor();
-    window.scrollTo(0,0);
-}
-
-function renderEditor() {
-    const container = document.getElementById('selected-list-editor');
-    if (selectedSongIds.length === 0) { container.innerHTML = '<div style="color: #666; text-align: center; padding: 10px;">Prázdny playlist</div>'; return; }
-    container.innerHTML = selectedSongIds.map((id, index) => {
-        const s = songs.find(x => x.id === id);
-        return `
-        <div class="editor-item">
-            <span style="flex-grow:1; font-size:13px; color:white; overflow:hidden; text-overflow:ellipsis;">${s ? s.title : id}</span>
-            <div class="editor-btn-group">
-                <button onclick="moveInSelection(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
-                <button onclick="moveInSelection(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
-                <button onclick="removeFromSelection(${index})" style="background:#ff4444;"><i class="fas fa-times"></i></button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function savePlaylist() {
-    const name = document.getElementById('playlist-name').value;
-    if (!name || !selectedSongIds.length) return alert('Zadaj názov');
-    window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${adminPassword}&content=${selectedSongIds.join(',')}`, '_blank','width=300,height=200');
-}
-function deletePlaylist(name) {
-    if (!confirm(`Vymazať ${name}?`)) return;
-    window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${adminPassword}`, '_blank','width=300,height=200');
-}
-function loadPlaylistHeaders() {
-    fetch(`${SCRIPT_URL}?action=list`)
-    .then(r => r.json())
-    .then(d => { localStorage.setItem('offline_playlists', JSON.stringify(d)); renderPlaylists(d); })
-    .catch(() => { const saved = localStorage.getItem('offline_playlists'); if (saved) renderPlaylists(JSON.parse(saved)); });
-}
-function renderPlaylists(d) {
-    const sect = document.getElementById('playlists-section');
-    if (!d || d.length === 0) { sect.innerHTML = ""; return; }
-    sect.innerHTML = '<h2 class="playlist-header-title">Playlisty</h2>' + d.map(p => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #333;" onclick="openPlaylist('${p.name}')">
-            <span style="cursor:pointer; flex-grow:1; display:flex; align-items:center;">
-                <i class="fas fa-music" style="color:#00bfff; margin-right:12px; width:20px; text-align:center;"></i>
-                ${p.name}
-            </span>
-            ${isAdmin ? `
-                <div style="display:flex; gap:20px;">
-                    <i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;"></i>
-                    <i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;"></i>
-                </div>` : ''}
-        </div>`).join('');
-}
-
-document.addEventListener('DOMContentLoaded', parseXML);
+    currentSong = JSON.parse(JSON.
