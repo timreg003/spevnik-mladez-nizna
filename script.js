@@ -4,11 +4,9 @@ let songs = [], filteredSongs = [], currentSong = null;
 let currentModeList = []; 
 let transposeStep = 0, fontSize = 17, chordsVisible = true, isAdmin = false, selectedSongIds = [], adminPassword = "";
 const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
-
 let autoscrollInterval = null;
 let currentLevel = 1;
 
-// Ovládanie tlačidla "Hore"
 window.onscroll = function() {
     const btn = document.getElementById("scroll-to-top");
     if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
@@ -40,25 +38,20 @@ function logoutAdmin() {
 async function parseXML() {
     try {
         const res = await fetch(SCRIPT_URL);
-        if (!res.ok) throw new Error('Network response was not ok');
+        if (!res.ok) throw new Error();
         const xmlText = await res.text();
         localStorage.setItem('offline_spevnik', xmlText);
         processXML(xmlText);
     } catch (e) {
-        console.error("Chyba načítavania:", e);
         const saved = localStorage.getItem('offline_spevnik');
         if (saved) processXML(saved);
-        else document.getElementById('piesne-list').innerText = "Chyba spojenia a žiadne dáta offline.";
+        else document.getElementById('piesne-list').innerText = "Chyba spojenia.";
     }
 }
 
 function processXML(xmlText) {
     const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
     const nodes = xml.getElementsByTagName('song');
-    if (nodes.length === 0) {
-        document.getElementById('piesne-list').innerText = "Žiadne piesne sa nenašli.";
-        return;
-    }
     songs = [...nodes].map(s => {
         const text = s.getElementsByTagName('songtext')[0]?.textContent.trim() || "";
         const rawId = s.getElementsByTagName('author')[0]?.textContent.trim() || "";
@@ -74,13 +67,9 @@ function processXML(xmlText) {
 
     songs.sort((a, b) => {
         const isNumA = /^\d+$/.test(a.originalId), isNumB = /^\d+$/.test(b.originalId);
-        const isMarA = a.originalId.startsWith('M'), isMarB = b.originalId.startsWith('M');
         if (isNumA && !isNumB) return -1;
         if (!isNumA && isNumB) return 1;
         if (isNumA && isNumB) return parseInt(a.originalId) - parseInt(b.originalId);
-        if (isMarA && !isMarB) return -1;
-        if (!isMarA && isMarB) return 1;
-        if (isMarA && isMarB) return (parseInt(a.originalId.substring(1)) || 0) - (parseInt(b.originalId.substring(1)) || 0);
         return a.originalId.localeCompare(b.originalId);
     });
 
@@ -91,12 +80,7 @@ function processXML(xmlText) {
 }
 
 function renderAllSongs() {
-    const list = document.getElementById('piesne-list');
-    if (filteredSongs.length === 0) {
-        list.innerHTML = "Žiadne výsledky.";
-        return;
-    }
-    list.innerHTML = filteredSongs.map(s => `
+    document.getElementById('piesne-list').innerHTML = filteredSongs.map(s => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom: 1px solid #333; color: #fff;" onclick="openSongById('${s.id}', 'all')">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
             ${isAdmin ? `<button onclick="event.stopPropagation(); addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:30px; height:30px; border:none;">+</button>` : ''}
@@ -107,20 +91,14 @@ function openSongById(id, source) {
     const s = songs.find(x => x.id === id); if (!s) return;
     if (source === 'all') currentModeList = [...songs];
     currentSong = JSON.parse(JSON.stringify(s));
-    
     transposeStep = 0; 
     document.getElementById('transpose-val').innerText = "0";
     currentLevel = 1; updateSpeedUI(); stopAutoscroll();
-
     document.getElementById('song-list').style.display = 'none';
     document.getElementById('song-detail').style.display = 'block';
     document.getElementById('render-title').innerText = s.displayId + '. ' + s.title;
-    document.getElementById('form-subject').value = "Chyba v piesni: " + s.displayId + ". " + s.title;
-    
     const firstChordMatch = s.origText.match(/\[(.*?)\]/);
-    const firstChord = firstChordMatch ? firstChordMatch[1] : "-";
-    document.getElementById('original-key-label').innerText = "Pôvodná tónina: " + firstChord;
-
+    document.getElementById('original-key-label').innerText = "Pôvodná tónina: " + (firstChordMatch ? firstChordMatch[1] : "-");
     renderSong(); window.scrollTo(0,0);
 }
 
@@ -137,11 +115,7 @@ function renderSong() {
 function navigateSong(d) {
     const idx = currentModeList.findIndex(s => s.id === currentSong.id);
     const n = currentModeList[idx + d]; 
-    if (n) {
-        transposeStep = 0;
-        document.getElementById('transpose-val').innerText = "0";
-        openSongById(n.id, 'playlist');
-    }
+    if (n) { transposeStep = 0; openSongById(n.id, 'playlist'); }
 }
 
 function toggleAutoscroll() {
@@ -158,8 +132,7 @@ function startScrolling() {
     let delay = 260 - (currentLevel * 12); if (delay < 5) delay = 5;
     autoscrollInterval = setInterval(() => {
         window.scrollBy(0, 1);
-        const content = document.getElementById('song-content');
-        if (content.getBoundingClientRect().bottom <= window.innerHeight) stopAutoscroll();
+        if (document.getElementById('song-content').getBoundingClientRect().bottom <= window.innerHeight) stopAutoscroll();
     }, delay);
 }
 
@@ -171,10 +144,8 @@ function stopAutoscroll() {
 
 function changeScrollSpeed(delta) {
     currentLevel += delta;
-    if (currentLevel < 1) currentLevel = 1;
-    if (currentLevel > 20) currentLevel = 20;
-    updateSpeedUI();
-    if (autoscrollInterval) startScrolling();
+    if (currentLevel < 1) currentLevel = 1; if (currentLevel > 20) currentLevel = 20;
+    updateSpeedUI(); if (autoscrollInterval) startScrolling();
 }
 
 function updateSpeedUI() { 
@@ -241,13 +212,7 @@ function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert('Zadaj názov');
     const saveWin = window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=qwer&content=${selectedSongIds.join(',')}`, '_blank','width=300,height=200');
-    const checkWin = setInterval(() => { 
-        if (saveWin && saveWin.closed) { 
-            clearInterval(checkWin); 
-            loadPlaylistHeaders(); 
-            logoutAdmin(); 
-        } 
-    }, 500);
+    const checkWin = setInterval(() => { if (saveWin && saveWin.closed) { clearInterval(checkWin); loadPlaylistHeaders(); logoutAdmin(); } }, 500);
 }
 
 function editPlaylist(name) {
@@ -259,26 +224,53 @@ function editPlaylist(name) {
     renderEditor(); window.scrollTo(0,0);
 }
 
+// NOVE: Funkcia na stiahnutie všetkých playlistov do offline pamäte
+async function cacheAllPlaylists(playlistData) {
+    for (const p of playlistData) {
+        try {
+            const r = await fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(p.name)}`);
+            const t = await r.text();
+            localStorage.setItem('playlist_' + p.name, t);
+        } catch(e) { console.log("Offline cache playlistu zlyhala"); }
+    }
+}
+
 function loadPlaylistHeaders() {
-    fetch(`${SCRIPT_URL}?action=list`).then(r => r.json()).then(d => { localStorage.setItem('offline_playlists', JSON.stringify(d)); renderPlaylists(d); })
+    fetch(`${SCRIPT_URL}?action=list`).then(r => r.json()).then(d => { 
+        localStorage.setItem('offline_playlists', JSON.stringify(d)); 
+        renderPlaylists(d);
+        cacheAllPlaylists(d); // Spustíme sťahovanie na pozadí
+    })
     .catch(() => { const saved = localStorage.getItem('offline_playlists'); if (saved) renderPlaylists(JSON.parse(saved)); });
 }
 
 function openPlaylist(name) {
-    fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`).then(r => r.text()).then(t => { localStorage.setItem('playlist_' + name, t); processOpenPlaylist(name, t); });
+    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:50px; color:#00bfff; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Sťahujem playlist: ${name}...</div>`;
+    
+    // Skúsime najprv lokálnu pamäť (funguje okamžite aj offline)
+    const cached = localStorage.getItem('playlist_' + name);
+    if (cached) {
+        processOpenPlaylist(name, cached);
+    } else {
+        // Ak nie je v pamäti, skúsime stiahnuť
+        fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`)
+        .then(r => r.text())
+        .then(t => { localStorage.setItem('playlist_' + name, t); processOpenPlaylist(name, t); })
+        .catch(() => { document.getElementById('piesne-list').innerText = "Tento playlist nie je dostupný offline."; });
+    }
 }
 
 function processOpenPlaylist(name, t) {
     const ids = t.split(',');
     currentModeList = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
-    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:15px; border-bottom:2px solid #00bfff; margin-bottom:15px;"><h2 class="playlist-header-title" style="margin:0;">${name}</h2><button onclick="smartReset()" style="background:none; color:#ff4444; border:1px solid #ff4444; padding:6px 16px; border-radius:20px; cursor:pointer; margin-top:10px; font-weight:bold;">ZAVRIEŤ</button></div>` +
+    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:15px; border-bottom:2px solid #00bfff; margin-bottom:15px;"><h2 class="playlist-header-title" style="margin:0; text-align:center;">${name}</h2><button onclick="smartReset()" style="background:none; color:#ff4444; border:1px solid #ff4444; padding:6px 16px; border-radius:20px; cursor:pointer; margin-top:10px; font-weight:bold;">ZAVRIEŤ</button></div>` +
     currentModeList.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="padding:15px; border-bottom: 1px solid #333; color: #fff;"><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
     window.scrollTo(0,0);
 }
 
 function renderPlaylists(d) {
     const sect = document.getElementById('playlists-section');
-    let html = `<h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer; padding:10px 0;">Playlisty <small style="font-size:10px; opacity:0.5;">(klikni pre správu)</small></h2>`;
+    let html = `<h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer; padding:10px 0; text-align:center; width:100%; display:block;">Playlisty <small style="font-size:10px; opacity:0.5; display:block;">(klikni pre správu)</small></h2>`;
     if (d && d.length > 0) {
         html += d.map(p => `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #333;" onclick="openPlaylist('${p.name}')">
