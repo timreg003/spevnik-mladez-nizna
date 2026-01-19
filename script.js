@@ -7,15 +7,15 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 let autoscrollInterval = null;
 let currentLevel = 1;
 
-// Ovládanie tlačidla "Hore"
+// Vylepšené tlačidlo "Hore"
 window.addEventListener('scroll', () => {
     const btn = document.getElementById("scroll-to-top");
-    if (window.scrollY > 200) {
-        btn.style.setProperty('display', 'flex', 'important');
+    if (window.scrollY > 300) {
+        btn.style.display = "flex";
     } else {
-        btn.style.setProperty('display', 'none', 'important');
+        btn.style.display = "none";
     }
-});
+}, { passive: true });
 
 function smartReset() {
     stopAutoscroll();
@@ -56,32 +56,19 @@ function processXML(xmlText) {
         let displayId = rawId;
         if (rawId.toUpperCase().startsWith('M')) displayId = "Mariánska " + rawId.substring(1).replace(/^0+/, '');
         else if (/^\d+$/.test(rawId)) displayId = rawId.replace(/^0+/, '');
-        return { 
-            id: s.getElementsByTagName('ID')[0]?.textContent.trim(), 
-            title: s.getElementsByTagName('title')[0]?.textContent.trim(), 
-            originalId: rawId, displayId: displayId, origText: text 
-        };
+        return { id: s.getElementsByTagName('ID')[0]?.textContent.trim(), title: s.getElementsByTagName('title')[0]?.textContent.trim(), originalId: rawId, displayId: displayId, origText: text };
     });
 
-    // OPRAVENÉ RADENIE: 1. Čísla, 2. Mariánske, 3. Abeceda
     songs.sort((a, b) => {
-        const idA = a.originalId.toUpperCase();
-        const idB = b.originalId.toUpperCase();
+        const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
         const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
         const isMarA = idA.startsWith('M'), isMarB = idB.startsWith('M');
-
         if (isNumA && !isNumB) return -1;
         if (!isNumA && isNumB) return 1;
         if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
-
         if (isMarA && !isMarB) return -1;
         if (!isMarA && isMarB) return 1;
-        if (isMarA && isMarB) {
-            const numA = parseInt(idA.substring(1)) || 0;
-            const numB = parseInt(idB.substring(1)) || 0;
-            return numA - numB;
-        }
-
+        if (isMarA && isMarB) return (parseInt(idA.substring(1)) || 0) - (parseInt(idB.substring(1)) || 0);
         return a.title.localeCompare(b.title, 'sk');
     });
 
@@ -143,7 +130,7 @@ function startScrolling() {
     if (autoscrollInterval) clearInterval(autoscrollInterval);
     let delay = 260 - (currentLevel * 12); if (delay < 5) delay = 5;
     autoscrollInterval = setInterval(() => {
-        window.scrollBy(0, 1);
+        window.scrollBy({ top: 1, behavior: 'auto' });
         if (document.getElementById('song-content').getBoundingClientRect().bottom <= window.innerHeight) stopAutoscroll();
     }, delay);
 }
@@ -187,12 +174,8 @@ function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function changeFontSize(d) { fontSize += d; renderSong(); }
 
 function tryUnlockAdmin() {
-    let p = prompt('Zadaj heslo pre správu playlistov:');
-    if (p === "qwer") {
-        isAdmin = true; adminPassword = p;
-        document.getElementById('admin-panel').style.display = 'block';
-        renderAllSongs(); loadPlaylistHeaders();
-    } else if (p !== null) alert('Nesprávne heslo');
+    let p = prompt('Zadaj heslo:');
+    if (p === "qwer") { isAdmin = true; document.getElementById('admin-panel').style.display = 'block'; renderAllSongs(); loadPlaylistHeaders(); }
 }
 
 function addToSelection(id) { if(!selectedSongIds.includes(id)) selectedSongIds.push(id); renderEditor(); }
@@ -206,34 +189,34 @@ function moveInSelection(idx, d) {
 
 function renderEditor() {
     const container = document.getElementById('selected-list-editor');
-    if (selectedSongIds.length === 0) { container.innerHTML = '<div style="color: #666; text-align: center; padding: 10px;">Prázdny playlist</div>'; return; }
+    if (selectedSongIds.length === 0) { container.innerHTML = '<div style="color:#666;text-align:center;padding:10px;">Prázdny</div>'; return; }
     container.innerHTML = selectedSongIds.map((id, index) => {
         const s = songs.find(x => x.id === id);
-        return `<div style="display:flex; align-items:center; background:#1e1e1e; margin-bottom:4px; padding:8px; border-radius:8px; gap:8px; border:1px solid #333;">
-            <span style="flex-grow:1; font-size:13px; color:white;">${s ? s.title : id}</span>
-            <div style="display:flex; gap:4px;">
-                <button onclick="moveInSelection(${index}, -1)" style="padding:5px; background:#333;"><i class="fas fa-chevron-up"></i></button>
-                <button onclick="moveInSelection(${index}, 1)" style="padding:5px; background:#333;"><i class="fas fa-chevron-down"></i></button>
-                <button onclick="removeFromSelection(${index})" style="padding:5px; background:#ff4444;"><i class="fas fa-times"></i></button>
+        return `<div style="display:flex;align-items:center;background:#1e1e1e;margin-bottom:4px;padding:8px;border-radius:8px;gap:8px;border:1px solid #333;">
+            <span style="flex-grow:1;font-size:13px;color:white;">${s ? s.title : id}</span>
+            <div style="display:flex;gap:4px;">
+                <button onclick="moveInSelection(${index},-1)" style="padding:5px;background:#333;"><i class="fas fa-chevron-up"></i></button>
+                <button onclick="moveInSelection(${index},1)" style="padding:5px;background:#333;"><i class="fas fa-chevron-down"></i></button>
+                <button onclick="removeFromSelection(${index})" style="padding:5px;background:#ff4444;"><i class="fas fa-times"></i></button>
             </div>
         </div>`;
     }).join('');
 }
 
-function savePlaylist() {
+// NOVE: Ukladanie na pozadí bez nového okna
+async function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert('Zadaj názov');
-    const saveWin = window.open(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=qwer&content=${selectedSongIds.join(',')}`, '_blank','width=300,height=200');
-    const checkWin = setInterval(() => { if (saveWin && saveWin.closed) { clearInterval(checkWin); loadPlaylistHeaders(); logoutAdmin(); } }, 500);
-}
-
-function editPlaylist(name) {
-    const cached = localStorage.getItem('playlist_' + name);
-    if (!cached) return;
-    selectedSongIds = cached.split(',').filter(x => x);
-    document.getElementById('playlist-name').value = name;
-    document.getElementById('admin-panel').style.display = 'block';
-    renderEditor(); window.scrollTo(0,0);
+    
+    const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=qwer&content=${selectedSongIds.join(',')}`;
+    
+    try {
+        await fetch(url, { mode: 'no-cors' });
+        alert('Playlist bol úspešne odoslaný na uloženie.');
+        setTimeout(() => { loadPlaylistHeaders(); logoutAdmin(); }, 1000);
+    } catch (e) {
+        alert('Chyba pri ukladaní.');
+    }
 }
 
 async function cacheAllPlaylists(playlistData) {
@@ -249,67 +232,51 @@ async function cacheAllPlaylists(playlistData) {
 function loadPlaylistHeaders() {
     fetch(`${SCRIPT_URL}?action=list`).then(r => r.json()).then(d => { 
         localStorage.setItem('offline_playlists', JSON.stringify(d)); 
-        renderPlaylists(d);
-        cacheAllPlaylists(d);
+        renderPlaylists(d); cacheAllPlaylists(d);
     })
     .catch(() => { const saved = localStorage.getItem('offline_playlists'); if (saved) renderPlaylists(JSON.parse(saved)); });
 }
 
 function openPlaylist(name) {
-    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:50px; color:#00bfff; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Sťahujem playlist: ${name}...</div>`;
+    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center;padding:50px;color:#00bfff;font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Sťahujem...</div>`;
     const cached = localStorage.getItem('playlist_' + name);
-    if (cached) {
-        processOpenPlaylist(name, cached);
-    } else {
+    if (cached) processOpenPlaylist(name, cached);
+    else {
         fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`)
-        .then(r => r.text())
-        .then(t => { localStorage.setItem('playlist_' + name, t); processOpenPlaylist(name, t); })
-        .catch(() => { document.getElementById('piesne-list').innerText = "Nedostupné offline."; });
+        .then(r => r.text()).then(t => { localStorage.setItem('playlist_' + name, t); processOpenPlaylist(name, t); })
+        .catch(() => { document.getElementById('piesne-list').innerText = "Nedostupné."; });
     }
 }
 
 function processOpenPlaylist(name, t) {
     const ids = t.split(',');
     currentModeList = ids.map(id => songs.find(s => s.id === id)).filter(x => x);
-    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:15px; border-bottom:2px solid #00bfff; margin-bottom:15px;"><h2 class="playlist-header-title" style="margin:0; text-align:center;">${name}</h2><button onclick="smartReset()" style="background:none; color:#ff4444; border:1px solid #ff4444; padding:6px 16px; border-radius:20px; cursor:pointer; margin-top:10px; font-weight:bold;">ZAVRIEŤ</button></div>` +
-    currentModeList.map(s => `<div onclick="openSongById('${s.id}', 'playlist')" style="padding:15px; border-bottom: 1px solid #333; color: #fff;"><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
+    document.getElementById('piesne-list').innerHTML = `<div style="text-align:center;padding:15px;border-bottom:2px solid #00bfff;margin-bottom:15px;"><h2 style="margin:0;text-align:center;">${name}</h2><button onclick="smartReset()" style="background:none;color:#ff4444;border:1px solid #ff4444;padding:6px 16px;border-radius:20px;margin-top:10px;font-weight:bold;">ZAVRIEŤ</button></div>` +
+    currentModeList.map(s => `<div onclick="openSongById('${s.id}','playlist')" style="padding:15px;border-bottom:1px solid #333;color:#fff;"><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</div>`).join('');
     window.scrollTo(0,0);
 }
 
 function renderPlaylists(d) {
     const sect = document.getElementById('playlists-section');
-    let html = `<h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer; padding:10px 0; text-align:center; width:100%; display:block;">Playlisty <small style="font-size:10px; opacity:0.5; display:block;">(klikni pre správu)</small></h2>`;
+    let html = `<h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer;padding:10px 0;text-align:center;width:100%;display:block;">Playlisty <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre správu)</small></h2>`;
     if (d && d.length > 0) {
-        html += d.map(p => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom: 1px solid #333;" onclick="openPlaylist('${p.name}')">
-                <span style="cursor:pointer; flex-grow:1; display:flex; align-items:center; color:#fff;">
-                    <i class="fas fa-music" style="color:#00bfff; width: 25px; text-align: center; margin-right:12px;"></i>
-                    ${p.name}
-                </span>
-                ${isAdmin ? `<div style="display:flex; gap:20px; align-items:center;"><i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff; padding:10px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444; padding:10px;"></i></div>` : ''}
-            </div>`).join('');
+        html += d.map(p => `<div style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #333;" onclick="openPlaylist('${p.name}')">
+            <span style="cursor:pointer;flex-grow:1;display:flex;align-items:center;color:#fff;"><i class="fas fa-music" style="color:#00bfff;width:25px;margin-right:12px;"></i>${p.name}</span>
+            ${isAdmin ? `<div style="display:flex;gap:20px;"><i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;padding:10px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;padding:10px;"></i></div>` : ''}
+        </div>`).join('');
     }
-    sect.innerHTML = html + `<div style="border-bottom: 1px solid #333; margin-bottom: 10px;"></div>`;
+    sect.innerHTML = html + `<div style="border-bottom:1px solid #333;margin-bottom:10px;"></div>`;
 }
 
-function deletePlaylist(n) { 
+// NOVE: Mazanie na pozadí
+async function deletePlaylist(n) { 
     if (confirm(`Vymazať ${n}?`)) {
-        const delWin = window.open(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(n)}&pwd=qwer`, '_blank','width=300,height=200');
-        const checkWin = setInterval(() => { if (delWin && delWin.closed) { clearInterval(checkWin); loadPlaylistHeaders(); } }, 500);
+        try {
+            await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(n)}&pwd=qwer`, { mode: 'no-cors' });
+            alert('Playlist bol zmazaný.');
+            setTimeout(() => { loadPlaylistHeaders(); }, 1000);
+        } catch(e) { alert('Chyba pri mazaní.'); }
     }
-}
-
-async function submitErrorForm(e) {
-    e.preventDefault();
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true; btn.innerText = "ODOSIELAM...";
-    try {
-        await fetch("https://formspree.io/f/mvzzkwlw", { method: "POST", body: new FormData(e.target), headers: { 'Accept': 'application/json' } });
-        document.getElementById('form-status').style.display = "block";
-        e.target.reset();
-        setTimeout(() => { document.getElementById('form-status').style.display = "none"; }, 4000);
-    } catch (err) { alert("Chyba spojenia."); }
-    finally { btn.disabled = false; btn.innerText = "ODOSLAŤ"; }
 }
 
 document.addEventListener('DOMContentLoaded', parseXML);
