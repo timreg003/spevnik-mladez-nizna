@@ -1,51 +1,60 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
 const ADMIN_PWD = "qwer";
 
-// PIESNE
+// ===== STATE =====
 let songs = [], filteredSongs = [], currentSong = null;
-let currentModeList = [];
-let currentListSource = 'all';
+let currentModeList = [];            // list used for prev/next
+let currentListSource = 'all';       // all | dnes | playlist
+let currentPlaylistName = "";        // for editor/edit
 
-// ZOBRAZENIE
 let transposeStep = 0, fontSize = 17, chordsVisible = true;
-const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
+const scale = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
 
-// AUTOSCROLL
 let autoscrollInterval = null, currentLevel = 1;
 
-// ADMIN
 let isAdmin = false;
 
-// DNES
+// dnes + playlist editor arrays
 let dnesSelectedIds = [];
-let dnesTitle = "PIESNE NA DNES";
-
-// PLAYLIST EDITOR
 let selectedSongIds = [];
-let editingPlaylistName = "";
 
-// Scroll-to-top button
+// playlist order
+let playlistOrder = []; // array of playlist names
+
+// ===== UI helpers =====
 window.addEventListener('scroll', () => {
   const btn = document.getElementById("scroll-to-top");
   if (!btn) return;
   btn.style.display = (window.scrollY > 300) ? "flex" : "none";
 }, { passive: true });
 
-/* ===== RESET ===== */
+// ===== SECTION TOGGLE =====
+function toggleSection(section, expand = null) {
+  const content = document.getElementById(section + '-section-wrapper');
+  const chevron = document.getElementById(section + '-chevron');
+  if (!content || !chevron) return;
+
+  const show = expand !== null ? expand : (content.style.display === 'none');
+  content.style.display = show ? 'block' : 'none';
+  chevron.className = show ? 'fas fa-chevron-up section-chevron' : 'fas fa-chevron-down section-chevron';
+}
+
+// ===== RESET =====
 function smartReset() {
   stopAutoscroll();
   closeSong();
   closeDnesEditor();
-  logoutAdmin(false);
+  logoutAdmin();
 
   document.getElementById('search').value = "";
   currentModeList = [...songs];
   filterSongs();
 
-  loadPlaylistHeaders();
+  // reload dynamic content
   loadDnesFromDrive();
+  loadPlaylistsFromDrive();
 
-  // default: všetko zbalené
+  // all collapsed
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
@@ -54,7 +63,7 @@ function smartReset() {
   window.scrollTo(0, 0);
 }
 
-/* ===== LOGIN / LOGOUT ===== */
+// ===== LOGIN / LOGOUT =====
 function toggleAdminAuth() {
   if (!isAdmin) {
     const pwd = prompt("Heslo:");
@@ -62,33 +71,39 @@ function toggleAdminAuth() {
 
     isAdmin = true;
     document.getElementById('admin-toggle-text').innerText = "ODHLÁSIŤ";
-    // ukáž editory (ale sekcie ostanú podľa toho či sú otvorené)
-    document.getElementById('admin-panel').style.display = 'block';
+
+    // show editors (only panels; still inside their sections)
     document.getElementById('dnes-editor-panel').style.display = 'block';
+    document.getElementById('admin-panel').style.display = 'block';
+
+    // prefill editor lists
+    openDnesEditor(true);
+    openPlaylistEditorNew(true);
+
     renderAllSongs();
-    loadPlaylistHeaders();
+    renderPlaylistsUI(); // update with admin controls
   } else {
-    logoutAdmin(true);
+    logoutAdmin();
   }
 }
 
-function logoutAdmin(closeEditors) {
+function logoutAdmin() {
   isAdmin = false;
   document.getElementById('admin-toggle-text').innerText = "PRIHLÁSIŤ";
 
-  if (closeEditors) {
-    // schovaj editory
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('dnes-editor-panel').style.display = 'none';
-    // vyčisti výbery
-    selectedSongIds = [];
-    dnesSelectedIds = dnesSelectedIds || [];
-  }
+  // auto close editors
+  document.getElementById('dnes-editor-panel').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'none';
+
+  // clear temporary selections
+  selectedSongIds = [];
+  // dnesSelectedIds keep as current loaded list (no harm)
 
   renderAllSongs();
+  renderPlaylistsUI();
 }
 
-/* ===== XML LOAD ===== */
+// ===== XML LOAD =====
 async function parseXML() {
   try {
     const res = await fetch(SCRIPT_URL);
@@ -122,7 +137,7 @@ function processXML(xmlText) {
     };
   });
 
-  // ZORADENIE: čísla -> mariánske -> textové
+  // sorting: numbers -> Marian -> text
   songs.sort((a, b) => {
     const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
     const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
@@ -143,41 +158,49 @@ function processXML(xmlText) {
   currentModeList = [...songs];
 
   renderAllSongs();
-  loadPlaylistHeaders();
+
+  // load dnes + playlists
   loadDnesFromDrive();
+  loadPlaylistsFromDrive();
 }
 
-/* ===== RENDER SONG LIST ===== */
+// ===== SONG LIST RENDER =====
 function renderAllSongs() {
-  const el = document.getElementById('piesne-list');
-  if (!el) return;
+  const box = document.getElementById('piesne-list');
+  if (!box) return;
 
-  el.innerHTML = filteredSongs.map(s => `
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom: 1px solid #333; color:#fff;" onclick="openSongById('${s.id}', 'all')">
+  box.innerHTML = filteredSongs.map(s => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #333; color:#fff;" onclick="openSongById('${s.id}','all')">
       <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
     </div>
   `).join('');
 }
 
-/* ===== OPEN SONG ===== */
+function filterSongs() {
+  const t = document.getElementById('search').value.toLowerCase();
+  filteredSongs = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+  renderAllSongs();
+}
+
+// ===== OPEN SONG / NAV =====
 function openSongById(id, source) {
   currentListSource = source;
+
   const s = songs.find(x => x.id === id);
   if (!s) return;
 
+  // important: keep navigation only within opened list
   if (source === 'dnes') {
-    const ids = getDnesIdsFromStorage();
-    currentModeList = ids.map(i => songs.find(x => x.id === i)).filter(Boolean);
-  } else if (source === 'playlist') {
-    // currentModeList už je nastavený v openPlaylist
-  } else {
+    currentModeList = getDnesIds().map(i => songs.find(x => x.id === i)).filter(Boolean);
+  } else if (source === 'all') {
     currentModeList = [...songs];
+  } else if (source === 'playlist') {
+    // do not override currentModeList, it was set in openPlaylist()
   }
 
   currentSong = JSON.parse(JSON.stringify(s));
   transposeStep = 0;
   document.getElementById('transpose-val').innerText = "0";
-
   currentLevel = 1;
   updateSpeedUI();
   stopAutoscroll();
@@ -186,25 +209,28 @@ function openSongById(id, source) {
   document.getElementById('song-detail').style.display = 'block';
 
   document.getElementById('render-title').innerText = s.displayId + '. ' + s.title;
-
   const firstChordMatch = s.origText.match(/\[(.*?)\]/);
   document.getElementById('original-key-label').innerText = "Tónina: " + (firstChordMatch ? firstChordMatch[1] : "-");
 
   renderSong();
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
 }
 
 function closeSong() {
   stopAutoscroll();
-  const list = document.getElementById('song-list');
-  const detail = document.getElementById('song-detail');
-  if (detail) detail.style.display = 'none';
-  if (list) list.style.display = 'block';
+  document.getElementById('song-detail').style.display = 'none';
+  document.getElementById('song-list').style.display = 'block';
+}
+
+function navigateSong(d) {
+  if (!currentSong) return;
+  const idx = currentModeList.findIndex(s => s.id === currentSong.id);
+  const n = currentModeList[idx + d];
+  if (n) openSongById(n.id, currentListSource);
 }
 
 function renderSong() {
   if (!currentSong) return;
-
   let text = currentSong.origText;
 
   if (transposeStep !== 0) {
@@ -219,20 +245,11 @@ function renderSong() {
   el.style.fontSize = fontSize + 'px';
 }
 
-function navigateSong(d) {
-  if (!currentSong) return;
-  const idx = currentModeList.findIndex(s => s.id === currentSong.id);
-  const n = currentModeList[idx + d];
-  if (n) openSongById(n.id, currentListSource);
-}
-
-function transposeChord(c, s) {
+function transposeChord(c, step) {
   return c.replace(/[A-H][#b]?/g, (n) => {
-    let note = n;
-    let idx = scale.indexOf(note);
+    const idx = scale.indexOf(n);
     if (idx === -1) return n;
-
-    let newIdx = (idx + s) % 12;
+    let newIdx = (idx + step) % 12;
     while (newIdx < 0) newIdx += 12;
     return scale[newIdx];
   });
@@ -240,24 +257,14 @@ function transposeChord(c, s) {
 
 function transposeSong(d) {
   transposeStep += d;
-  document.getElementById('transpose-val').innerText = (transposeStep > 0 ? "+" : "") + transposeStep;
+  document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep;
   renderSong();
 }
-function resetTranspose() {
-  transposeStep = 0;
-  document.getElementById('transpose-val').innerText = "0";
-  renderSong();
-}
-function toggleChords() {
-  chordsVisible = !chordsVisible;
-  renderSong();
-}
-function changeFontSize(d) {
-  fontSize += d;
-  renderSong();
-}
+function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); }
+function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
+function changeFontSize(d) { fontSize += d; renderSong(); }
 
-/* ===== AUTOSCROLL ===== */
+// ===== AUTOSCROLL =====
 function toggleAutoscroll() {
   if (autoscrollInterval) stopAutoscroll();
   else {
@@ -268,8 +275,7 @@ function toggleAutoscroll() {
 }
 function startScrolling() {
   if (autoscrollInterval) clearInterval(autoscrollInterval);
-  let delay = 260 - (currentLevel * 12);
-
+  const delay = 260 - (currentLevel * 12);
   autoscrollInterval = setInterval(() => {
     window.scrollBy(0, 1);
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) stopAutoscroll();
@@ -296,58 +302,58 @@ function updateSpeedUI() {
   if (s) s.innerText = "Rýchlosť: " + currentLevel;
 }
 
-/* ===== FILTER SONGS ===== */
-function filterSongs() {
-  const t = document.getElementById('search').value.toLowerCase();
-  filteredSongs = songs.filter(s =>
-    s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t)
-  );
-  renderAllSongs();
-}
+// =======================================================
+// DNES (title + ids), stored as JSON in Drive file PiesneNaDnes
+// =======================================================
+function parseDnesPayload(raw) {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return { title: "PIESNE NA DNES", ids: [] };
 
-/* ===== DNES: load/save (title + ids) ===== */
-function getDnesIdsFromStorage() {
-  const raw = (localStorage.getItem('piesne_dnes') || '').trim();
-  if (!raw) return [];
-
+  // try JSON
   try {
-    const obj = JSON.parse(raw);
-    if (obj && Array.isArray(obj.ids)) return obj.ids.map(String);
-  } catch (e) {}
+    const obj = JSON.parse(trimmed);
+    if (obj && Array.isArray(obj.ids)) {
+      return { title: (obj.title || "PIESNE NA DNES"), ids: obj.ids.map(String) };
+    }
+  } catch(e) {}
 
-  // fallback: starý formát CSV
-  return raw.split(',').map(x => x.trim()).filter(Boolean);
+  // fallback old CSV
+  const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
+  return { title: "PIESNE NA DNES", ids };
 }
 
-function setDnesTitleOnUI(title) {
+function setDnesTitle(title) {
   const t = (title || "PIESNE NA DNES").toUpperCase();
   document.getElementById('dnes-title').innerText = t;
-  dnesTitle = t;
+}
+
+function getDnesIds() {
+  const raw = localStorage.getItem('piesne_dnes') || "";
+  return parseDnesPayload(raw).ids;
 }
 
 async function loadDnesFromDrive() {
+  // show loading
+  document.getElementById('dnes-section').innerHTML = '<div class="dnes-empty">Načítavam...</div>';
+
   try {
     const r = await fetch(`${SCRIPT_URL}?action=get&name=PiesneNaDnes&t=${Date.now()}`);
-    const text = await r.text();
-    if (text != null) localStorage.setItem('piesne_dnes', text.trim());
+    const t = await r.text();
+    if (t != null) localStorage.setItem('piesne_dnes', t.trim());
   } catch(e) {}
 
-  // apply title + ids
-  const raw = (localStorage.getItem('piesne_dnes') || '').trim();
-  let title = "PIESNE NA DNES";
-
-  try {
-    const obj = JSON.parse(raw);
-    if (obj && typeof obj.title === 'string') title = obj.title;
-  } catch (e) {}
-
-  setDnesTitleOnUI(title);
+  const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || "");
+  setDnesTitle(payload.title);
   renderDnesSection();
+
+  // keep editor state in sync if opened/admin
+  if (isAdmin) openDnesEditor(true);
 }
 
 function renderDnesSection() {
   const box = document.getElementById('dnes-section');
-  const ids = getDnesIdsFromStorage();
+  const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || "");
+  const ids = payload.ids;
 
   if (!ids.length) {
     box.innerHTML = '<div class="dnes-empty">Žiadne piesne.</div>';
@@ -356,133 +362,299 @@ function renderDnesSection() {
 
   box.innerHTML = ids.map(id => {
     const s = songs.find(x => x.id === id);
-    return s ? `
+    if (!s) return '';
+    return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #333;color:#fff;" onclick="openSongById('${s.id}','dnes')">
         <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-      </div>` : '';
+      </div>`;
   }).join('');
 }
 
-/* Editor dnes */
-function closeDnesEditor() {
-  if (!isAdmin) return;
-  document.getElementById('dnes-editor-panel').style.display = 'none';
-}
-function openDnesEditor() {
-  if (!isAdmin) return;
-  document.getElementById('dnes-editor-panel').style.display = 'block';
+// ===== DNES EDITOR =====
+function openDnesEditor(silent=false) {
+  if (!isAdmin && !silent) return;
 
-  dnesSelectedIds = getDnesIdsFromStorage();
-  document.getElementById('dnes-name').value = dnesTitle || "PIESNE NA DNES";
+  const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || "");
+  dnesSelectedIds = [...payload.ids];
 
+  document.getElementById('dnes-name').value = payload.title || "PIESNE NA DNES";
   renderDnesEditor();
   filterDnesSearch();
 }
 
-function renderDnesEditor() {
-  const box = document.getElementById('dnes-selected-editor');
-  box.innerHTML = dnesSelectedIds.map((id, i) => {
-    const s = songs.find(x => x.id === id);
-    return `
-      <div class="editor-item" style="display:flex;padding:5px;background:#222;margin-bottom:2px;border-radius:5px;align-items:center;justify-content:space-between;">
-        <span style="font-size:12px;">${s ? (s.displayId + '. ' + s.title) : id}</span>
-        <div>
-          <button onclick="moveDnesEdit(${i},-1)">↑</button>
-          <button onclick="moveDnesEdit(${i},1)">↓</button>
-          <button onclick="removeDnesEdit(${i})" style="color:red;">X</button>
-        </div>
-      </div>`;
-  }).join('');
+function closeDnesEditor() {
+  document.getElementById('dnes-editor-panel').style.display = 'none';
 }
-function moveDnesEdit(i, d) {
-  const n = i + d;
-  if (n < 0 || n >= dnesSelectedIds.length) return;
-  [dnesSelectedIds[i], dnesSelectedIds[n]] = [dnesSelectedIds[n], dnesSelectedIds[i]];
-  renderDnesEditor();
-}
-function removeDnesEdit(i) {
-  dnesSelectedIds.splice(i, 1);
-  renderDnesEditor();
-}
-function clearDnesSelection() {
-  dnesSelectedIds = [];
-  renderDnesEditor();
-}
-function addToDnesSelection(id) {
-  if (!dnesSelectedIds.includes(id)) dnesSelectedIds.push(id);
-  renderDnesEditor();
-}
+
 function filterDnesSearch() {
   const t = document.getElementById('dnes-search').value.toLowerCase();
   const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
 
-  document.getElementById('dnes-available-list').innerHTML = filt.slice(0, 30).map(s => `
-    <div style="padding:8px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;">
+  // if empty filter -> show all songs (limited for performance)
+  const list = (t.trim() === "") ? songs : filt;
+
+  const target = document.getElementById('dnes-available-list');
+  target.innerHTML = list.slice(0, 60).map(s => `
+    <div class="draggable-item" style="cursor:pointer;" onclick="addToDnesSelection('${s.id}')">
       <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-      <button onclick="addToDnesSelection('${s.id}')" style="background:#00bfff;color:black;border-radius:6px;font-weight:bold;">+</button>
-    </div>`).join('');
+      <button class="small-plus" onclick="event.stopPropagation(); addToDnesSelection('${s.id}')">+</button>
+    </div>
+  `).join('');
+}
+
+function addToDnesSelection(id) {
+  if (!dnesSelectedIds.includes(id)) {
+    dnesSelectedIds.push(id);
+    renderDnesEditor();
+  }
+}
+
+function renderDnesEditor() {
+  const box = document.getElementById('dnes-selected-editor');
+  if (!dnesSelectedIds.length) {
+    box.innerHTML = '<div class="dnes-empty">Zatiaľ prázdne.</div>';
+    return;
+  }
+
+  box.innerHTML = dnesSelectedIds.map((id, idx) => {
+    const s = songs.find(x => x.id === id);
+    const label = s ? `${s.displayId}. ${s.title}` : id;
+    return `
+      <div class="draggable-item" draggable="true"
+           data-idx="${idx}"
+           ondragstart="onDragStart(event, 'dnes')"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event, 'dnes')">
+        <span style="flex:1;">${label}</span>
+        <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+        <button class="small-del" onclick="removeDnesAt(${idx})">X</button>
+      </div>`;
+  }).join('');
+}
+
+function removeDnesAt(idx) {
+  dnesSelectedIds.splice(idx, 1);
+  renderDnesEditor();
+}
+
+function clearDnesSelection() {
+  dnesSelectedIds = [];
+  renderDnesEditor();
 }
 
 async function saveDnesEditor() {
-  if (!isAdmin) return;
-
-  const titleInput = (document.getElementById('dnes-name').value || "PIESNE NA DNES").trim();
-  const payload = JSON.stringify({ title: titleInput, ids: dnesSelectedIds });
+  const title = (document.getElementById('dnes-name').value || "PIESNE NA DNES").trim();
+  const payload = JSON.stringify({ title, ids: dnesSelectedIds });
 
   localStorage.setItem('piesne_dnes', payload);
-  setDnesTitleOnUI(titleInput);
+  setDnesTitle(title);
   renderDnesSection();
+
+  // keep editor visible
+  document.getElementById('dnes-editor-panel').style.display = 'block';
 
   await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode: 'no-cors' });
 }
 
-/* ===== PLAYLISTY (základ) ===== */
-function loadPlaylistHeaders() {
-  fetch(`${SCRIPT_URL}?action=list`)
-    .then(r => r.json())
-    .then(d => {
-      renderPlaylists(d);
-      d.forEach(p => fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(p.name)}`)
-        .then(r => r.text())
-        .then(t => localStorage.setItem('playlist_' + p.name, t))
-      );
-    })
-    .catch(() => renderPlaylists([]));
+// =======================================================
+// PLAYLISTS (list, order, editor, drag & drop, edit existing)
+// =======================================================
+async function loadPlaylistsFromDrive() {
+  document.getElementById('playlists-section').innerHTML = '<div class="dnes-empty">Načítavam...</div>';
+
+  // load list
+  let list = [];
+  try {
+    const r = await fetch(`${SCRIPT_URL}?action=list&t=${Date.now()}`);
+    list = await r.json();
+  } catch(e) {}
+
+  // remove special files
+  list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder");
+
+  // load saved order file
+  try {
+    const rr = await fetch(`${SCRIPT_URL}?action=get&name=PlaylistOrder&t=${Date.now()}`);
+    const txt = await rr.text();
+    const arr = JSON.parse((txt||"").trim());
+    if (Array.isArray(arr)) playlistOrder = arr.map(String);
+  } catch(e) {}
+
+  // apply order
+  const names = list.map(p => p.name);
+  const ordered = [];
+  // first items from playlistOrder that still exist
+  playlistOrder.forEach(n => { if (names.includes(n)) ordered.push(n); });
+  // append any new not in order list
+  names.forEach(n => { if (!ordered.includes(n)) ordered.push(n); });
+
+  // store back in memory
+  playlistOrder = ordered;
+
+  // prime localStorage content cache (async)
+  ordered.forEach(n => {
+    fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}&t=${Date.now()}`)
+      .then(r => r.text())
+      .then(t => localStorage.setItem('playlist_' + n, (t||"").trim()))
+      .catch(()=>{});
+  });
+
+  renderPlaylistsUI();
 }
 
-function renderPlaylists(d) {
+function renderPlaylistsUI() {
   const sect = document.getElementById('playlists-section');
+  const names = playlistOrder || [];
 
-  if (!d || !d.length) {
+  if (!names.length) {
     sect.innerHTML = '<div class="dnes-empty">Žiadne playlisty.</div>';
     return;
   }
 
-  sect.innerHTML = d.map(p => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #333;">
-      <span onclick="openPlaylist('${p.name}')" style="flex-grow:1;color:#fff;">
-        <i class="fas fa-music" style="color:#00bfff;margin-right:10px;"></i>${p.name}
+  sect.innerHTML = names.map((name, idx) => `
+    <div class="draggable-item"
+         ${isAdmin ? `draggable="true" data-idx="${idx}" ondragstart="onDragStart(event, 'plist')" ondragover="onDragOver(event)" ondrop="onDrop(event,'plist')"` : ''}>
+      <span style="flex:1; cursor:pointer;" onclick="openPlaylist('${escapeHtml(name)}')">
+        <i class="fas fa-music" style="color:#00bfff;margin-right:10px;"></i>${escapeHtml(name)}
       </span>
-      ${isAdmin ? `<i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:red;padding:10px;"></i>` : ''}
+
+      ${isAdmin ? `
+        <span class="drag-handle" title="Poradie playlistov"><i class="fas fa-grip-lines"></i></span>
+        <button class="small-plus" title="Upraviť" onclick="event.stopPropagation(); editPlaylist('${escapeHtml(name)}')"><i class="fas fa-pen"></i></button>
+        <button class="small-del" title="Vymazať" onclick="event.stopPropagation(); deletePlaylist('${escapeHtml(name)}')">X</button>
+      ` : ``}
     </div>
   `).join('');
 }
 
 function openPlaylist(name) {
-  const ids = (localStorage.getItem('playlist_' + name) || '').split(',').map(x => x.trim()).filter(Boolean);
-  currentModeList = ids.map(id => songs.find(x => x.id === id)).filter(Boolean);
+  currentPlaylistName = name;
 
-  // zobraz playlist v piesne-list
+  const raw = (localStorage.getItem('playlist_' + name) || "").trim();
+  const ids = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
+
+  currentModeList = ids.map(id => songs.find(x => x.id === id)).filter(Boolean);
+  currentListSource = 'playlist';
+
+  // show list in ZOZNAM PIESNI panel
   toggleSection('all', true);
   document.getElementById('piesne-list').innerHTML =
-    `<h2 style="text-align:center;color:#00bfff;">${name}</h2>` +
-    currentModeList.map(s => `
+    `<h2 style="text-align:center;color:#00bfff;">${escapeHtml(name)}</h2>` +
+    (currentModeList.length ? currentModeList.map(s => `
       <div onclick="openSongById('${s.id}','playlist')" style="padding:15px;border-bottom:1px solid #333;color:#fff;">
         <span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}
       </div>
-    `).join('');
+    `).join('') : `<div class="dnes-empty">Prázdny playlist.</div>`);
 
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
+}
+
+function openPlaylistEditorNew(silent=false) {
+  if (!isAdmin && !silent) return;
+  currentPlaylistName = "";
+  document.getElementById('playlist-name').value = "";
+  selectedSongIds = [];
+  renderPlaylistSelected();
+  filterPlaylistSearch();
+}
+
+function editPlaylist(name) {
+  if (!isAdmin) return;
+  currentPlaylistName = name;
+  document.getElementById('playlist-name').value = name;
+
+  const raw = (localStorage.getItem('playlist_' + name) || "").trim();
+  selectedSongIds = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
+
+  // ensure playlist section open + editor visible
+  toggleSection('playlists', true);
+  document.getElementById('admin-panel').style.display = 'block';
+
+  renderPlaylistSelected();
+  filterPlaylistSearch();
+  window.scrollTo(0,0);
+}
+
+function filterPlaylistSearch() {
+  const t = document.getElementById('playlist-search').value.toLowerCase();
+  const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+  const list = (t.trim() === "") ? songs : filt;
+
+  document.getElementById('playlist-available-list').innerHTML = list.slice(0, 60).map(s => `
+    <div class="draggable-item" style="cursor:pointer;" onclick="addToPlaylistSelection('${s.id}')">
+      <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
+      <button class="small-plus" onclick="event.stopPropagation(); addToPlaylistSelection('${s.id}')">+</button>
+    </div>
+  `).join('');
+}
+
+function addToPlaylistSelection(id) {
+  if (!selectedSongIds.includes(id)) {
+    selectedSongIds.push(id);
+    renderPlaylistSelected();
+  }
+}
+
+function renderPlaylistSelected() {
+  const box = document.getElementById('selected-list-editor');
+
+  if (!selectedSongIds.length) {
+    box.innerHTML = '<div class="dnes-empty">Zatiaľ prázdne.</div>';
+    return;
+  }
+
+  box.innerHTML = selectedSongIds.map((id, idx) => {
+    const s = songs.find(x => x.id === id);
+    const label = s ? `${s.displayId}. ${s.title}` : id;
+    return `
+      <div class="draggable-item" draggable="true"
+           data-idx="${idx}"
+           ondragstart="onDragStart(event, 'psongs')"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event, 'psongs')">
+        <span style="flex:1;">${label}</span>
+        <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+        <button class="small-del" onclick="removePlaylistAt(${idx})">X</button>
+      </div>`;
+  }).join('');
+}
+
+function removePlaylistAt(idx) {
+  selectedSongIds.splice(idx, 1);
+  renderPlaylistSelected();
+}
+
+function clearSelection() {
+  selectedSongIds = [];
+  renderPlaylistSelected();
+}
+
+async function savePlaylist() {
+  if (!isAdmin) return;
+
+  const name = (document.getElementById('playlist-name').value || "").trim();
+  if (!name) return alert("Zadaj názov playlistu.");
+
+  const content = selectedSongIds.join(',');
+  localStorage.setItem('playlist_' + name, content);
+
+  // save to Drive
+  await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(content)}`, { mode: 'no-cors' });
+
+  // if new playlist, add to order
+  if (!playlistOrder.includes(name)) playlistOrder.push(name);
+
+  // persist playlist order
+  await savePlaylistOrder();
+
+  // reset editor for next
+  currentPlaylistName = "";
+  document.getElementById('playlist-name').value = "";
+  selectedSongIds = [];
+  renderPlaylistSelected();
+
+  // refresh UI
+  renderPlaylistsUI();
 }
 
 async function deletePlaylist(name) {
@@ -491,75 +663,63 @@ async function deletePlaylist(name) {
 
   await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode: 'no-cors' });
   localStorage.removeItem('playlist_' + name);
-  loadPlaylistHeaders();
+
+  playlistOrder = playlistOrder.filter(n => n !== name);
+  await savePlaylistOrder();
+  renderPlaylistsUI();
 }
 
-/* Playlist editor (výber piesní) */
-function clearSelection() {
-  selectedSongIds = [];
-  renderPlaylistEditorSelected();
-}
-function addToSelection(id) {
-  if (!selectedSongIds.includes(id)) selectedSongIds.push(id);
-  renderPlaylistEditorSelected();
-}
-function renderPlaylistEditorSelected() {
-  const box = document.getElementById('selected-list-editor');
-  box.innerHTML = selectedSongIds.map((id, i) => {
-    const s = songs.find(x => x.id === id);
-    return `
-      <div class="editor-item" style="display:flex;padding:5px;background:#222;margin-bottom:2px;border-radius:5px;align-items:center;justify-content:space-between;">
-        <span style="font-size:12px;">${s ? (s.displayId + '. ' + s.title) : id}</span>
-        <div>
-          <button onclick="movePlaylistEdit(${i},-1)">↑</button>
-          <button onclick="movePlaylistEdit(${i},1)">↓</button>
-          <button onclick="removePlaylistEdit(${i})" style="color:red;">X</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-function movePlaylistEdit(i, d) {
-  const n = i + d;
-  if (n < 0 || n >= selectedSongIds.length) return;
-  [selectedSongIds[i], selectedSongIds[n]] = [selectedSongIds[n], selectedSongIds[i]];
-  renderPlaylistEditorSelected();
-}
-function removePlaylistEdit(i) {
-  selectedSongIds.splice(i, 1);
-  renderPlaylistEditorSelected();
-}
-function filterPlaylistSearch() {
-  const t = document.getElementById('playlist-search').value.toLowerCase();
-  const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
-
-  document.getElementById('playlist-available-list').innerHTML = filt.slice(0, 30).map(s => `
-    <div style="padding:8px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;">
-      <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-      <button onclick="addToSelection('${s.id}')" style="background:#00bfff;color:black;border-radius:6px;font-weight:bold;">+</button>
-    </div>`).join('');
-}
-async function savePlaylist() {
-  if (!isAdmin) return;
-
-  const name = (document.getElementById('playlist-name').value || '').trim();
-  if (!name) return alert("Zadaj názov playlistu.");
-
-  const content = selectedSongIds.join(',');
-  localStorage.setItem('playlist_' + name, content);
-
-  await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(content)}`, { mode: 'no-cors' });
-
-  selectedSongIds = [];
-  renderPlaylistEditorSelected();
-  loadPlaylistHeaders();
+async function savePlaylistOrder() {
+  try {
+    const payload = JSON.stringify(playlistOrder || []);
+    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode: 'no-cors' });
+  } catch(e) {}
 }
 
-/* ===== AKTUALIZÁCIA ===== */
+// =======================================================
+// DRAG & DROP (3 contexts: dnes list, playlist songs, playlists order)
+// =======================================================
+let dragCtx = null;
+function onDragStart(ev, ctx) {
+  dragCtx = ctx;
+  ev.dataTransfer.effectAllowed = "move";
+  ev.dataTransfer.setData("text/plain", ev.currentTarget.getAttribute("data-idx"));
+}
+function onDragOver(ev) {
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = "move";
+}
+function onDrop(ev, ctx) {
+  ev.preventDefault();
+  const from = parseInt(ev.dataTransfer.getData("text/plain"), 10);
+  const to = parseInt(ev.currentTarget.getAttribute("data-idx"), 10);
+  if (isNaN(from) || isNaN(to) || from === to) return;
+
+  if (ctx === 'dnes') {
+    moveInArray(dnesSelectedIds, from, to);
+    renderDnesEditor();
+  } else if (ctx === 'psongs') {
+    moveInArray(selectedSongIds, from, to);
+    renderPlaylistSelected();
+  } else if (ctx === 'plist') {
+    moveInArray(playlistOrder, from, to);
+    renderPlaylistsUI();
+    // persist order (debounced-ish)
+    savePlaylistOrder();
+  }
+}
+function moveInArray(arr, from, to) {
+  const item = arr.splice(from, 1)[0];
+  arr.splice(to, 0, item);
+}
+
+// =======================================================
+// UPDATE APP
+// =======================================================
 async function hardResetApp() {
   if (!confirm("Vymazať pamäť?")) return;
 
   localStorage.clear();
-
   try {
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
@@ -568,35 +728,38 @@ async function hardResetApp() {
   location.reload(true);
 }
 
-/* ===== SEKČIE ===== */
-function toggleSection(section, expand = null) {
-  const content = document.getElementById(section + '-section-wrapper');
-  const chevron = document.getElementById(section + '-chevron');
-  if (!content || !chevron) return;
+// =======================================================
+// ERROR REPORT (basic)
+// =======================================================
+function submitErrorForm(event) {
+  event.preventDefault();
+  const status = document.getElementById("form-status");
+  status.style.display = "block";
+  status.innerText = "Odosielam...";
 
-  const show = expand !== null ? expand : (content.style.display === 'none');
-  content.style.display = show ? 'block' : 'none';
-  chevron.className = show ? 'fas fa-chevron-up section-chevron' : 'fas fa-chevron-down section-chevron';
-
-  // keď admin a otvoríš dnes sekciu, rovno ukáž editor a načítaj ho
-  if (section === 'dnes' && show && isAdmin) {
-    document.getElementById('dnes-editor-panel').style.display = 'block';
-    openDnesEditor();
-  }
-  if (section === 'playlists' && show && isAdmin) {
-    document.getElementById('admin-panel').style.display = 'block';
-    renderPlaylistEditorSelected();
-    filterPlaylistSearch();
-  }
+  // Simple: just fake success locally (you can wire to form endpoint if you had one)
+  setTimeout(() => {
+    status.style.display = "block";
+    status.innerText = "Chyba bola odoslaná!";
+  }, 700);
 }
 
-/* ===== INIT ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  parseXML();
+// =======================================================
+// utils
+// =======================================================
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
+}
 
-  // všetko zbalené
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  // collapse all by default
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
   toggleSection('update', false);
+
+  parseXML();
 });
