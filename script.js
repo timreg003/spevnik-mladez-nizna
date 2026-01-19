@@ -1,11 +1,12 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
 const ADMIN_PWD = "qwer";
+const FORMSPREE_URL = "https://formspree.io/f/mvzzkwlw";
 
 // ===== STATE =====
 let songs = [], filteredSongs = [], currentSong = null;
-let currentModeList = [];            // list used for prev/next
-let currentListSource = 'all';       // all | dnes | playlist
-let currentPlaylistName = "";        // for editor/edit
+let currentModeList = [];
+let currentListSource = 'all';
+let currentPlaylistName = "";
 
 let transposeStep = 0, fontSize = 17, chordsVisible = true;
 const scale = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
@@ -14,12 +15,12 @@ let autoscrollInterval = null, currentLevel = 1;
 
 let isAdmin = false;
 
-// dnes + playlist editor arrays
+// editors
 let dnesSelectedIds = [];
 let selectedSongIds = [];
 
-// playlist order
-let playlistOrder = []; // array of playlist names
+// playlists order
+let playlistOrder = [];
 
 // ===== UI helpers =====
 window.addEventListener('scroll', () => {
@@ -43,18 +44,15 @@ function toggleSection(section, expand = null) {
 function smartReset() {
   stopAutoscroll();
   closeSong();
-  closeDnesEditor();
   logoutAdmin();
 
   document.getElementById('search').value = "";
   currentModeList = [...songs];
   filterSongs();
 
-  // reload dynamic content
   loadDnesFromDrive();
   loadPlaylistsFromDrive();
 
-  // all collapsed
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
@@ -72,16 +70,14 @@ function toggleAdminAuth() {
     isAdmin = true;
     document.getElementById('admin-toggle-text').innerText = "ODHLÁSIŤ";
 
-    // show editors (only panels; still inside their sections)
     document.getElementById('dnes-editor-panel').style.display = 'block';
     document.getElementById('admin-panel').style.display = 'block';
 
-    // prefill editor lists
     openDnesEditor(true);
     openPlaylistEditorNew(true);
 
     renderAllSongs();
-    renderPlaylistsUI(); // update with admin controls
+    renderPlaylistsUI();
   } else {
     logoutAdmin();
   }
@@ -91,13 +87,10 @@ function logoutAdmin() {
   isAdmin = false;
   document.getElementById('admin-toggle-text').innerText = "PRIHLÁSIŤ";
 
-  // auto close editors
   document.getElementById('dnes-editor-panel').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'none';
 
-  // clear temporary selections
   selectedSongIds = [];
-  // dnesSelectedIds keep as current loaded list (no harm)
 
   renderAllSongs();
   renderPlaylistsUI();
@@ -159,7 +152,6 @@ function processXML(xmlText) {
 
   renderAllSongs();
 
-  // load dnes + playlists
   loadDnesFromDrive();
   loadPlaylistsFromDrive();
 }
@@ -189,13 +181,12 @@ function openSongById(id, source) {
   const s = songs.find(x => x.id === id);
   if (!s) return;
 
-  // important: keep navigation only within opened list
   if (source === 'dnes') {
     currentModeList = getDnesIds().map(i => songs.find(x => x.id === i)).filter(Boolean);
   } else if (source === 'all') {
     currentModeList = [...songs];
   } else if (source === 'playlist') {
-    // do not override currentModeList, it was set in openPlaylist()
+    // currentModeList already set in openPlaylist()
   }
 
   currentSong = JSON.parse(JSON.stringify(s));
@@ -211,6 +202,10 @@ function openSongById(id, source) {
   document.getElementById('render-title').innerText = s.displayId + '. ' + s.title;
   const firstChordMatch = s.origText.match(/\[(.*?)\]/);
   document.getElementById('original-key-label').innerText = "Tónina: " + (firstChordMatch ? firstChordMatch[1] : "-");
+
+  // pre error form
+  const hidden = document.getElementById('error-song-hidden');
+  if (hidden) hidden.value = `${s.displayId}. ${s.title}`;
 
   renderSong();
   window.scrollTo(0,0);
@@ -303,13 +298,12 @@ function updateSpeedUI() {
 }
 
 // =======================================================
-// DNES (title + ids), stored as JSON in Drive file PiesneNaDnes
+// DNES (title + ids)
 // =======================================================
 function parseDnesPayload(raw) {
   const trimmed = (raw || "").trim();
   if (!trimmed) return { title: "PIESNE NA DNES", ids: [] };
 
-  // try JSON
   try {
     const obj = JSON.parse(trimmed);
     if (obj && Array.isArray(obj.ids)) {
@@ -317,7 +311,6 @@ function parseDnesPayload(raw) {
     }
   } catch(e) {}
 
-  // fallback old CSV
   const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
   return { title: "PIESNE NA DNES", ids };
 }
@@ -333,7 +326,6 @@ function getDnesIds() {
 }
 
 async function loadDnesFromDrive() {
-  // show loading
   document.getElementById('dnes-section').innerHTML = '<div class="dnes-empty">Načítavam...</div>';
 
   try {
@@ -346,7 +338,6 @@ async function loadDnesFromDrive() {
   setDnesTitle(payload.title);
   renderDnesSection();
 
-  // keep editor state in sync if opened/admin
   if (isAdmin) openDnesEditor(true);
 }
 
@@ -382,19 +373,14 @@ function openDnesEditor(silent=false) {
   filterDnesSearch();
 }
 
-function closeDnesEditor() {
-  document.getElementById('dnes-editor-panel').style.display = 'none';
-}
-
 function filterDnesSearch() {
   const t = document.getElementById('dnes-search').value.toLowerCase();
-  const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
-
-  // if empty filter -> show all songs (limited for performance)
-  const list = (t.trim() === "") ? songs : filt;
+  const list = (t.trim() === "")
+    ? songs
+    : songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
 
   const target = document.getElementById('dnes-available-list');
-  target.innerHTML = list.slice(0, 60).map(s => `
+  target.innerHTML = list.map(s => `
     <div class="draggable-item" style="cursor:pointer;" onclick="addToDnesSelection('${s.id}')">
       <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
       <button class="small-plus" onclick="event.stopPropagation(); addToDnesSelection('${s.id}')">+</button>
@@ -450,29 +436,23 @@ async function saveDnesEditor() {
   setDnesTitle(title);
   renderDnesSection();
 
-  // keep editor visible
-  document.getElementById('dnes-editor-panel').style.display = 'block';
-
   await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode: 'no-cors' });
 }
 
 // =======================================================
-// PLAYLISTS (list, order, editor, drag & drop, edit existing)
+// PLAYLISTS (list, order, editor)
 // =======================================================
 async function loadPlaylistsFromDrive() {
   document.getElementById('playlists-section').innerHTML = '<div class="dnes-empty">Načítavam...</div>';
 
-  // load list
   let list = [];
   try {
     const r = await fetch(`${SCRIPT_URL}?action=list&t=${Date.now()}`);
     list = await r.json();
   } catch(e) {}
 
-  // remove special files
   list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder");
 
-  // load saved order file
   try {
     const rr = await fetch(`${SCRIPT_URL}?action=get&name=PlaylistOrder&t=${Date.now()}`);
     const txt = await rr.text();
@@ -480,18 +460,14 @@ async function loadPlaylistsFromDrive() {
     if (Array.isArray(arr)) playlistOrder = arr.map(String);
   } catch(e) {}
 
-  // apply order
   const names = list.map(p => p.name);
   const ordered = [];
-  // first items from playlistOrder that still exist
+
   playlistOrder.forEach(n => { if (names.includes(n)) ordered.push(n); });
-  // append any new not in order list
   names.forEach(n => { if (!ordered.includes(n)) ordered.push(n); });
 
-  // store back in memory
   playlistOrder = ordered;
 
-  // prime localStorage content cache (async)
   ordered.forEach(n => {
     fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}&t=${Date.now()}`)
       .then(r => r.text())
@@ -514,20 +490,21 @@ function renderPlaylistsUI() {
   sect.innerHTML = names.map((name, idx) => `
     <div class="draggable-item"
          ${isAdmin ? `draggable="true" data-idx="${idx}" ondragstart="onDragStart(event, 'plist')" ondragover="onDragOver(event)" ondrop="onDrop(event,'plist')"` : ''}>
-      <span style="flex:1; cursor:pointer;" onclick="openPlaylist('${escapeHtml(name)}')">
+      <span style="flex:1; cursor:pointer;" onclick="openPlaylist('${encodeURIComponent(name)}')">
         <i class="fas fa-music" style="color:#00bfff;margin-right:10px;"></i>${escapeHtml(name)}
       </span>
 
       ${isAdmin ? `
         <span class="drag-handle" title="Poradie playlistov"><i class="fas fa-grip-lines"></i></span>
-        <button class="small-plus" title="Upraviť" onclick="event.stopPropagation(); editPlaylist('${escapeHtml(name)}')"><i class="fas fa-pen"></i></button>
-        <button class="small-del" title="Vymazať" onclick="event.stopPropagation(); deletePlaylist('${escapeHtml(name)}')">X</button>
+        <button class="small-plus" title="Upraviť" onclick="event.stopPropagation(); editPlaylist('${encodeURIComponent(name)}')"><i class="fas fa-pen"></i></button>
+        <button class="small-del" title="Vymazať" onclick="event.stopPropagation(); deletePlaylist('${encodeURIComponent(name)}')">X</button>
       ` : ``}
     </div>
   `).join('');
 }
 
-function openPlaylist(name) {
+function openPlaylist(nameEnc) {
+  const name = decodeURIComponent(nameEnc);
   currentPlaylistName = name;
 
   const raw = (localStorage.getItem('playlist_' + name) || "").trim();
@@ -536,7 +513,6 @@ function openPlaylist(name) {
   currentModeList = ids.map(id => songs.find(x => x.id === id)).filter(Boolean);
   currentListSource = 'playlist';
 
-  // show list in ZOZNAM PIESNI panel
   toggleSection('all', true);
   document.getElementById('piesne-list').innerHTML =
     `<h2 style="text-align:center;color:#00bfff;">${escapeHtml(name)}</h2>` +
@@ -545,8 +521,6 @@ function openPlaylist(name) {
         <span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}
       </div>
     `).join('') : `<div class="dnes-empty">Prázdny playlist.</div>`);
-
-  window.scrollTo(0,0);
 }
 
 function openPlaylistEditorNew(silent=false) {
@@ -558,29 +532,30 @@ function openPlaylistEditorNew(silent=false) {
   filterPlaylistSearch();
 }
 
-function editPlaylist(name) {
+function editPlaylist(nameEnc) {
   if (!isAdmin) return;
+  const name = decodeURIComponent(nameEnc);
+
   currentPlaylistName = name;
   document.getElementById('playlist-name').value = name;
 
   const raw = (localStorage.getItem('playlist_' + name) || "").trim();
   selectedSongIds = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
 
-  // ensure playlist section open + editor visible
   toggleSection('playlists', true);
   document.getElementById('admin-panel').style.display = 'block';
 
   renderPlaylistSelected();
   filterPlaylistSearch();
-  window.scrollTo(0,0);
 }
 
 function filterPlaylistSearch() {
   const t = document.getElementById('playlist-search').value.toLowerCase();
-  const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
-  const list = (t.trim() === "") ? songs : filt;
+  const list = (t.trim() === "")
+    ? songs
+    : songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
 
-  document.getElementById('playlist-available-list').innerHTML = list.slice(0, 60).map(s => `
+  document.getElementById('playlist-available-list').innerHTML = list.map(s => `
     <div class="draggable-item" style="cursor:pointer;" onclick="addToPlaylistSelection('${s.id}')">
       <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
       <button class="small-plus" onclick="event.stopPropagation(); addToPlaylistSelection('${s.id}')">+</button>
@@ -638,27 +613,23 @@ async function savePlaylist() {
   const content = selectedSongIds.join(',');
   localStorage.setItem('playlist_' + name, content);
 
-  // save to Drive
   await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(content)}`, { mode: 'no-cors' });
 
-  // if new playlist, add to order
   if (!playlistOrder.includes(name)) playlistOrder.push(name);
-
-  // persist playlist order
   await savePlaylistOrder();
 
-  // reset editor for next
   currentPlaylistName = "";
   document.getElementById('playlist-name').value = "";
   selectedSongIds = [];
   renderPlaylistSelected();
 
-  // refresh UI
   renderPlaylistsUI();
 }
 
-async function deletePlaylist(name) {
+async function deletePlaylist(nameEnc) {
   if (!isAdmin) return;
+  const name = decodeURIComponent(nameEnc);
+
   if (!confirm(`Vymazať playlist "${name}"?`)) return;
 
   await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode: 'no-cors' });
@@ -677,13 +648,12 @@ async function savePlaylistOrder() {
 }
 
 // =======================================================
-// DRAG & DROP (3 contexts: dnes list, playlist songs, playlists order)
+// DRAG & DROP
 // =======================================================
-let dragCtx = null;
 function onDragStart(ev, ctx) {
-  dragCtx = ctx;
   ev.dataTransfer.effectAllowed = "move";
   ev.dataTransfer.setData("text/plain", ev.currentTarget.getAttribute("data-idx"));
+  ev.dataTransfer.setData("ctx", ctx);
 }
 function onDragOver(ev) {
   ev.preventDefault();
@@ -704,7 +674,6 @@ function onDrop(ev, ctx) {
   } else if (ctx === 'plist') {
     moveInArray(playlistOrder, from, to);
     renderPlaylistsUI();
-    // persist order (debounced-ish)
     savePlaylistOrder();
   }
 }
@@ -729,19 +698,48 @@ async function hardResetApp() {
 }
 
 // =======================================================
-// ERROR REPORT (basic)
+// ✅ ERROR REPORT -> Formspree
 // =======================================================
-function submitErrorForm(event) {
+async function submitErrorForm(event) {
   event.preventDefault();
-  const status = document.getElementById("form-status");
-  status.style.display = "block";
-  status.innerText = "Odosielam...";
 
-  // Simple: just fake success locally (you can wire to form endpoint if you had one)
-  setTimeout(() => {
-    status.style.display = "block";
-    status.innerText = "Chyba bola odoslaná!";
-  }, 700);
+  const form = document.getElementById("error-form");
+  const status = document.getElementById("form-status");
+  const btn = document.getElementById("submit-btn");
+
+  status.style.display = "block";
+  status.style.color = "#00ff00";
+  status.innerText = "Odosielam...";
+  btn.disabled = true;
+
+  try {
+    const formData = new FormData(form);
+
+    // add song info (safety)
+    if (currentSong) {
+      formData.set("piesen", `${currentSong.displayId}. ${currentSong.title}`);
+    }
+
+    const res = await fetch(FORMSPREE_URL, {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+      body: formData
+    });
+
+    if (res.ok) {
+      status.style.color = "#00ff00";
+      status.innerText = "Chyba bola odoslaná!";
+      form.reset();
+    } else {
+      status.style.color = "#ff4444";
+      status.innerText = "Nepodarilo sa odoslať. Skús ešte raz.";
+    }
+  } catch (e) {
+    status.style.color = "#ff4444";
+    status.innerText = "Nepodarilo sa odoslať. Skontroluj internet.";
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // =======================================================
@@ -755,7 +753,6 @@ function escapeHtml(s) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  // collapse all by default
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
