@@ -1,113 +1,262 @@
-body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #e0e0e0; padding: 15px; }
-.container { max-width: 700px; margin: auto; }
-
-#piesne-list, #playlists-section, #dnes-section, .controls, .back-btn, .main-title, #render-title, .playlist-header-title {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none;
-  user-select: none;
-}
+body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0e0; padding:15px; }
+.container { max-width:700px; margin:auto; }
 
 .main-title, #render-title, .playlist-header-title {
-  font-weight: 700;
-  background: linear-gradient(90deg, #00bfff, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center !important;
-  display: block !important;
-  width: 100% !important;
+  font-weight:700;
+  background: linear-gradient(90deg,#00bfff,#ffffff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-align:center !important;
+  display:block !important;
+  width:100% !important;
 }
 
-.main-title { font-size: 1.8em; margin: 0; }
-#render-title { font-size: 1.6em; margin-bottom: 5px; }
+.main-title { font-size:1.8em; margin:0; }
+#render-title { font-size:1.6em; margin-bottom:5px; }
 
-/* SEKČNÉ NADPISY + CHEVRON */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  cursor: pointer;
-  border-top: 1px solid #333;
-  margin-top: 20px;
-}
-.section-header h2 { margin: 0; }
-.section-chevron { font-size: 1.2em; color: #00bfff; margin-left: 10px; }
-
-/* SKRÝVANIE OBSAHU */
-.section-content { display: none; }
-
-/* EDITORY */
-#dnes-editor-panel, #admin-panel {
-  background: #1e1e1e;
-  padding: 15px;
-  border-radius: 12px;
-  margin: 20px 0;
-  border: 1px solid #00bfff;
+.topbar{
+  display:flex; align-items:center; justify-content:center;
+  position:relative; margin-bottom:20px; padding-top:10px; z-index:10000;
 }
 
-/* TLAČIDLÁ V JEDNOM RIADKU */
-#dnes-editor-panel > div:last-child,
-#admin-panel > div:last-child {
-  display: flex;
-  gap: 10px;
-  flex-wrap: nowrap;
+#admin-toggle-btn{
+  position:absolute; left:0;
+  display:flex; align-items:center; gap:10px;
+  background:none; border:none; color:#00bfff;
+  cursor:pointer; padding:15px; font-weight:700;
+  -webkit-tap-highlight-color:transparent;
+}
+#admin-toggle-btn i{ font-size:24px; }
+#admin-toggle-text{ font-size:14px; }
+
+.home-ico{
+  position:absolute; right:0; font-size:1.5em; color:#00bfff; cursor:pointer; padding:15px;
+  -webkit-tap-highlight-color:transparent;
 }
 
-#dnes-editor-panel button,
-#admin-panel button {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
+/* SECTION HEADERS */
+.section-header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; cursor:pointer;
+  border-top:1px solid #333; margin-top:20px;
+  -webkit-tap-highlight-color:transparent;
+}
+.section-header h2{ margin:0; font-size:1.4em; text-transform:uppercase; letter-spacing:1px; }
+.section-chevron{ font-size:1.2em; color:#00bfff; margin-left:10px; }
+
+.section-content{ display:none; }
+
+#search{
+  width:100%; padding:14px; font-size:16px; border-radius:12px;
+  background:#1e1e1e; color:#fff; margin-bottom:20px;
+  border:1px solid #333; outline:none; box-sizing:border-box;
 }
 
-#search {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  border-radius: 12px;
-  background: #1e1e1e;
-  color: #fff;
-  margin-bottom: 20px;
-  border: 1px solid #333;
-  outline: none;
-  box-sizing: border-box;
+/* LIST BOXES */
+.list-box{
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:12px;
+  overflow:hidden;
 }
 
-.controls {
-  display: flex;
-  justify-content: space-around;
-  background: #1a1a1a;
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  gap: 5px;
-  border: 1px solid #333;
-  flex-wrap: wrap;
-}
-.control-group { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.btn-row { display: flex; background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
-button { background: #1e1e1e; border: none; color: #fff; padding: 10px 14px; cursor: pointer; }
-
-#scroll-btn.active { background: #00bfff !important; color: black !important; }
-
-#scroll-to-top {
-  display: none; position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
-  background: #00bfff; color: black; border: none; z-index: 99999; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-  font-size: 24px; align-items: center; justify-content: center;
+/* EDITOR */
+.editor-panel{
+  display:none;
+  background:#1e1e1e;
+  padding:15px;
+  border-radius:12px;
+  margin:20px 0;
+  border:1px solid #00bfff;
 }
 
-.back-btn {
-  background: none; color: #00bfff; font-size: 16px; border: none; cursor: pointer;
-  margin-bottom: 15px; width: 100%; text-align: center; font-weight: 600;
+.editor-title{ color:#00bfff; margin-top:0; font-size:16px; }
+.editor-subtitle{ font-size:12px; opacity:0.8; margin:8px 0 6px; }
+
+.editor-panel input{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  background:#2a2a2a;
+  border:1px solid #444;
+  color:white;
+  border-radius:8px;
+  box-sizing:border-box;
 }
 
-#song-content {
-  background: #1a1a1a; padding: 25px 15px; border-radius: 12px; line-height: 2.2; white-space: pre-wrap;
-  margin-top: 10px; font-size: 17px; text-align: center; color: #fff;
+.editor-list{
+  max-height:260px;
+  overflow-y:auto;
+  background:#121212;
+  border-radius:8px;
+  padding:5px;
+  border:1px solid #333;
+  margin-bottom:10px;
 }
 
-.chord { color: #00bfff; font-weight: bold; background: #252525; padding: 1px 4px; border-radius: 4px; }
-.dnes-empty { color: #666; text-align: center; padding: 15px; font-size: 14px; }
+/* Item for drag */
+.draggable-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px;
+  border-bottom:1px solid #333;
+  color:#fff;
+  background:#121212;
+}
+.draggable-item:last-child{ border-bottom:none; }
+
+.drag-handle{
+  cursor:grab;
+  color:#00bfff;
+  padding:6px 8px;
+  border:1px solid #333;
+  border-radius:8px;
+  background:#1e1e1e;
+  user-select:none;
+}
+
+.small-plus{
+  width:28px; height:28px;
+  border:none;
+  border-radius:8px;
+  background:#00bfff;
+  color:black;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.small-del{
+  width:28px; height:28px;
+  border:none;
+  border-radius:8px;
+  background:#ff4444;
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+}
+
+/* bottom buttons row */
+.btn-row-3{
+  display:flex;
+  gap:10px;
+}
+.btn-row-3 button{
+  flex:1;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn-save{ background:#00c853; color:#001b00; }   /* zelená */
+.btn-cancel{ background:#666; color:#fff; }      /* šedá */
+.btn-delete{ background:#ff4444; color:#fff; }   /* červená */
+
+/* SONG DETAIL CONTROLS */
+.controls{
+  display:flex; justify-content:space-around;
+  background:#1a1a1a; padding:10px;
+  border-radius:12px; margin-bottom:10px;
+  gap:5px; border:1px solid #333; flex-wrap:wrap;
+}
+.control-group{ display:flex; flex-direction:column; gap:4px; align-items:center; }
+.btn-row{ display:flex; background:#1e1e1e; border-radius:8px; overflow:hidden; border:1px solid #333; }
+button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:pointer; }
+
+#scroll-btn.active{ background:#00bfff !important; color:black !important; }
+
+#scroll-to-top{
+  display:none; position:fixed; bottom:30px; right:20px;
+  width:60px; height:60px; border-radius:50%;
+  background:#00bfff; color:black; border:none; z-index:99999;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  font-size:24px; align-items:center; justify-content:center;
+}
+
+.back-btn{
+  background:none; color:#00bfff; font-size:16px; border:none;
+  cursor:pointer; margin-bottom:15px; width:100%;
+  text-align:center; font-weight:600;
+}
+
+#song-content{
+  background:#1a1a1a;
+  padding:25px 15px;
+  border-radius:12px;
+  line-height:2.2;
+  white-space:pre-wrap;
+  margin-top:10px;
+  font-size:17px;
+  text-align:center;
+  color:#fff;
+}
+
+.chord{
+  color:#00bfff;
+  font-weight:bold;
+  background:#252525;
+  padding:1px 4px;
+  border-radius:4px;
+}
+
+.tiny-label{
+  font-size:10px;
+  color:#00bfff;
+  margin-top:4px;
+  font-weight:bold;
+}
+
+/* Empty / loading text */
+.dnes-empty{ color:#666; text-align:center; padding:15px; font-size:14px; }
+
+/* Update section */
+.update-box{ text-align:center; margin:20px 0; }
+.btn-update{
+  background:#00bfff; color:black; font-weight:900;
+  padding:12px 24px; border-radius:12px; border:none; cursor:pointer;
+}
+
+/* Error report */
+#error-report-container{
+  margin:40px 0 60px 0;
+  padding:20px;
+  background:#1a1a1a;
+  border-radius:12px;
+  border:1px solid #333;
+}
+.error-title{
+  color:#00bfff;
+  margin-top:0;
+  font-weight:bold;
+  text-align:center;
+}
+#error-form input, #error-form textarea{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #444;
+  background:#222;
+  color:white;
+  box-sizing:border-box;
+  font-family:inherit;
+}
+#error-form textarea{ height:80px; }
+#submit-btn{
+  width:100%;
+  background:#00bfff;
+  color:black;
+  font-weight:bold;
+  border-radius:8px;
+  padding:12px;
+  border:none;
+  cursor:pointer;
+}
+#form-status{
+  text-align:center;
+  margin-top:10px;
+  font-size:14px;
+  color:#00ff00;
+}
