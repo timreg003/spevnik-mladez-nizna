@@ -29,14 +29,16 @@
     </button>
 
     <div style="display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 20px; padding-top: 10px; z-index: 10000;">
-      <i class="fas fa-lock" style="position: absolute; left: 0; opacity: 0.15; cursor: pointer; padding: 15px;" onclick="unlockAdmin()"></i>
       <h1 class="main-title">Mládežnícky spevník NIŽNÁ</h1>
       <i class="fas fa-home" style="position: absolute; right: 0; font-size: 1.5em; color: #00bfff; cursor: pointer; padding: 15px; touch-action: manipulation;" onclick="smartReset()"></i>
     </div>
 
     <div id="song-list">
       <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()" />
-      <div id="playlists-section"></div>
+      
+      <div id="playlists-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
+        <div id="playlists-section"></div>
+      </div>
 
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
         <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
@@ -45,7 +47,7 @@
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button onclick="savePlaylist()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
             <button onclick="clearSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">ZMAZAŤ</button>
-            <button onclick="smartReset()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ EDITOR</button>
+            <button onclick="logoutAdmin()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ EDITOR</button>
         </div>
       </div>
 
@@ -79,6 +81,7 @@
                 <button onclick="changeScrollSpeed(1)"><i class="fas fa-plus"></i></button>
             </div>
             <span id="speed-label" style="font-size: 10px; color: #888; margin-top: 2px;">Rýchlosť: 1</span>
+            <span id="original-key-label" style="font-size: 10px; color: #00bfff; margin-top: 4px; font-weight: bold;">Pôvodná tónina: -</span>
         </div>
       </div>
       
