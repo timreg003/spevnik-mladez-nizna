@@ -53,7 +53,7 @@ function processXML(xmlText) {
         return { id: s.getElementsByTagName('ID')[0]?.textContent.trim(), title: s.getElementsByTagName('title')[0]?.textContent.trim(), originalId: rawId, displayId: displayId, origText: text };
     });
 
-    // SPRÁVNE TRIEDENIE: Čísla -> Mariánske -> Ostatné
+    // Triedenie: Čísla -> Mariánske -> Ostatné
     songs.sort((a, b) => {
         const idA = a.originalId.toUpperCase();
         const idB = b.originalId.toUpperCase();
@@ -308,7 +308,7 @@ function renderPlaylists(d) {
                 <i class="fas fa-star" onclick="event.stopPropagation(); setAsToday('${p.name}')" style="margin-right:15px; color: ${todayName === p.name ? '#00bfff' : '#222'}; opacity: ${isAdmin || todayName === p.name ? '1':'0.1'}; cursor:${isAdmin ? 'pointer':'default'};"></i>
                 <span>${p.name}</span>
             </div>
-            ${isAdmin ? `<div style="display:flex;gap:5px;"><i class="fas fa-chevron-up" onclick="event.stopPropagation(); movePlaylist('${p.name}', -1)" style="color:#666; padding:8px;"></i><i class="fas fa-chevron-down" onclick="event.stopPropagation(); movePlaylist('${p.name}', 1)" style="color:#666; padding:8px;"></i><i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;padding:8px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;padding:8px;"></i></div>` : ''}
+            ${isAdmin ? `<div style="display:flex;gap:5px;"><i class="fas fa-chevron-up" onclick="event.stopPropagation(); movePlaylist('${p.name}', -1)" style="color:#666; padding:8px;"></i><i class="fas fa-chevron-down" onclick="event.stopPropagation(); movePlaylist('${p.name}', 1)" style="color:#666; padding:8px;"></i><i class="fas fa-edit" onclick="event.stopPropagation(); editPlaylist('${p.name}')" style="color:#00bfff;padding:8px;"></i><i class="fas fa-trash" onclick="event.stopPropagation(); deletePlaylist('${p.name}')" style="color:#ff4444;padding:8px;"></i></div> : ''}
         </div>`).join('');
     }
     sect.innerHTML = html;
