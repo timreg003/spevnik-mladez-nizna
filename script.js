@@ -7,14 +7,15 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 let autoscrollInterval = null;
 let currentLevel = 1;
 
-window.onscroll = function() {
+// Ovládanie tlačidla "Hore"
+window.addEventListener('scroll', () => {
     const btn = document.getElementById("scroll-to-top");
-    if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-        btn.style.display = "block";
+    if (window.scrollY > 200) {
+        btn.style.setProperty('display', 'flex', 'important');
     } else {
-        btn.style.display = "none";
+        btn.style.setProperty('display', 'none', 'important');
     }
-};
+});
 
 function smartReset() {
     stopAutoscroll();
@@ -28,17 +29,14 @@ function smartReset() {
 }
 
 function logoutAdmin() {
-    isAdmin = false;
-    adminPassword = "";
+    isAdmin = false; adminPassword = "";
     document.getElementById('admin-panel').style.display = 'none';
-    renderAllSongs();
-    loadPlaylistHeaders();
+    renderAllSongs(); loadPlaylistHeaders();
 }
 
 async function parseXML() {
     try {
         const res = await fetch(SCRIPT_URL);
-        if (!res.ok) throw new Error();
         const xmlText = await res.text();
         localStorage.setItem('offline_spevnik', xmlText);
         processXML(xmlText);
@@ -56,7 +54,7 @@ function processXML(xmlText) {
         const text = s.getElementsByTagName('songtext')[0]?.textContent.trim() || "";
         const rawId = s.getElementsByTagName('author')[0]?.textContent.trim() || "";
         let displayId = rawId;
-        if (rawId.startsWith('M')) displayId = "Mariánska " + rawId.substring(1).replace(/^0+/, '');
+        if (rawId.toUpperCase().startsWith('M')) displayId = "Mariánska " + rawId.substring(1).replace(/^0+/, '');
         else if (/^\d+$/.test(rawId)) displayId = rawId.replace(/^0+/, '');
         return { 
             id: s.getElementsByTagName('ID')[0]?.textContent.trim(), 
@@ -65,12 +63,26 @@ function processXML(xmlText) {
         };
     });
 
+    // OPRAVENÉ RADENIE: 1. Čísla, 2. Mariánske, 3. Abeceda
     songs.sort((a, b) => {
-        const isNumA = /^\d+$/.test(a.originalId), isNumB = /^\d+$/.test(b.originalId);
+        const idA = a.originalId.toUpperCase();
+        const idB = b.originalId.toUpperCase();
+        const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
+        const isMarA = idA.startsWith('M'), isMarB = idB.startsWith('M');
+
         if (isNumA && !isNumB) return -1;
         if (!isNumA && isNumB) return 1;
-        if (isNumA && isNumB) return parseInt(a.originalId) - parseInt(b.originalId);
-        return a.originalId.localeCompare(b.originalId);
+        if (isNumA && isNumB) return parseInt(idA) - parseInt(idB);
+
+        if (isMarA && !isMarB) return -1;
+        if (!isMarA && isMarB) return 1;
+        if (isMarA && isMarB) {
+            const numA = parseInt(idA.substring(1)) || 0;
+            const numB = parseInt(idB.substring(1)) || 0;
+            return numA - numB;
+        }
+
+        return a.title.localeCompare(b.title, 'sk');
     });
 
     filteredSongs = [...songs];
@@ -224,14 +236,13 @@ function editPlaylist(name) {
     renderEditor(); window.scrollTo(0,0);
 }
 
-// NOVE: Funkcia na stiahnutie všetkých playlistov do offline pamäte
 async function cacheAllPlaylists(playlistData) {
     for (const p of playlistData) {
         try {
             const r = await fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(p.name)}`);
             const t = await r.text();
             localStorage.setItem('playlist_' + p.name, t);
-        } catch(e) { console.log("Offline cache playlistu zlyhala"); }
+        } catch(e) {}
     }
 }
 
@@ -239,24 +250,21 @@ function loadPlaylistHeaders() {
     fetch(`${SCRIPT_URL}?action=list`).then(r => r.json()).then(d => { 
         localStorage.setItem('offline_playlists', JSON.stringify(d)); 
         renderPlaylists(d);
-        cacheAllPlaylists(d); // Spustíme sťahovanie na pozadí
+        cacheAllPlaylists(d);
     })
     .catch(() => { const saved = localStorage.getItem('offline_playlists'); if (saved) renderPlaylists(JSON.parse(saved)); });
 }
 
 function openPlaylist(name) {
     document.getElementById('piesne-list').innerHTML = `<div style="text-align:center; padding:50px; color:#00bfff; font-weight:bold;"><i class="fas fa-spinner fa-spin"></i> Sťahujem playlist: ${name}...</div>`;
-    
-    // Skúsime najprv lokálnu pamäť (funguje okamžite aj offline)
     const cached = localStorage.getItem('playlist_' + name);
     if (cached) {
         processOpenPlaylist(name, cached);
     } else {
-        // Ak nie je v pamäti, skúsime stiahnuť
         fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`)
         .then(r => r.text())
         .then(t => { localStorage.setItem('playlist_' + name, t); processOpenPlaylist(name, t); })
-        .catch(() => { document.getElementById('piesne-list').innerText = "Tento playlist nie je dostupný offline."; });
+        .catch(() => { document.getElementById('piesne-list').innerText = "Nedostupné offline."; });
     }
 }
 
