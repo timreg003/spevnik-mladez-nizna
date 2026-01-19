@@ -7,30 +7,15 @@
   
   <link rel="manifest" href="manifest.json?v=2">
   <meta name="theme-color" content="#00bfff">
-
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=2">
-
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css?v=2"/>
 
   <style>
-    * { 
-        -webkit-tap-highlight-color: transparent !important; 
-        touch-action: manipulation !important;
-        outline: none !important; 
-    }
+    * { -webkit-tap-highlight-color: transparent !important; touch-action: manipulation !important; }
   </style>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
-      });
-    }
-  </script>
 </head>
 <body>
   <div class="container">
@@ -45,18 +30,18 @@
 
     <div id="song-list">
       <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()" />
+      
       <div id="playlists-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
         <div id="playlists-section"></div>
       </div>
 
       <div id="admin-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin-bottom:20px; border:1px solid #00bfff;">
-        <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor playlistu</h3>
-        <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-        <input type="text" id="playlist-name" placeholder="Názov nového playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="savePlaylist()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-            <button onclick="clearSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">ZMAZAŤ</button>
-            <button onclick="logoutAdmin()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ EDITOR</button>
+        <h3 style="color:#00bfff; margin-top:0;">Editor playlistu</h3>
+        <div id="selected-list-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; padding: 5px; border: 1px solid #333;"></div>
+        <input type="text" id="playlist-name" placeholder="Názov playlistu" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
+        <div style="display: flex; gap: 10px;">
+            <button onclick="savePlaylist()" style="flex: 2; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px;">ULOŽIŤ</button>
+            <button onclick="logoutAdmin()" style="flex: 1; background:#444; color:white; padding:12px; border-radius:8px;">ZRUŠIŤ</button>
         </div>
       </div>
 
