@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
 
-  <link rel="manifest" href="manifest.json?v=4">
+  <link rel="manifest" href="manifest.json?v=5">
   <meta name="theme-color" content="#00bfff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=4">
+  <link rel="apple-touch-icon" href="icon.png?v=5">
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=4"/>
+  <link rel="stylesheet" href="style.css?v=5"/>
 
   <script>
     if ('serviceWorker' in navigator) {
@@ -76,14 +76,12 @@
         <div class="editor-subtitle">Vytvorený zoznam (ťahaj pre poradie)</div>
         <div id="dnes-selected-editor" class="editor-list"></div>
 
-        <!-- buttons row -->
-        <div class="btn-row-3">
+        <!-- buttons row (bez ZRUŠIŤ EDITOR) -->
+        <div class="btn-row-2">
           <button class="btn-save" onclick="saveDnesEditor()">ULOŽIŤ</button>
-          <button class="btn-cancel" onclick="closeDnesEditor()">ZRUŠIŤ EDITOR</button>
           <button class="btn-delete" onclick="clearDnesSelection()">VYMAZAŤ</button>
         </div>
       </div>
-
     </div>
 
     <!-- ===== PLAYLISTY ===== -->
@@ -92,7 +90,8 @@
       <i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
     </div>
 
-    <div id="playlists-wrapper" class="section-content" style="display:none;">
+    <!-- ✅ OPRAVA: ID musí byť playlists-section-wrapper -->
+    <div id="playlists-section-wrapper" class="section-content" style="display:none;">
       <div id="playlists-section" class="list-box">Načítavam...</div>
 
       <!-- EDITOR PLAYLIST – pod existujúcimi playlistami -->
@@ -192,21 +191,26 @@
 
     <div id="song-content"></div>
 
-    <!-- ERROR REPORT -->
+    <!-- ✅ ERROR REPORT (Formspree) -->
     <div id="error-report-container">
       <p class="error-title">Našiel/la si chybu? Napíš, opravím :)</p>
+
       <form id="error-form" onsubmit="submitErrorForm(event)">
-        <input type="hidden" name="_subject" value="Chyba v piesni">
         <input type="text" name="meno" placeholder="Tvoje meno" required>
         <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required></textarea>
+
+        <!-- doplníme aj song info -->
+        <input type="hidden" name="piesen" id="error-song-hidden" value="">
+
         <button type="submit" id="submit-btn">ODOSLAŤ</button>
       </form>
+
       <p id="form-status" style="display:none;">Chyba bola odoslaná!</p>
     </div>
   </div>
 
 </div>
 
-<script src="script.js?v=4"></script>
+<script src="script.js?v=5"></script>
 </body>
 </html>
