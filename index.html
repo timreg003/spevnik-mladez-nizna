@@ -51,6 +51,7 @@
     <div id="song-detail" style="display:none;">
       <h2 id="render-title"></h2>
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
+      
       <div class="controls">
         <div class="control-group"><small>Pieseň</small><div class="btn-row">
             <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
@@ -70,7 +71,19 @@
             <button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
         </div></div>
       </div>
+      
       <div id="song-content"></div>
+
+      <div id="error-report-container" style="margin: 40px 0 60px 0; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel si chybu? Napíš, opravím :)</p>
+        <form action="https://formspree.io/f/mvzzkwlw" method="POST" id="error-form">
+          <input type="hidden" name="_subject" id="form-subject" value="Chyba v piesni">
+          <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
+          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
+          <button type="submit" style="width:100%; background:#00bfff; color:black; font-weight:bold; margin-top:10px; border-radius:8px; padding:12px; border:none; cursor:pointer;">ODOSLAŤ</button>
+        </form>
+      </div>
+
     </div>
   </div>
   <script src="script.js"></script>
