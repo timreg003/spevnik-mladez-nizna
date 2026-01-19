@@ -26,7 +26,6 @@
 <body>
 
   <div class="container">
-    
     <div id="song-list">
       <h1 class="main-title" onclick="smartReset()" style="cursor:pointer">Mládežnícky spevník NIŽNÁ</h1>
       
@@ -35,7 +34,6 @@
       </div>
 
       <div id="today-playlist-container" style="margin-top: 15px;"></div>
-
       <div id="playlists-section" style="margin-top: 20px;"></div>
 
       <div id="admin-panel" style="display:none; margin-top:20px; padding:15px; background:#1a1a1a; border-radius:12px; border: 2px solid #00bfff;">
@@ -96,13 +94,15 @@
           <span id="speed-label" style="font-size: 10px; color: #888; margin-top: 4px; font-weight: bold;">Rýchlosť: 1</span>
         </div>
       </div>
+      
       <div id="song-content"></div>
 
       <div id="error-report-container" style="margin: 40px 0 60px 0; padding: 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+        <p style="color: #00bfff; margin-top: 0; font-weight: bold; text-align: center;">Našiel si chybu? Napíš, opravím :)</p>
         <form id="error-form" onsubmit="submitErrorForm(event)">
           <input type="hidden" name="_subject" id="form-subject" value="Chyba v piesni">
           <input type="text" name="meno" placeholder="Tvoje meno" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box;">
-          <textarea name="chyba" placeholder="Napr. chybný akord..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
+          <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required style="width:100%; padding:10px; height:80px; border-radius:8px; border:1px solid #444; background:#222; color:white; box-sizing: border-box; font-family: inherit;"></textarea>
           <button type="submit" id="submit-btn" style="width:100%; padding:12px; background:#00bfff; color:black; border:none; border-radius:8px; font-weight:bold;">ODOSLAŤ</button>
         </form>
         <div id="form-status" style="display:none; color:#00ff00; text-align:center; margin-top:10px; font-weight:bold;">Odoslané!</div>
