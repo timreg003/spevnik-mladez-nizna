@@ -24,7 +24,7 @@
 </head>
 <body>
   <div class="container">
-    <button id="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:50px; height:50px; border-radius:50%; background:#00bfff; color:black; border:none; z-index:10001; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 20px;">
+    <button id="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:50px; height:50px; border-radius:50%; background:#00bfff; color:black; border:none; z-index:10001; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 20px; cursor: pointer;">
         <i class="fas fa-arrow-up"></i>
     </button>
 
@@ -59,29 +59,39 @@
       <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
       
       <div class="controls">
-        <div class="control-group"><small>Pieseň</small><div class="btn-row">
-            <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
-            <button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button>
-        </div></div>
-        <div class="control-group"><small>Tónina: <span id="transpose-val">0</span></small><div class="btn-row">
-            <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
-            <button onclick="resetTranspose()"><i class="fas fa-undo"></i></button>
-            <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
-        </div></div>
-        <div class="control-group"><small>Zobrazenie</small><div class="btn-row">
-            <button onclick="toggleChords()"><i class="fas fa-guitar"></i></button>
-            <button onclick="changeFontSize(-1)">A-</button>
-            <button onclick="changeFontSize(1)">A+</button>
-        </div></div>
+        <div class="control-group">
+            <small>Pieseň</small>
+            <div class="btn-row">
+                <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="control-group">
+            <small>Tónina: <span id="transpose-val">0</span></small>
+            <div class="btn-row">
+                <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
+                <button onclick="resetTranspose()"><i class="fas fa-undo"></i></button>
+                <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
+            </div>
+            <span id="original-key-label" style="font-size: 10px; color: #00bfff; margin-top: 4px; font-weight: bold;">Pôvodná tónina: -</span>
+        </div>
+        <div class="control-group">
+            <small>Zobrazenie</small>
+            <div class="btn-row">
+                <button onclick="toggleChords()"><i class="fas fa-guitar"></i></button>
+                <button onclick="changeFontSize(-1)">A-</button>
+                <button onclick="changeFontSize(1)">A+</button>
+            </div>
+        </div>
         
-        <div class="control-group"><small>Auto-posun</small>
+        <div class="control-group">
+            <small>Auto-posun</small>
             <div class="btn-row">
                 <button onclick="changeScrollSpeed(-1)"><i class="fas fa-minus"></i></button>
                 <button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
                 <button onclick="changeScrollSpeed(1)"><i class="fas fa-plus"></i></button>
             </div>
-            <span id="speed-label" style="font-size: 10px; color: #888; margin-top: 2px;">Rýchlosť: 1</span>
-            <span id="original-key-label" style="font-size: 10px; color: #00bfff; margin-top: 4px; font-weight: bold;">Pôvodná tónina: -</span>
+            <span id="speed-label" style="font-size: 10px; color: #00bfff; margin-top: 4px; font-weight: bold;">Rýchlosť: 1</span>
         </div>
       </div>
       
