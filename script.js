@@ -19,8 +19,8 @@ function smartReset() {
     document.getElementById('song-list').style.display = 'block';
     document.getElementById('search').value = "";
     currentModeList = [...songs]; filterSongs();
-    loadPlaylistHeaders();                // normálne playlisty
-    renderDnesSection();                  // „dnes“
+    loadPlaylistHeaders();
+    renderDnesSection();
     window.scrollTo(0,0);
 }
 
@@ -82,7 +82,9 @@ function renderAllSongs() {
 
 function openSongById(id, source) {
     const s = songs.find(x => x.id === id); if (!s) return;
-    if (source === 'all') currentModeList = [...songs];
+    if (source === 'dnes') currentModeList = dnesList();
+    else if (source === 'all') currentModeList = [...songs];
+    else if (source === 'playlist') currentModeList = [...songs];
     currentSong = JSON.parse(JSON.stringify(s));
     transposeStep = 0; document.getElementById('transpose-val').innerText = "0";
     currentLevel = 1; updateSpeedUI(); stopAutoscroll();
@@ -92,6 +94,10 @@ function openSongById(id, source) {
     const firstChordMatch = s.origText.match(/\[(.*?)\]/);
     document.getElementById('original-key-label').innerText = "Pôvodná tónina: " + (firstChordMatch ? firstChordMatch[1] : "-");
     renderSong(); window.scrollTo(0,0);
+}
+
+function dnesList() {
+    return getDnesIds().map(id => songs.find(s => s.id === id)).filter(x => x);
 }
 
 function renderSong() {
@@ -107,7 +113,7 @@ function renderSong() {
 function navigateSong(d) {
     const idx = currentModeList.findIndex(s => s.id === currentSong.id);
     const n = currentModeList[idx + d];
-    if (n) { transposeStep = 0; openSongById(n.id, 'playlist'); }
+    if (n) { transposeStep = 0; openSongById(n.id, currentModeList === dnesList() ? 'dnes' : 'playlist'); }
 }
 
 function toggleAutoscroll() {
@@ -206,10 +212,8 @@ function renderEditor() {
 function filterPlaylistSearch() {
     const t = document.getElementById('playlist-search').value.toLowerCase();
     const filt = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
-    const box = document.getElementById('selected-list-editor');
-    if (!isAdmin) return;
-    const addList = document.getElementById('playlist-available-list');
-    addList.innerHTML = filt.map(s => `
+    const box = document.getElementById('playlist-available-list');
+    box.innerHTML = filt.map(s => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #333;color:#fff;">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
             <button onclick="addToSelection('${s.id}')" style="background:#00bfff; color:black; border-radius:4px; font-weight:bold; width:26px; height:26px; border:none;">+</button>
@@ -296,13 +300,8 @@ function renderDnesSection() {
     const items = ids.map((id, idx) => {
         const s = songs.find(x => x.id === id);
         if (!s) return '';
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #333;color:#fff;">
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #333;color:#fff;" onclick="openSongById('${s.id}','dnes')">
             <span><span style="color:#00bfff;font-weight:bold;">${s.displayId}.</span> ${s.title}</span>
-            <div style="display:flex;gap:4px;">
-                <button onclick="moveDnes(${idx},-1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-up"></i></button>
-                <button onclick="moveDnes(${idx},1)" style="padding:4px 6px;background:#333;"><i class="fas fa-chevron-down"></i></button>
-                <button onclick="removeDnes(${idx})" style="padding:4px 8px;background:#ff4444;"><i class="fas fa-times"></i></button>
-            </div>
         </div>`;
     }).join('');
     box.innerHTML = items + `<div style="border-bottom:1px solid #333;margin-bottom:10px;"></div>`;
