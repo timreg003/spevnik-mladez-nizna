@@ -18,7 +18,9 @@ function smartReset() {
     document.getElementById('song-detail').style.display = 'none';
     document.getElementById('song-list').style.display = 'block';
     document.getElementById('search').value = "";
-    currentModeList = [...songs]; filterSongs(); window.scrollTo(0,0);
+    currentModeList = [...songs]; filterSongs(); 
+    loadPlaylistHeaders(); // DOPLNENÝ RIADOK: Aktualizuje playlisty pri návrate domov
+    window.scrollTo(0,0);
 }
 
 function logoutAdmin() {
