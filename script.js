@@ -480,5 +480,5 @@ async function hardResetApp() {
 
 document.addEventListener('DOMContentLoaded', () => {
     parseXML();
-    loadDnesFromDrive(); // <-- NAČÍTANIE Z DISKU PRI STARTE
+    loadDnesFromDrive();
 });
