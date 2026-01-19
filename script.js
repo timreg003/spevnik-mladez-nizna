@@ -7,7 +7,6 @@ const scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 let autoscrollInterval = null;
 let currentLevel = 1;
 
-// Tlačidlo "Hore"
 window.addEventListener('scroll', () => {
     const btn = document.getElementById("scroll-to-top");
     if (window.scrollY > 300) btn.style.display = "flex";
@@ -203,18 +202,15 @@ function editPlaylist(name) {
     renderEditor(); window.scrollTo(0,0);
 }
 
-// UPRAVENÉ: Okamžité zmiznutie editora
 async function savePlaylist() {
     const name = document.getElementById('playlist-name').value;
     if (!name || !selectedSongIds.length) return alert('Zadaj názov');
     const idsToSave = selectedSongIds.join(',');
-    
-    logoutAdmin(); // Zmizne hneď
-
+    logoutAdmin();
     const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=qwer&content=${idsToSave}`;
     try {
         await fetch(url, { mode: 'no-cors' });
-        alert('Playlist uložený.');
+        alert('Playlist bol uložený/upravený.');
         setTimeout(() => { loadPlaylistHeaders(); }, 500);
     } catch (e) { alert('Chyba.'); }
 }
@@ -272,7 +268,7 @@ async function deletePlaylist(n) {
     if (confirm(`Vymazať ${n}?`)) {
         try {
             await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(n)}&pwd=qwer`, { mode: 'no-cors' });
-            alert('Zmazané.');
+            alert('Playlist bol vymazaný.');
             setTimeout(() => { loadPlaylistHeaders(); }, 500);
         } catch(e) { alert('Chyba.'); }
     }
@@ -291,29 +287,17 @@ async function submitErrorForm(e) {
     finally { btn.disabled = false; btn.innerText = "ODOSLAŤ"; }
 }
 
-// NOVINKA: TVRDÝ RESET A VYMAZANIE PAMÄTE
 async function hardResetApp() {
     if (confirm("Naozaj chceš vymazať pamäť aplikácie a vynútiť aktualizáciu?")) {
-        // Vymazať LocalStorage
         localStorage.clear();
-        
-        // Vymazať Cache Storage (Service Worker)
         if ('caches' in window) {
             const keys = await caches.keys();
-            for (const key of keys) {
-                await caches.delete(key);
-            }
+            for (const key of keys) await caches.delete(key);
         }
-        
-        // Odregistrovať Service Workery
         if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const reg of registrations) {
-                await reg.unregister();
-            }
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) await reg.unregister();
         }
-        
-        // Úplný reštart
         window.location.reload(true);
     }
 }
