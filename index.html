@@ -67,24 +67,11 @@
 
       <!-- === PIESNE NA DNES === -->
       <div id="dnes-section-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
-        <h2 class="playlist-header-title" style="cursor:pointer;text-align:center;" onclick="openDnesEditor()">Piesne na dnes <small style="font-size:10px;opacity:0.5;">(klikni pre úpravu)</small></h2>
+        <h2 class="playlist-header-title" style="cursor:pointer;text-align:center;width:100%;display:block;" onclick="openDnesEditor()">Piesne na dnes <small style="font-size:10px;opacity:0.5;">(klikni pre úpravu)</small></h2>
         <div id="dnes-section"></div>
       </div>
 
-      <!-- === EDITOR: PIESNE NA DNES – hneď pod sekciou === -->
-      <div id="dnes-editor-panel" style="display:none; background:#1e1e1e; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #00bfff;">
-        <h3 style="color:#00bfff; margin-top:0; font-size:16px;">Editor – Piesne na dnes</h3>
-        <input type="text" id="dnes-search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterDnesSearch()" style="width:100%; padding:12px; margin-bottom:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:8px; box-sizing:border-box;">
-        <div id="dnes-selected-editor" style="margin-bottom:15px; max-height: 250px; overflow-y: auto; background: #121212; border-radius: 8px; padding: 5px; border: 1px solid #333;"></div>
-        <div id="dnes-available-list" style="max-height:250px; overflow-y:auto; margin-bottom:15px; background:#121212; border-radius:8px; padding:5px; border:1px solid #333;"></div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="saveDnesEditor()" style="flex: 2; min-width: 120px; background:#00bfff; color:black; font-weight:bold; padding:12px; border-radius:8px; border:none;">ULOŽIŤ</button>
-            <button onclick="clearDnesSelection()" style="flex: 1; min-width: 80px; background:#333; color:white; padding:12px; border-radius:8px; border:none;">VYMAZAŤ</button>
-            <button onclick="closeDnesEditor()" style="width: 100%; background:#444; color:white; padding:12px; border-radius:8px; border:none; margin-top:10px; font-weight: bold;">ZRUŠIŤ EDITOR</button>
-        </div>
-      </div>
-
-      <!-- === PLAYLISTY – s prádznym stavom === -->
+      <!-- === PLAYLISTY === -->
       <div id="playlists-wrapper" style="border-top: 1px solid #333; margin-top: 20px;">
         <h2 class="playlist-header-title" onclick="tryUnlockAdmin()" style="cursor:pointer;padding:10px 0;text-align:center;width:100%;display:block;">Playlisty <small style="font-size:10px;opacity:0.5;display:block;">(klikni pre správu)</small></h2>
         <div id="playlists-section"></div>
