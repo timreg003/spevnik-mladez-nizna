@@ -78,6 +78,35 @@ function setSaveButtonState(disabled){
     }
   });
 }
+
+function setButtonStateById(id, disabled, label){
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  if (!btn.dataset.origText) btn.dataset.origText = btn.innerHTML;
+  if (disabled){
+    btn.classList.add('disabled');
+    btn.disabled = true;
+    if (label) btn.innerHTML = label;
+  } else {
+    btn.classList.remove('disabled');
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.origText || btn.innerHTML;
+  }
+}
+
+function updatePlaylistSaveEnabled(){
+  const nameEl = document.getElementById('playlist-name');
+  const btn = document.getElementById('playlist-save-btn');
+  if (!btn) return;
+  const has = !!(nameEl && nameEl.value.trim());
+  if (!has){
+    btn.classList.add('disabled');
+    btn.disabled = true;
+  } else {
+    btn.classList.remove('disabled');
+    btn.disabled = false;
+  }
+}
 function showToast(message, ok=true){
   const t = document.getElementById("toast");
   if (!t) return;
@@ -533,6 +562,9 @@ function addToDnesSelection(id) {
   if (!dnesSelectedIds.includes(id)) {
     dnesSelectedIds.push(id);
     renderDnesSelected();
+    const __s = document.getElementById('dnes-search');
+    if (__s && __s.value) { __s.value = ''; renderDnesAvailable(); }
+
   }
 }
 function renderDnesSelected() {
@@ -571,7 +603,7 @@ function clearDnesSelection(){
   renderDnesSelected();
 }
 async function saveDnesEditor() {
-  setSaveButtonState(true,'<i class="fas fa-check"></i>');
+  setButtonStateById('dnes-save-btn', true, '<i class="fas fa-check"></i>');
   showToast('Ukladám…', true);
   const title = (document.getElementById('dnes-name').value || DNES_DEFAULT_TITLE).trim();
   const payload = JSON.stringify({ title, ids: dnesSelectedIds });
@@ -583,10 +615,10 @@ async function saveDnesEditor() {
   try {
     await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
     showToast("Uložené ✅", true);
-    setSaveButtonState(false);
+    setButtonStateById('dnes-save-btn', false);
   } catch(e) {
     showToast("Nepodarilo sa uložiť ❌", false);
-    setSaveButtonState(false);
+    setButtonStateById('dnes-save-btn', false);
   }
 }
 
@@ -768,6 +800,7 @@ function newPlaylist(){
   editingPlaylistName = null;
   renderPlaylistAvailable();
   renderPlaylistSelection();
+  updatePlaylistSaveEnabled();
 }
 function openPlaylistEditorNew(silent=false){
   if (!isAdmin && !silent) return;
@@ -779,6 +812,7 @@ function openPlaylistEditorNew(silent=false){
   if (searchEl) searchEl.value = '';
   renderPlaylistAvailable();
   renderPlaylistSelection();
+  updatePlaylistSaveEnabled();
 }
 
 function filterPlaylistSearch(){
@@ -807,6 +841,9 @@ function addToPlaylistSelection(id){
   if (!selectedSongIds.includes(id)) {
     selectedSongIds.push(id);
     renderPlaylistSelection();
+    const __ps = document.getElementById('playlist-search');
+    if (__ps && __ps.value) { __ps.value = ''; renderPlaylistAvailable(); }
+
   }
 }
 
@@ -853,17 +890,22 @@ function clearSelection(){
 }
 
 async function savePlaylist(){
-  setSaveButtonState(true,'<i class="fas fa-check"></i>');
-  showToast('Ukladám…', true);
   if (!isAdmin) return;
+
   const nameEl = document.getElementById('playlist-name');
   const rawName = (nameEl?.value || '').trim();
+
+  // Don't allow save without a name (button should be disabled, but keep this guard)
   if (!rawName) {
     showToast('Zadaj názov playlistu.', false);
+    updatePlaylistSaveEnabled();
     return;
   }
 
-  const newName = rawName;
+  // immediate feedback
+  setButtonStateById('playlist-save-btn', true, '<i class="fas fa-check"></i>');
+  showToast('Ukladám…', true);
+const newName = rawName;
   const oldName = editingPlaylistName;
 
   // handle rename / overwrite
@@ -919,10 +961,14 @@ async function savePlaylist(){
       try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' }); } catch(e) {}
     }
     showToast('Uložené ✅', true);
-    setSaveButtonState(false);
+    setButtonStateById('playlist-save-btn', false);
+    updatePlaylistSaveEnabled();
+    setButtonStateById('dnes-save-btn', false);
   } catch(e) {
     showToast('Nepodarilo sa uložiť ❌', false);
-    setSaveButtonState(false);
+    setButtonStateById('playlist-save-btn', false);
+    updatePlaylistSaveEnabled();
+    setButtonStateById('dnes-save-btn', false);
   }
 }
 
@@ -932,6 +978,7 @@ function editPlaylist(nameEnc){
   editingPlaylistName = name;
   const nameEl = document.getElementById('playlist-name');
   if (nameEl) nameEl.value = name;
+  updatePlaylistSaveEnabled();
 
   const raw = (localStorage.getItem('playlist_' + name) || '').trim();
   selectedSongIds = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
@@ -991,6 +1038,9 @@ function onDrop(ev, ctx) {
   if (ctx === 'dnes') {
     moveInArray(dnesSelectedIds, from, to);
     renderDnesSelected();
+    const __s = document.getElementById('dnes-search');
+    if (__s && __s.value) { __s.value = ''; renderDnesAvailable(); }
+
   }
   else if (ctx === 'plist') {
     moveInArray(playlistOrder, from, to);
@@ -1004,6 +1054,9 @@ function onDrop(ev, ctx) {
   else if (ctx === 'plsel') {
     moveInArray(selectedSongIds, from, to);
     renderPlaylistSelection();
+    const __ps = document.getElementById('playlist-search');
+    if (__ps && __ps.value) { __ps.value = ''; renderPlaylistAvailable(); }
+
   }
 }
 function moveInArray(arr, from, to){ const item = arr.splice(from,1)[0]; arr.splice(to,0,item); }
@@ -1130,6 +1183,10 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
+
+  const __pn = document.getElementById('playlist-name');
+  if (__pn) __pn.addEventListener('input', updatePlaylistSaveEnabled);
+  updatePlaylistSaveEnabled();
 
   parseXML();
 });
