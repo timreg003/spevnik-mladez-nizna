@@ -53,20 +53,29 @@
       <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div></div>
 
       <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
-        <h3 class="editor-title">Editor – Piesne na dnes</h3>
-
+        <div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
+          <div class="editor-toggle-title">Editor – Piesne na dnes</div>
+          <i class="fas fa-chevron-down editor-toggle-ico"></i>
+        </div>
+        <div class="editor-body">
+          <h3 class="editor-title">Editor – Piesne na dnes</h3>
         <input type="text" id="dnes-name" placeholder="Názov zoznamu (napr. Piatok 16.1.)" maxlength="40"/>
         <input type="text" id="dnes-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterDnesSearch()"/>
 
         <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
-        <div id="dnes-available-list" class="editor-list"></div>
 
-        <div class="editor-subtitle">Vytvorený zoznam (ťahaj pre poradie)</div>
+        <div class="editor-subtitle">Piesne v zozname (ťahaj pre poradie)</div>
         <div id="dnes-selected-editor" class="editor-list"></div>
 
-        <div class="btn-row-2">
+        <input type="text" id="dnes-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterDnesSearch()"/>
+
+        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
+        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
+        <div id="dnes-available-list" class="editor-list"></div>
+<div class="btn-row-2">
           <button class="btn-save" onclick="saveDnesEditor()">ULOŽIŤ</button>
           <button class="btn-delete" onclick="clearDnesSelection()">VYMAZAŤ</button>
+        </div>
         </div>
       </div>
     </div>
@@ -80,21 +89,25 @@
       <div id="playlists-section" class="list-box"><div class="loading">Načítavam...</div></div>
 
       <div id="admin-panel" class="editor-panel" style="display:none;">
-        <h3 class="editor-title">Editor playlistu</h3>
-
+        <div class="editor-toggle" onclick="toggleEditor('admin-panel')">
+          <div class="editor-toggle-title">Editor playlistov</div>
+          <i class="fas fa-chevron-down editor-toggle-ico"></i>
+        </div>
+        <div class="editor-body">
+          <h3 class="editor-title">Editor playlistu</h3>
         <input type="text" id="playlist-name" placeholder="Názov playlistu"/>
-        <input type="text" id="playlist-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterPlaylistSearch()"/>
 
-        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
-        <div id="playlist-available-list" class="editor-list"></div>
-
-        <div class="editor-subtitle">Vytvorený playlist (ťahaj pre poradie)</div>
+        <div class="editor-subtitle">Piesne v playliste (ťahaj pre poradie)</div>
         <div id="selected-list-editor" class="editor-list"></div>
 
-        <div class="btn-row-2">
+        <input type="text" id="playlist-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterPlaylistSearch()"/>
+        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
+        <div id="playlist-available-list" class="editor-list"></div>
+<div class="btn-row-2">
           <button class="btn-save" onclick="savePlaylist()">ULOŽIŤ</button>
           <button class="btn-neutral" onclick="newPlaylist()">NOVÝ PLAYLIST</button>
           <button class="btn-delete" onclick="clearSelection()">VYMAZAŤ</button>
+        </div>
         </div>
       </div>
     </div>
