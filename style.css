@@ -323,11 +323,12 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
 
 /* Save button disabled while saving */
 .btn-save.disabled{
-  background:#666 !important;
-  color:#bbb !important;
+  background:#777 !important;
+  color:#111 !important;
   cursor: not-allowed;
   opacity:0.8;
 }
+
 
 /* Collapsible editor header */
 .editor-toggle{
