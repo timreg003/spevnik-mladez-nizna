@@ -50,7 +50,10 @@
       <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
     </div>
     <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div></div>
+      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div>
+        <h2 class="playlist-header-title" style="margin-top:18px;">HISTÓRIA</h2>
+        <div id="history-section" class="list-box"></div>
+</div>
 
       <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
         <div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
@@ -83,14 +86,7 @@
     </div>
     <div id="playlists-section-wrapper" class="section-content" style="display:none;">
       <div id="playlists-section" class="list-box"><div class="loading">Načítavam...</div></div>
-      <!-- HISTÓRIA -->
-      <div class="section-header" onclick="toggleSection('history')">
-        <div class="section-title">HISTÓRIA</div>
-        <i id="history-chevron" class="fas fa-chevron-down section-chevron"></i>
-      </div>
-      <div id="history-section-wrapper" style="display:none;">
-        <div id="history-section" class="list-box"></div>
-      </div>
+</div>
 
 
       <div id="admin-panel" class="editor-panel" style="display:none;">
@@ -204,5 +200,45 @@
 </div>
 
 <script src="script.js?v=14"></script>
+
+  <!-- FORM EDITOR MODAL -->
+  <div id="form-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
+      <div class="modal-header">
+        <button class="modal-close" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
+        <div id="form-modal-title" class="modal-title">Forma piesne</div>
+        <button id="form-modal-save" class="modal-save" onclick="saveFormModal()">Uložiť</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-block">
+          <div class="modal-label">Náhľad označení v texte</div>
+          <div id="form-preview" class="form-preview"></div>
+        </div>
+
+        <div class="modal-block">
+          <div class="modal-label">Poradie</div>
+          <div id="form-order" class="form-order"></div>
+          <div class="modal-hint">Klikni na položku v poradí pre odstránenie.</div>
+        </div>
+
+        <div class="modal-block">
+          <div class="modal-label">Pridať časť</div>
+          <div id="form-buttons" class="form-buttons"></div>
+        </div>
+
+        <div class="modal-block">
+          <div class="modal-label">Špeciálne</div>
+          <div class="form-buttons">
+            <button class="chip-btn" onclick="addSpecialStep('PREDOHRA')">Predohra</button>
+            <button class="chip-btn" onclick="addSpecialStep('MEDZIHRA')">Medzihra</button>
+            <button class="chip-btn" onclick="addSpecialStep('DOHRA')">Dohra</button>
+          </div>
+          <div class="modal-hint">Poznámku dopíšeš po kliknutí (napr. akordy, pokyn).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
