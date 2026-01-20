@@ -437,7 +437,7 @@ function loadDnesCacheFirst(showEmptyAllowed) {
       box.innerHTML = '<div class="loading">Načítavam...</div>';
       return;
     }
-    box.innerHTML = '<div class="dnes-empty">Zoznam piesní na dnešný deň je momentálne prázdny.</div>';
+    box.innerHTML = '<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'‑(</div>';
     return;
   }
 
