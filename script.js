@@ -518,8 +518,7 @@ function buildOrderedSongText(song, orderStr){
   let out = [];
   if (!is999 && topTrans){
     out.push(`Transpozícia: ${topTrans}`);
-    out.push("");
-  }
+}
 
   const shownTransFor = new Set();
 
@@ -532,7 +531,6 @@ function buildOrderedSongText(song, orderStr){
       const kind = m[1].toUpperCase();
       const note = (m[2]||"").trim();
       out.push(kind.charAt(0) + kind.slice(1).toLowerCase() + (note?`: ${note}`:""));
-      out.push("");
       continue;
     }
 
@@ -546,7 +544,6 @@ function buildOrderedSongText(song, orderStr){
       const firstNonEmpty = (lines.find(l => l.trim() !== "") || "").trim();
       if (/^[+-]\d+$/.test(firstNonEmpty)){
         out.push(`Transpozícia: ${firstNonEmpty}`);
-        out.push("");
       }
       shownTransFor.add(key);
     }
@@ -559,7 +556,6 @@ function buildOrderedSongText(song, orderStr){
     } else {
       out.push(...lines);
     }
-    out.push("");
   }
 
   return out.join("\n").trim();
@@ -577,10 +573,14 @@ function renderSong() {
     text = text.replace(/\[.*?\]/g, '');
   }
 
+  // Style special lines / markers (keep \n, rely on pre-wrap in CSS)
+  text = text.replace(/^Transpozícia:\s*([+-]?\d+)\s*$/gm, 'Transpozícia: <span class="song-transpose">$1</span>');
+  text = text.replace(/^(Predohra|Medzihra|Dohra)(:.*)?$/gmi, (m0) => `<span class="song-special">${m0}</span>`);
+  text = text.replace(/^(\d+\.|R\d*:|B\d*:)\s*$/gm, '<span class="song-marker">$1</span>');
+
   const el = document.getElementById('song-content');
   el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
   el.style.fontSize = fontSize + 'px';
-  updateFontSizeLabel();
 }
 
 function transposeChord(c, step) {
@@ -827,9 +827,28 @@ function renderFormModalOrder(){
   box.innerHTML = formModalOrder.map((t, i) => {
     const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
-    return `<div class="${cls}" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>`;
+    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>`;
   }).join('');
 }
+let formDragFrom = null;
+
+function onFormChipDragStart(i){
+  formDragFrom = i;
+}
+function onFormChipDragOver(ev){
+  ev.preventDefault();
+}
+function onFormChipDrop(i){
+  if (formDragFrom === null) return;
+  const from = formDragFrom;
+  const to = i;
+  formDragFrom = null;
+  if (from === to) return;
+  const item = formModalOrder.splice(from,1)[0];
+  formModalOrder.splice(to,0,item);
+  renderFormModalOrder();
+}
+
 
 function addOrderToken(tok){
   const t = (tok||"").trim();
