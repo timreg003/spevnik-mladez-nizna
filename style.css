@@ -415,3 +415,124 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
   color:#00bfff;
   font-weight: 900;
 }
+
+/* Modal (Form editor) */
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:9999;
+}
+.modal-sheet{
+  width:100%;
+  max-width:900px;
+  background:#0f0f0f;
+  border-top-left-radius:18px;
+  border-top-right-radius:18px;
+  box-shadow:0 -10px 30px rgba(0,0,0,0.5);
+  max-height:92vh;
+  overflow:hidden;
+}
+.modal-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 12px;
+  border-bottom:1px solid #222;
+}
+.modal-title{
+  flex:1;
+  font-weight:900;
+  text-align:center;
+  letter-spacing:1px;
+  color:#fff;
+}
+.modal-close{
+  width:42px;
+  height:38px;
+  border-radius:10px;
+  border:none;
+  background:#222;
+  color:#fff;
+}
+.modal-save{
+  min-width:90px;
+  height:38px;
+  border-radius:10px;
+  border:none;
+  background:#00c853;
+  color:#081308;
+  font-weight:900;
+}
+.modal-save.disabled{
+  background:#777;
+  color:#111;
+}
+.modal-body{
+  padding:14px 12px 20px;
+  overflow:auto;
+  max-height:calc(92vh - 56px);
+}
+.modal-block{
+  margin-bottom:16px;
+}
+.modal-label{
+  font-weight:900;
+  color:#fff;
+  margin-bottom:8px;
+}
+.modal-hint{
+  margin-top:8px;
+  opacity:0.75;
+  font-size:12px;
+}
+.form-preview{
+  border:1px solid #222;
+  border-radius:12px;
+  padding:10px;
+  background:#121212;
+  font-size:14px;
+  line-height:1.35;
+  max-height:220px;
+  overflow:auto;
+}
+.form-preview .mk{
+  color:#00bfff;
+  font-weight:900;
+}
+.form-order{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.chip{
+  background:#222;
+  color:#fff;
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:900;
+  cursor:pointer;
+  user-select:none;
+}
+.chip.special{
+  background:rgba(0,191,255,0.15);
+  color:#00bfff;
+}
+.form-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.chip-btn{
+  background:#222;
+  border:none;
+  color:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.chip-btn:active{ transform:scale(0.99); }
