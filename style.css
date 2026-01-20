@@ -359,3 +359,39 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
 .editor-list{ padding:6px; }
 .controls{ gap:10px; }
 .control-group small{ opacity:0.9; }
+
+/* History */
+.history-card{
+  border: 1px solid #2b2b2b;
+  border-radius: 12px;
+  padding: 10px 10px;
+  margin: 10px 0;
+  background:#121212;
+}
+.history-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.history-title{
+  font-weight:900;
+  color:#fff;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.history-meta{
+  opacity:0.8;
+  font-size: 13px;
+}
+.history-del{
+  background:#333;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+.history-del:active{ transform: scale(0.99); }
