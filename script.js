@@ -409,7 +409,7 @@ function openSongById(id, source) {
     // pick order for this song (from dnesItems if available, else from stored payload)
     const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || '');
     const it = (payload.items||[]).find(x => String(x.songId) === String(id));
-    currentDnesOrder = historyActiveOrder || (it ? String(it.order||'') : '');
+    currentDnesOrder = (historyActiveOrder || (it ? String(it.order||'') : '')).trim();
   } else if (source === 'playlist') {
     // already set
   } else {
@@ -518,7 +518,7 @@ function buildOrderedSongText(song, orderStr){
   let out = [];
   if (!is999 && topTrans){
     out.push(`Transpozícia: ${topTrans}`);
-}
+  }
 
   const shownTransFor = new Set();
 
@@ -561,10 +561,22 @@ function buildOrderedSongText(song, orderStr){
   return out.join("\n").trim();
 }
 
-
 function renderSong() {
   if (!currentSong) return;
   let text = (currentListSource === 'dnes' && currentDnesOrder) ? buildOrderedSongText(currentSong, currentDnesOrder) : currentSong.origText;
+
+  // DNES: aj bez nastavenej formy zobraz Transpozíciu z 1. riadku (+1 / -2 ...)
+  if (currentListSource === 'dnes' && !currentDnesOrder) {
+    const is999 = String(currentSong.originalId||"").replace(/^0+/,'') === '999';
+    if (!is999) {
+      const lines = (text||"").split(/\r?\n/);
+      const first = (lines[0]||"").trim();
+      if (/^[+-]\d+$/.test(first)) {
+        lines.shift();
+        text = `Transpozícia: ${first}\n` + lines.join("\n");
+      }
+    }
+  }
 
   if (transposeStep !== 0) {
     text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
@@ -573,7 +585,7 @@ function renderSong() {
     text = text.replace(/\[.*?\]/g, '');
   }
 
-  // Style special lines / markers (keep \n, rely on pre-wrap in CSS)
+  // zvýraznenia (modré a väčšie)
   text = text.replace(/^Transpozícia:\s*([+-]?\d+)\s*$/gm, 'Transpozícia: <span class="song-transpose">$1</span>');
   text = text.replace(/^(Predohra|Medzihra|Dohra)(:.*)?$/gmi, (m0) => `<span class="song-special">${m0}</span>`);
   text = text.replace(/^(\d+\.|R\d*:|B\d*:)\s*$/gm, '<span class="song-marker">$1</span>');
@@ -581,6 +593,7 @@ function renderSong() {
   const el = document.getElementById('song-content');
   el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
   el.style.fontSize = fontSize + 'px';
+  updateFontSizeLabel();
 }
 
 function transposeChord(c, step) {
@@ -827,28 +840,26 @@ function renderFormModalOrder(){
   box.innerHTML = formModalOrder.map((t, i) => {
     const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
-    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>`;
+    const leftDisabled = i === 0 ? 'disabled' : '';
+    const rightDisabled = i === formModalOrder.length - 1 ? 'disabled' : '';
+    return `
+      <div class="${cls}">
+        <button class="chip-move" ${leftDisabled} onclick="event.stopPropagation(); moveOrderToken(${i},-1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="chip-text" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>
+        <button class="chip-move" ${rightDisabled} onclick="event.stopPropagation(); moveOrderToken(${i},1)"><i class="fas fa-chevron-right"></i></button>
+      </div>`;
   }).join('');
 }
-let formDragFrom = null;
 
-function onFormChipDragStart(i){
-  formDragFrom = i;
-}
-function onFormChipDragOver(ev){
-  ev.preventDefault();
-}
-function onFormChipDrop(i){
-  if (formDragFrom === null) return;
-  const from = formDragFrom;
-  const to = i;
-  formDragFrom = null;
-  if (from === to) return;
-  const item = formModalOrder.splice(from,1)[0];
-  formModalOrder.splice(to,0,item);
+function moveOrderToken(i, dir){
+  const j = i + dir;
+  if (i < 0 || i >= formModalOrder.length) return;
+  if (j < 0 || j >= formModalOrder.length) return;
+  const tmp = formModalOrder[i];
+  formModalOrder[i] = formModalOrder[j];
+  formModalOrder[j] = tmp;
   renderFormModalOrder();
 }
-
 
 function addOrderToken(tok){
   const t = (tok||"").trim();
