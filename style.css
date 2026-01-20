@@ -232,7 +232,7 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
 .back-btn{
   background:none; color:#00bfff; font-size:16px; border:none;
   cursor:pointer; margin-bottom:15px; width:100%;
-  text-align:center; font-weight:600;
+  text-align:left; font-weight:600;
 }
 
 #song-content{
@@ -352,3 +352,10 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
 .editor-panel.collapsed .editor-body{
   display:none;
 }
+
+/* Visual tweaks */
+.editor-panel{ padding:16px; }
+.editor-subtitle{ margin:10px 0 6px; }
+.editor-list{ padding:6px; }
+.controls{ gap:10px; }
+.control-group small{ opacity:0.9; }
