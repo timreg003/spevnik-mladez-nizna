@@ -28,6 +28,35 @@
 })();
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
+
+/* ===== JSONP helper (bypasses CORS for Apps Script) ===== */
+function jsonpRequest(url){
+  return new Promise((resolve, reject) => {
+    const cb = "cb_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+    const s = document.createElement('script');
+    const sep = url.includes('?') ? '&' : '?';
+    const full = url + sep + "callback=" + cb + "&t=" + Date.now();
+
+    window[cb] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+
+    function cleanup(){
+      try { delete window[cb]; } catch(e) { window[cb] = undefined; }
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    }
+
+    s.src = full;
+    s.async = true;
+    s.onerror = () => {
+      cleanup();
+      reject(new Error("JSONP load failed"));
+    };
+    document.head.appendChild(s);
+  });
+}
+
 const ADMIN_PWD = "qwer";
 const FORMSPREE_URL = "https://formspree.io/f/mvzzkwlw";
 
@@ -276,8 +305,8 @@ renderPlaylistsUI(true);
 /* ===== XML LOAD ===== */
 async function parseXML() {
   try {
-    const res = await fetch(SCRIPT_URL);
-    const xmlText = await res.text();
+    const data = await jsonpRequest(SCRIPT_URL);
+    const xmlText = (data && data.xml != null) ? String(data.xml) : "";
     localStorage.setItem('offline_spevnik', xmlText);
     processXML(xmlText);
   } catch (e) {
@@ -695,9 +724,9 @@ async function loadDnesFromDrive() {
   dnesFetchInFlight = true;
   loadDnesCacheFirst(false);
   try {
-    const r = await fetch(`${SCRIPT_URL}?action=get&name=PiesneNaDnes&t=${Date.now()}`);
-    const t = await r.text();
-    if (t != null) localStorage.setItem('piesne_dnes', t.trim());
+    const data = await jsonpRequest(`${SCRIPT_URL}?action=get&name=PiesneNaDnes`);
+    const t = (data && data.text != null) ? String(data.text) : "";
+    localStorage.setItem('piesne_dnes', t.trim());
   } catch(e) {}
   dnesFetchInFlight = false;
   loadDnesCacheFirst(true);
@@ -990,8 +1019,8 @@ async function loadHistoryFromDrive(){
   historyFetchInFlight = true;
   loadHistoryCacheFirst(false);
   try {
-    const r = await fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(HISTORY_NAME)}&t=${Date.now()}`);
-    const t = await r.text();
+    const data = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(HISTORY_NAME)}`);
+    const t = (data && data.text != null) ? String(data.text) : "";
     localStorage.setItem(LS_HISTORY, (t||"").trim());
   } catch(e) {}
   historyFetchInFlight = false;
@@ -1079,35 +1108,33 @@ function loadPlaylistsCacheFirst(showEmptyAllowed) {
 async function loadPlaylistsFromDrive() {
   playlistsFetchInFlight = true;
   loadPlaylistsCacheFirst(false);
-  loadHistoryCacheFirst(false);
 
   let list = [];
   try {
-    const r = await fetch(`${SCRIPT_URL}?action=list&t=${Date.now()}`);
-    list = await r.json();
+    const data = await jsonpRequest(`${SCRIPT_URL}?action=list`);
+    list = (data && data.list) ? data.list : (Array.isArray(data) ? data : []);
   } catch(e) {
     playlistsFetchInFlight = false;
     loadPlaylistsCacheFirst(true);
     return;
   }
 
-  list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder");
+  list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder" && p.name !== "HistoryLog");
   const allNames = list.map(p => p.name);
 
   let order = [];
   try {
-    const rr = await fetch(`${SCRIPT_URL}?action=get&name=PlaylistOrder&t=${Date.now()}`);
-    const txt = (await rr.text()).trim();
+    const od = await jsonpRequest(`${SCRIPT_URL}?action=get&name=PlaylistOrder`);
+    const txt = (od && od.text != null) ? String(od.text).trim() : "";
     const arr = JSON.parse(txt || "[]");
     if (Array.isArray(arr)) order = arr.map(String);
   } catch(e) {}
 
-  // Fetch contents first, then hide empty/deleted playlists
   const contents = {};
   await Promise.all(allNames.map(async (n) => {
     try {
-      const r = await fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}&t=${Date.now()}`);
-      const t = (await r.text()).trim();
+      const gd = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}`);
+      const t = (gd && gd.text != null) ? String(gd.text).trim() : "";
       contents[n] = t;
       localStorage.setItem('playlist_' + n, t);
     } catch(e) {
