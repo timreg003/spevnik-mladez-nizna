@@ -406,14 +406,11 @@ function openSongById(id, source) {
   if (source === 'dnes') {
     const ids = getDnesIds();
     currentModeList = ids.map(i => songs.find(x => x.id === i)).filter(Boolean);
-    // pick order for this song (from dnesItems if available, else from stored payload)
     const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || '');
     const it = (payload.items||[]).find(x => String(x.songId) === String(id));
-    currentDnesOrder = historyActiveOrder || (it ? String(it.order||'') : '');
+    currentDnesOrder = it ? String(it.order||'') : '';
   } else if (source === 'playlist') {
     currentDnesOrder = '';
- {
-    // already set
   } else {
     currentModeList = [...songs];
     currentDnesOrder = '';
