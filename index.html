@@ -15,7 +15,7 @@
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=14"/>
+  <link rel="stylesheet" href="style.css?v=15"/>
 </head>
 
 <body>
@@ -115,21 +115,20 @@
       <i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
     </div>
     <div id="all-section-wrapper" class="section-content" style="display:none;">
-      <div id="piesne-list" class="list-box"><div class="loading">Načítavam...</div>
+      <div id="piesne-list" class="list-box"><div class="loading">Načítavam...</div></div>
+  </div>
+
     <!-- HISTORY (public) -->
-    <div class="playlist-header" onclick="toggleSection('history')">
+    <div class="section-header" onclick="toggleSection('history')">
       <h2 class="playlist-header-title">HISTÓRIA</h2>
       <i id="history-chevron" class="fas fa-chevron-down section-chevron"></i>
     </div>
-    <div id="history-section-wrapper" style="display:none;">
+    <div id="history-section-wrapper" class="section-content" style="display:none;">
       <div class="list-box" style="padding:10px 12px;">
         <input id="history-search" class="search" type="text" placeholder="Hľadať v histórii..." oninput="filterHistorySearch()" />
       </div>
       <div id="history-section" class="list-box"></div>
     </div>
-</div>
-    </div>
-  </div>
 
   <!-- SONG DETAIL -->
   <div id="song-detail" style="display:none;">
@@ -207,7 +206,7 @@
   </div>
 </div>
 
-<script src="script.js?v=14"></script>
+<script src="script.js?v=15"></script>
 
   <!-- FORM EDITOR MODAL -->
   <div id="form-modal" class="modal-overlay" style="display:none;">
