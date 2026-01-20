@@ -314,7 +314,6 @@ function renderSong() {
   const el = document.getElementById('song-content');
   el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
   el.style.fontSize = fontSize + 'px';
-  updateFontSizeLabel();
 }
 
 function transposeChord(c, step) {
@@ -407,11 +406,16 @@ function parseDnesPayload(raw) {
   try {
     const obj = JSON.parse(trimmed);
     if (obj && Array.isArray(obj.ids)) {
-      if (obj.ids.length === 0) return { title: DNES_DEFAULT_TITLE, ids: [] };
-      return { title: (obj.title || DNES_DEFAULT_TITLE), ids: obj.ids.map(String) };
+      if (obj.ids.length === 0) {
+        return { title: DNES_DEFAULT_TITLE, ids: [] };
+      }
+      return { title: obj.title || DNES_DEFAULT_TITLE, ids: obj.ids.map(String) };
     }
   } catch(e) {}
 
+  const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
+  return { title: DNES_DEFAULT_TITLE, ids };
+}
   const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
   return { title: DNES_DEFAULT_TITLE, ids };
 }
@@ -433,7 +437,7 @@ function loadDnesCacheFirst(showEmptyAllowed) {
       box.innerHTML = '<div class="loading">Načítavam...</div>';
       return;
     }
-    box.innerHTML = '<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :&#39;-(</div>';
+    box.innerHTML = '<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'-(</div>';
     return;
   }
 
@@ -490,7 +494,7 @@ function addToDnesSelection(id) {
 function renderDnesSelected() {
   const box = document.getElementById('dnes-selected-editor');
   if (!dnesSelectedIds.length) {
-    box.innerHTML = '<div class="dnes-empty">Zatiaľ prázdne.</div>';
+    box.innerHTML = `<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'-(</div>`;
     return;
   }
   box.innerHTML = dnesSelectedIds.map((id, idx) => {
@@ -530,7 +534,7 @@ async function saveDnesEditor() {
   loadDnesCacheFirst(true);
 
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(payload)}`, { mode:'no-cors' });
     showToast("Uložené ✅", true);
   } catch(e) {
     showToast("Nepodarilo sa uložiť ❌", false);
@@ -577,7 +581,7 @@ async function loadPlaylistsFromDrive() {
   }
 
   list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder");
-  const names = list.map(p => p.name);
+  const allNames = list.map(p => p.name);
 
   let order = [];
   try {
@@ -587,22 +591,34 @@ async function loadPlaylistsFromDrive() {
     if (Array.isArray(arr)) order = arr.map(String);
   } catch(e) {}
 
-  playlistOrder = applyOrder(names, order);
-  localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
-  localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
-
-  await Promise.all(playlistOrder.map(async (n) => {
+  // Fetch contents first, then hide empty/deleted playlists (server-side delete may not exist)
+  const contents = {};
+  await Promise.all(allNames.map(async (n) => {
     try {
       const r = await fetch(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}&t=${Date.now()}`);
       const t = (await r.text()).trim();
+      contents[n] = t;
       localStorage.setItem('playlist_' + n, t);
-    } catch(e) {}
+    } catch(e) {
+      contents[n] = (localStorage.getItem('playlist_' + n) || "").trim();
+    }
   }));
+
+  const names = allNames.filter(n => !isDeletedPlaylistContent(contents[n]));
+
+  playlistOrder = applyOrder(names, order);
+  localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
+  localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
 
   playlistsFetchInFlight = false;
   renderPlaylistsUI(true);
 }
 
+
+function isDeletedPlaylistContent(t){
+  const s = (t || "").trim();
+  return s === "" || s === "__DELETED__";
+}
 function renderPlaylistsUI(showEmptyAllowed=true) {
   const sect = document.getElementById('playlists-section');
   if (!sect) return;
@@ -737,7 +753,7 @@ function renderPlaylistSelection(){
   const box = document.getElementById('selected-list-editor');
   if (!box) return;
   if (!selectedSongIds.length) {
-    box.innerHTML = '<div class="dnes-empty">Zatiaľ prázdne.</div>';
+    box.innerHTML = `<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'-(</div>`;
     return;
   }
 
@@ -829,12 +845,12 @@ async function savePlaylist(){
 
   // persist to Drive
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
       try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=__DELETED__`, { mode:'no-cors' }); } catch(e) {}
     }
     showToast('Uložené ✅', true);
   } catch(e) {
@@ -883,8 +899,8 @@ async function deletePlaylist(nameEnc){
 
   try {
     try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=__DELETED__`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     showToast('Vymazané ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa vymazať ❌', false);
@@ -914,7 +930,7 @@ function onDrop(ev, ctx) {
     renderPlaylistsUI(true);
     // best-effort persist order
     if (isAdmin) {
-      try { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
+      try { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
     }
   }
   else if (ctx === 'plsel') {
@@ -981,18 +997,10 @@ function escapeHtml(s) {
   }[m]));
 }
 
-
-/* ===== FONT SIZE UI (DETAIL) ===== */
-function updateFontSizeLabel(){
-  const el = document.getElementById('font-size-label');
-  if (el) el.innerText = String(fontSize);
-}
-
 /* ===== PINCH TO CHANGE SONG TEXT SIZE (DETAIL) ===== */
 function applySongFontSize(px){
   const v = Math.max(12, Math.min(34, Math.round(px)));
   fontSize = v;
-  updateFontSizeLabel();
   try { localStorage.setItem(LS_SONG_FONT_SIZE, String(v)); } catch(e) {}
   renderSong();
 }
@@ -1040,7 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
   if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
-  updateFontSizeLabel();
   initSongPinchToZoom();
 
   toggleSection('dnes', false);
