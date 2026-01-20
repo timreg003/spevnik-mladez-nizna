@@ -395,3 +395,23 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
   cursor:pointer;
 }
 .history-del:active{ transform: scale(0.99); }
+
+/* Transpose hint banner */
+.transpose-hint{
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0,191,255,0.12);
+  color:#00bfff;
+  font-weight: 900;
+  font-size: 18px;
+}
+/* Form notes (Predohra/Medzihra/Dohra) */
+.form-note{
+  margin: 10px 0 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0,191,255,0.10);
+  color:#00bfff;
+  font-weight: 900;
+}
