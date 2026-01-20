@@ -536,3 +536,10 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
   cursor:pointer;
 }
 .chip-btn:active{ transform:scale(0.99); }
+
+/* History list scroll */
+#history-section{
+  max-height: 320px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
