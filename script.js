@@ -1,4 +1,7 @@
-/* ✅ ANTI PULL-TO-REFRESH (Android) */
+/* ✅ ANTI PULL-TO-REFRESH (Android)
+   Zablokuje refresh pri ťahu dole, keď je stránka úplne hore.
+   Nezabíja scroll v listoch (editor-list, list-box, song-content).
+*/
 (function preventPullToRefresh(){
   let startY = 0;
   let maybePull = false;
@@ -40,13 +43,16 @@ let autoscrollInterval = null, currentLevel = 1;
 let isAdmin = false;
 
 let dnesSelectedIds = [];
+// Default title shown when the list is empty / freshly cleared
 const DNES_DEFAULT_TITLE = "PIESNE NA DNES";
 let dnesTitle = DNES_DEFAULT_TITLE;
 
 let selectedSongIds = [];
 let playlistOrder = [];
 
+// Persisted song font size (pinch zoom in song detail)
 const LS_SONG_FONT_SIZE = 'song_font_size';
+
 const LS_PLAYLIST_INDEX = "playlist_index";
 const LS_PLAYLIST_ORDER = "playlist_order";
 
@@ -76,24 +82,30 @@ function openFabMenu(){
   m.setAttribute("aria-hidden", "false");
 }
 function toggleFabMenu(ev){
+  // stop click bubbling so outside-click handler doesn’t close immediately
   if (ev) ev.stopPropagation();
+
   if (!navigator.onLine){
     showToast("Si offline – aktualizácia nie je dostupná.", false);
     closeFabMenu();
     return;
   }
+
   const m = document.getElementById("fab-menu");
   if (!m) return;
+
   if (m.style.display === "block") closeFabMenu();
   else openFabMenu();
 }
 
+// click anywhere else closes
 document.addEventListener('click', (e) => {
   const fab = document.getElementById("fab-update");
   if (!fab) return;
   if (!fab.contains(e.target)) closeFabMenu();
 }, true);
 
+/* offline: close menu automatically */
 window.addEventListener('offline', () => closeFabMenu());
 
 /* ===== SCROLL TO TOP BTN ===== */
@@ -122,9 +134,11 @@ function goHomeUI() {
   renderPlaylistsUI(true);
   document.getElementById('search').value = "";
   filterSongs();
+
   toggleSection('dnes', false);
   toggleSection('playlists', false);
   toggleSection('all', false);
+
   window.scrollTo(0,0);
 }
 
@@ -133,10 +147,12 @@ function toggleAdminAuth() {
   if (!isAdmin) {
     const pwd = prompt("Heslo:");
     if (pwd !== ADMIN_PWD) return;
+
     isAdmin = true;
     document.getElementById('admin-toggle-text').innerText = "ODHLÁSIŤ";
     document.getElementById('dnes-editor-panel').style.display = 'block';
     document.getElementById('admin-panel').style.display = 'block';
+
     openDnesEditor(true);
     openPlaylistEditorNew(true);
     renderPlaylistsUI(true);
@@ -204,8 +220,12 @@ function processXML(xmlText) {
 
   filteredSongs = [...songs];
   renderAllSongs();
+
+  // cache-first (no flicker)
   loadDnesCacheFirst(false);
   loadPlaylistsCacheFirst(false);
+
+  // then refresh
   loadDnesFromDrive();
   loadPlaylistsFromDrive();
 }
@@ -221,6 +241,7 @@ function songRowHTMLClickable(displayId, title, onclickJs) {
 function renderAllSongs() {
   const box = document.getElementById('piesne-list');
   if (!box) return;
+
   box.innerHTML = filteredSongs.map(s =>
     songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','all')`)
   ).join('');
@@ -240,7 +261,7 @@ function openSongById(id, source) {
   if (source === 'dnes') {
     currentModeList = getDnesIds().map(i => songs.find(x => x.id === i)).filter(Boolean);
   } else if (source === 'playlist') {
-    // currentModeList set in renderPlaylistSongsView
+    // already set
   } else {
     currentModeList = [...songs];
   }
@@ -254,6 +275,7 @@ function openSongById(id, source) {
 
   document.getElementById('song-list').style.display = 'none';
   document.getElementById('song-detail').style.display = 'block';
+
   document.getElementById('render-title').innerText = `${s.displayId}. ${s.title}`;
 
   const firstChordMatch = s.origText.match(/\[(.*?)\]/);
@@ -281,12 +303,14 @@ function navigateSong(d) {
 function renderSong() {
   if (!currentSong) return;
   let text = currentSong.origText;
+
   if (transposeStep !== 0) {
     text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
   }
   if (!chordsVisible) {
     text = text.replace(/\[.*?\]/g, '');
   }
+
   const el = document.getElementById('song-content');
   el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
   el.style.fontSize = fontSize + 'px';
@@ -344,27 +368,60 @@ function updateSpeedUI() {
   if (s) s.innerText = "Rýchlosť: " + currentLevel;
 }
 
-/* ===== DNES ===== */
+/* Swipe left/right */
+(function initSwipe(){
+  const detail = document.getElementById('song-detail');
+  if (!detail) return;
+
+  let sx = 0, sy = 0, active = false;
+
+  detail.addEventListener('touchstart', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    active = true;
+  }, { passive:true });
+
+  detail.addEventListener('touchend', (e) => {
+    if (!active || !e.changedTouches || e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    active = false;
+
+    if (Math.abs(dx) < 70) return;
+    if (Math.abs(dy) > 80) return;
+
+    if (dx < 0) navigateSong(1);
+    else navigateSong(-1);
+  }, { passive:true });
+})();
+
+/* ===== DNES (no flicker) ===== */
 let dnesFetchInFlight = false;
 
 function parseDnesPayload(raw) {
   const trimmed = (raw || "").trim();
   if (!trimmed) return { title: DNES_DEFAULT_TITLE, ids: [] };
+
   try {
     const obj = JSON.parse(trimmed);
     if (obj && Array.isArray(obj.ids)) {
-      if (obj.ids.length === 0) return { title: DNES_DEFAULT_TITLE, ids: [] };
+      if (obj.ids.length === 0) {
+        return { title: DNES_DEFAULT_TITLE, ids: [] };
+      }
       return { title: obj.title || DNES_DEFAULT_TITLE, ids: obj.ids.map(String) };
     }
   } catch(e) {}
+
   const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
   return { title: DNES_DEFAULT_TITLE, ids };
 }
-
+  const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
+  return { title: DNES_DEFAULT_TITLE, ids };
+}
 function setDnesTitle(title) {
   dnesTitle = (title || DNES_DEFAULT_TITLE);
-  const el = document.getElementById('dnes-title');
-  if (el) el.innerText = dnesTitle.toUpperCase();
+  document.getElementById('dnes-title').innerText = dnesTitle.toUpperCase();
 }
 function getDnesIds() {
   const raw = localStorage.getItem('piesne_dnes') || "";
@@ -374,6 +431,7 @@ function loadDnesCacheFirst(showEmptyAllowed) {
   const box = document.getElementById('dnes-section');
   const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || "");
   setDnesTitle(payload.title);
+
   if (!payload.ids.length) {
     if (!showEmptyAllowed && dnesFetchInFlight) {
       box.innerHTML = '<div class="loading">Načítavam...</div>';
@@ -382,6 +440,7 @@ function loadDnesCacheFirst(showEmptyAllowed) {
     box.innerHTML = '<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'-(</div>';
     return;
   }
+
   box.innerHTML = payload.ids.map(id => {
     const s = songs.find(x => x.id === id);
     if (!s) return '';
@@ -401,6 +460,7 @@ async function loadDnesFromDrive() {
   if (isAdmin) openDnesEditor(true);
 }
 
+/* dnes editor (zachované) */
 function openDnesEditor(silent=false) {
   if (!isAdmin && !silent) return;
   const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || "");
@@ -413,6 +473,7 @@ function filterDnesSearch(){ renderDnesAvailable(); }
 function renderDnesAvailable() {
   const t = document.getElementById('dnes-search').value.toLowerCase().trim();
   const list = t ? songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t)) : songs;
+
   const target = document.getElementById('dnes-available-list');
   target.innerHTML = list.map(s => `
     <div class="draggable-item" onclick="addToDnesSelection('${s.id}')">
@@ -441,7 +502,12 @@ function renderDnesSelected() {
     const left = s ? `${s.displayId}.` : id;
     const right = s ? s.title : '';
     return `
-      <div class="draggable-item" draggable="true" data-idx="${idx}" ondragstart="onDragStart(event,'dnes')" ondragover="onDragOver(event)" ondrop="onDrop(event,'dnes')">
+      <div class="draggable-item"
+           draggable="true"
+           data-idx="${idx}"
+           ondragstart="onDragStart(event,'dnes')"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event,'dnes')">
         <div style="display:flex; gap:10px; align-items:center; flex:1;">
           <div style="color:#00bfff; font-weight:900; min-width:78px; text-align:right; white-space:nowrap;">${escapeHtml(left)}</div>
           <div style="flex:1; overflow-wrap:anywhere;">${escapeHtml(right)}</div>
@@ -462,9 +528,11 @@ function clearDnesSelection(){
 async function saveDnesEditor() {
   const title = (document.getElementById('dnes-name').value || DNES_DEFAULT_TITLE).trim();
   const payload = JSON.stringify({ title, ids: dnesSelectedIds });
+
   localStorage.setItem('piesne_dnes', payload);
   setDnesTitle(title);
   loadDnesCacheFirst(true);
+
   try {
     await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(payload)}`, { mode:'no-cors' });
     showToast("Uložené ✅", true);
@@ -473,16 +541,18 @@ async function saveDnesEditor() {
   }
 }
 
-/* ===== PLAYLISTY ===== */
+/* ===== PLAYLISTY (no flicker) ===== */
 let playlistsFetchInFlight = false;
-let playlistViewName = null;
-let editingPlaylistName = null;
+let playlistViewName = null; // when set, playlists section shows songs inside that playlist
+let editingPlaylistName = null; // original name when editing (for rename)
 
 function getCachedPlaylistNames() {
-  try { const idx = JSON.parse(localStorage.getItem(LS_PLAYLIST_INDEX) || "[]"); return Array.isArray(idx) ? idx.map(String) : []; } catch(e) { return []; }
+  try { const idx = JSON.parse(localStorage.getItem(LS_PLAYLIST_INDEX) || "[]"); if (Array.isArray(idx)) return idx.map(String); } catch(e) {}
+  return [];
 }
 function getCachedPlaylistOrder() {
-  try { const ord = JSON.parse(localStorage.getItem(LS_PLAYLIST_ORDER) || "[]"); return Array.isArray(ord) ? ord.map(String) : []; } catch(e) { return []; }
+  try { const ord = JSON.parse(localStorage.getItem(LS_PLAYLIST_ORDER) || "[]"); if (Array.isArray(ord)) return ord.map(String); } catch(e) {}
+  return [];
 }
 function applyOrder(names, order) {
   const ordered = [];
@@ -499,6 +569,7 @@ function loadPlaylistsCacheFirst(showEmptyAllowed) {
 async function loadPlaylistsFromDrive() {
   playlistsFetchInFlight = true;
   loadPlaylistsCacheFirst(false);
+
   let list = [];
   try {
     const r = await fetch(`${SCRIPT_URL}?action=list&t=${Date.now()}`);
@@ -508,8 +579,10 @@ async function loadPlaylistsFromDrive() {
     loadPlaylistsCacheFirst(true);
     return;
   }
+
   list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder");
   const allNames = list.map(p => p.name);
+
   let order = [];
   try {
     const rr = await fetch(`${SCRIPT_URL}?action=get&name=PlaylistOrder&t=${Date.now()}`);
@@ -518,6 +591,7 @@ async function loadPlaylistsFromDrive() {
     if (Array.isArray(arr)) order = arr.map(String);
   } catch(e) {}
 
+  // Fetch contents first, then hide empty/deleted playlists (server-side delete may not exist)
   const contents = {};
   await Promise.all(allNames.map(async (n) => {
     try {
@@ -531,27 +605,43 @@ async function loadPlaylistsFromDrive() {
   }));
 
   const names = allNames.filter(n => !isDeletedPlaylistContent(contents[n]));
+
   playlistOrder = applyOrder(names, order);
   localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
   localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
+
   playlistsFetchInFlight = false;
   renderPlaylistsUI(true);
 }
 
-function isDeletedPlaylistContent(t){ return (t || "").trim() === "" || (t || "").trim() === "__DELETED__"; }
 
+function isDeletedPlaylistContent(t){
+  const s = (t || "").trim();
+  return s === "" || s === "__DELETED__";
+}
 function renderPlaylistsUI(showEmptyAllowed=true) {
   const sect = document.getElementById('playlists-section');
   if (!sect) return;
-  if (playlistViewName) { renderPlaylistSongsView(playlistViewName); return; }
+
+  // If user opened a playlist, show its songs INSIDE the playlists folder
+  if (playlistViewName) {
+    renderPlaylistSongsView(playlistViewName);
+    return;
+  }
+
   const names = playlistOrder || [];
   if (!names.length) {
-    if (!showEmptyAllowed && playlistsFetchInFlight) { sect.innerHTML = '<div class="loading">Načítavam...</div>'; return; }
+    if (!showEmptyAllowed && playlistsFetchInFlight) {
+      sect.innerHTML = '<div class="loading">Načítavam...</div>';
+      return;
+    }
     sect.innerHTML = '<div class="dnes-empty">Žiadne playlisty.</div>';
     return;
   }
+
   sect.innerHTML = names.map((name, idx) => {
     const safe = escapeHtml(name);
+
     if (!isAdmin) {
       return `
         <div class="pl-row" onclick="openPlaylist('${encodeURIComponent(name)}')">
@@ -559,15 +649,22 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
           <div class="song-title">${safe}</div>
         </div>`;
     }
+
     return `
-      <div class="draggable-item" draggable="true" data-idx="${idx}" ondragstart="onDragStart(event,'plist')" ondragover="onDragOver(event)" ondrop="onDrop(event,'plist')">
+      <div class="draggable-item"
+           draggable="true"
+           data-idx="${idx}"
+           ondragstart="onDragStart(event,'plist')"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event,'plist')">
         <div style="display:flex; gap:10px; align-items:center; flex:1; cursor:pointer;" onclick="openPlaylist('${encodeURIComponent(name)}')">
           <div style="min-width:78px; text-align:right; color:#00bfff;"><i class="fas fa-music"></i></div>
           <div style="flex:1; overflow-wrap:anywhere;">${safe}</div>
         </div>
-        <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-        <button class="small-plus" onclick="event.stopPropagation(); editPlaylist('${encodeURIComponent(name)}')"><i class="fas fa-pen"></i></button>
-        <button class="small-del" onclick="event.stopPropagation(); deletePlaylist('${encodeURIComponent(name)}')">X</button>
+
+        <span class="drag-handle" title="Poradie"><i class="fas fa-grip-lines"></i></span>
+        <button class="small-plus" title="Upraviť" onclick="event.stopPropagation(); editPlaylist('${encodeURIComponent(name)}')"><i class="fas fa-pen"></i></button>
+        <button class="small-del" title="Vymazať" onclick="event.stopPropagation(); deletePlaylist('${encodeURIComponent(name)}')">X</button>
       </div>`;
   }).join('');
 }
@@ -579,23 +676,36 @@ function openPlaylist(nameEnc) {
   renderPlaylistsUI(true);
   window.scrollTo(0,0);
 }
-function closePlaylistView(){ playlistViewName = null; renderPlaylistsUI(true); }
+
+function closePlaylistView(){
+  playlistViewName = null;
+  renderPlaylistsUI(true);
+}
 
 function renderPlaylistSongsView(name){
   const sect = document.getElementById('playlists-section');
   if (!sect) return;
+
   const raw = (localStorage.getItem('playlist_' + name) || "").trim();
   const ids = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
   currentModeList = ids.map(id => songs.find(x => x.id === id)).filter(Boolean);
   currentListSource = 'playlist';
+
   const headerBtns = `
     <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #333; background:#121212;">
-      <button class="pl-back" onclick="closePlaylistView()"><i class="fas fa-arrow-left"></i> Späť</button>
+      <button class="pl-back" onclick="closePlaylistView()"><i class=\"fas fa-arrow-left\"></i> Späť</button>
       <div style="font-weight:800; color:#fff; text-align:center; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 8px;">${escapeHtml(name)}</div>
-      ${isAdmin ? `<button class="pl-edit" onclick="editPlaylist('${encodeURIComponent(name)}')"><i class="fas fa-pen"></i></button>` : `<span style="width:44px;"></span>`}
+      ${isAdmin ? `<button class=\"pl-edit\" onclick=\"editPlaylist('${encodeURIComponent(name)}')\"><i class=\"fas fa-pen\"></i></button>` : `<span style=\"width:44px;\"></span>`}
     </div>`;
-  if (!currentModeList.length) { sect.innerHTML = headerBtns + `<div class="dnes-empty">Prázdny playlist.</div>`; return; }
-  sect.innerHTML = headerBtns + currentModeList.map(s => songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','playlist')`)).join('');
+
+  if (!currentModeList.length) {
+    sect.innerHTML = headerBtns + `<div class="dnes-empty">Prázdny playlist.</div>`;
+    return;
+  }
+
+  sect.innerHTML = headerBtns + currentModeList.map(s =>
+    songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','playlist')`)
+  ).join('');
 }
 
 /* ===== PLAYLIST EDITOR ===== */
@@ -603,17 +713,24 @@ function openPlaylistEditorNew(silent=false){
   if (!isAdmin && !silent) return;
   editingPlaylistName = null;
   selectedSongIds = [];
-  if (document.getElementById('playlist-name')) document.getElementById('playlist-name').value = '';
-  if (document.getElementById('playlist-search')) document.getElementById('playlist-search').value = '';
+  const nameEl = document.getElementById('playlist-name');
+  if (nameEl) nameEl.value = '';
+  const searchEl = document.getElementById('playlist-search');
+  if (searchEl) searchEl.value = '';
   renderPlaylistAvailable();
   renderPlaylistSelection();
 }
-function filterPlaylistSearch(){ renderPlaylistAvailable(); }
+
+function filterPlaylistSearch(){
+  renderPlaylistAvailable();
+}
+
 function renderPlaylistAvailable(){
   const t = (document.getElementById('playlist-search')?.value || '').toLowerCase().trim();
   const list = t ? songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t)) : songs;
   const target = document.getElementById('playlist-available-list');
   if (!target) return;
+
   target.innerHTML = list.map(s => `
     <div class="draggable-item" onclick="addToPlaylistSelection('${s.id}')">
       <div style="display:flex; gap:10px; align-items:center; flex:1;">
@@ -624,17 +741,33 @@ function renderPlaylistAvailable(){
     </div>
   `).join('');
 }
-function addToPlaylistSelection(id){ if (!selectedSongIds.includes(id)) { selectedSongIds.push(id); renderPlaylistSelection(); } }
+
+function addToPlaylistSelection(id){
+  if (!selectedSongIds.includes(id)) {
+    selectedSongIds.push(id);
+    renderPlaylistSelection();
+  }
+}
+
 function renderPlaylistSelection(){
   const box = document.getElementById('selected-list-editor');
   if (!box) return;
-  if (!selectedSongIds.length) { box.innerHTML = `<div class="dnes-empty">Prázdny výber.</div>`; return; }
+  if (!selectedSongIds.length) {
+    box.innerHTML = `<div class="dnes-empty">Zoznam piesní na dnešný deň je prázdny :'-(</div>`;
+    return;
+  }
+
   box.innerHTML = selectedSongIds.map((id, idx) => {
     const s = songs.find(x => x.id === id);
     const left = s ? `${s.displayId}.` : id;
     const right = s ? s.title : '';
     return `
-      <div class="draggable-item" draggable="true" data-idx="${idx}" ondragstart="onDragStart(event,'plsel')" ondragover="onDragOver(event)" ondrop="onDrop(event,'plsel')">
+      <div class="draggable-item"
+           draggable="true"
+           data-idx="${idx}"
+           ondragstart="onDragStart(event,'plsel')"
+           ondragover="onDragOver(event)"
+           ondrop="onDrop(event,'plsel')">
         <div style="display:flex; gap:10px; align-items:center; flex:1;">
           <div style="color:#00bfff; font-weight:900; min-width:78px; text-align:right; white-space:nowrap;">${escapeHtml(left)}</div>
           <div style="flex:1; overflow-wrap:anywhere;">${escapeHtml(right)}</div>
@@ -644,30 +777,51 @@ function renderPlaylistSelection(){
       </div>`;
   }).join('');
 }
-function removeFromPlaylistSelection(idx){ selectedSongIds.splice(idx,1); renderPlaylistSelection(); }
+
+function removeFromPlaylistSelection(idx){
+  selectedSongIds.splice(idx,1);
+  renderPlaylistSelection();
+}
+
 function clearSelection(){
   selectedSongIds = [];
-  if (document.getElementById('playlist-name')) document.getElementById('playlist-name').value = '';
+  const nameEl = document.getElementById('playlist-name');
+  if (nameEl) nameEl.value = '';
   editingPlaylistName = null;
   renderPlaylistSelection();
 }
+
 async function savePlaylist(){
   if (!isAdmin) return;
-  const rawName = (document.getElementById('playlist-name')?.value || '').trim();
-  if (!rawName) { showToast('Zadaj názov playlistu.', false); return; }
+  const nameEl = document.getElementById('playlist-name');
+  const rawName = (nameEl?.value || '').trim();
+  if (!rawName) {
+    showToast('Zadaj názov playlistu.', false);
+    return;
+  }
+
   const newName = rawName;
   const oldName = editingPlaylistName;
-  if (oldName && newName !== oldName) { if (playlistOrder.includes(newName) && !confirm('Prepísať existujúci?')) return; }
-  else if (!oldName && playlistOrder.includes(newName)) { if (!confirm('Prepísať existujúci?')) return; }
 
+  // handle rename / overwrite
+  if (oldName && newName !== oldName) {
+    if (playlistOrder.includes(newName) && !confirm('Playlist s týmto názvom už existuje. Prepísať?')) return;
+  } else if (!oldName && playlistOrder.includes(newName)) {
+    if (!confirm('Playlist s týmto názvom už existuje. Prepísať?')) return;
+  }
+
+  // update local storage index/order
   let names = getCachedPlaylistNames();
   playlistOrder = getCachedPlaylistOrder();
   playlistOrder = applyOrder(names, playlistOrder);
 
   if (oldName && newName !== oldName) {
+    // rename in index
     names = names.filter(n => n !== oldName);
     if (!names.includes(newName)) names.push(newName);
+    // rename in order
     playlistOrder = playlistOrder.map(n => (n === oldName ? newName : n));
+    // move cached content key
     const oldKey = 'playlist_' + oldName;
     const newKey = 'playlist_' + newName;
     const oldContent = localStorage.getItem(oldKey);
@@ -682,30 +836,45 @@ async function savePlaylist(){
   localStorage.setItem('playlist_' + newName, payload);
   localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
   localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
+
   editingPlaylistName = newName;
+
+  // update UI immediately
   playlistViewName = null;
   renderPlaylistsUI(true);
 
+  // persist to Drive
   try {
     await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(payload)}`, { mode:'no-cors' });
     await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
       try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=__DELETED__`, { mode:'no-cors' }); } catch(e) {}
     }
     showToast('Uložené ✅', true);
-  } catch(e) { showToast('Chyba pri ukladaní ❌', false); }
+  } catch(e) {
+    showToast('Nepodarilo sa uložiť ❌', false);
+  }
 }
 
 function editPlaylist(nameEnc){
   if (!isAdmin) return;
   const name = decodeURIComponent(nameEnc);
   editingPlaylistName = name;
-  if (document.getElementById('playlist-name')) document.getElementById('playlist-name').value = name;
+  const nameEl = document.getElementById('playlist-name');
+  if (nameEl) nameEl.value = name;
+
   const raw = (localStorage.getItem('playlist_' + name) || '').trim();
   selectedSongIds = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
-  if (document.getElementById('playlist-search')) document.getElementById('playlist-search').value = '';
+
+  // show editor (already visible for admin), and reset search
+  const searchEl = document.getElementById('playlist-search');
+  if (searchEl) searchEl.value = '';
   renderPlaylistAvailable();
   renderPlaylistSelection();
+
+  // if we were inside playlist view, jump out so user sees editor
   playlistViewName = null;
   renderPlaylistsUI(true);
   toggleSection('playlists', true);
@@ -714,23 +883,31 @@ function editPlaylist(nameEnc){
 async function deletePlaylist(nameEnc){
   if (!isAdmin) return;
   const name = decodeURIComponent(nameEnc);
-  if (!confirm(`Vymazať "${name}"?`)) return;
+  if (!confirm(`Vymazať playlist "${name}"?`)) return;
+
   localStorage.removeItem('playlist_' + name);
+
   let names = getCachedPlaylistNames().filter(n => n !== name);
   playlistOrder = applyOrder(names, getCachedPlaylistOrder().filter(n => n !== name));
   localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
   localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
+
   if (editingPlaylistName === name) openPlaylistEditorNew(true);
   if (playlistViewName === name) playlistViewName = null;
+
   renderPlaylistsUI(true);
+
   try {
+    try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
     await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=__DELETED__`, { mode:'no-cors' });
     await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     showToast('Vymazané ✅', true);
-  } catch(e) { showToast('Chyba pri mazaní ❌', false); }
+  } catch(e) {
+    showToast('Nepodarilo sa vymazať ❌', false);
+  }
 }
 
-/* ===== DRAG & DROP ===== */
+/* Drag & Drop basics */
 function onDragStart(ev, ctx) {
   ev.dataTransfer.effectAllowed = "move";
   ev.dataTransfer.setData("text/plain", ev.currentTarget.getAttribute("data-idx"));
@@ -742,58 +919,140 @@ function onDrop(ev, ctx) {
   const from = parseInt(ev.dataTransfer.getData("text/plain"), 10);
   const to = parseInt(ev.currentTarget.getAttribute("data-idx"), 10);
   if (isNaN(from) || isNaN(to) || from === to) return;
-  if (ctx === 'dnes') { moveInArray(dnesSelectedIds, from, to); renderDnesSelected(); }
+
+  if (ctx === 'dnes') {
+    moveInArray(dnesSelectedIds, from, to);
+    renderDnesSelected();
+  }
   else if (ctx === 'plist') {
     moveInArray(playlistOrder, from, to);
     localStorage.setItem(LS_PLAYLIST_ORDER, JSON.stringify(playlistOrder));
     renderPlaylistsUI(true);
-    if (isAdmin) { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); }
+    // best-effort persist order
+    if (isAdmin) {
+      try { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
+    }
   }
-  else if (ctx === 'plsel') { moveInArray(selectedSongIds, from, to); renderPlaylistSelection(); }
+  else if (ctx === 'plsel') {
+    moveInArray(selectedSongIds, from, to);
+    renderPlaylistSelection();
+  }
 }
 function moveInArray(arr, from, to){ const item = arr.splice(from,1)[0]; arr.splice(to,0,item); }
 
-/* ===== OSTATNÉ ===== */
+/* Update app (offline blocked) */
 async function hardResetApp() {
-  if (!navigator.onLine){ showToast("Si offline.", false); return; }
+  if (!navigator.onLine){
+    showToast("Si offline – aktualizácia nie je dostupná.", false);
+    return;
+  }
   closeFabMenu();
   if (!confirm("Vymazať pamäť?")) return;
+
   localStorage.clear();
-  try { const keys = await caches.keys(); for (const k of keys) await caches.delete(k); } catch (e) {}
+  try {
+    const keys = await caches.keys();
+    for (const k of keys) await caches.delete(k);
+  } catch (e) {}
   location.reload(true);
 }
 
+/* Formspree */
 async function submitErrorForm(event) {
   event.preventDefault();
   const form = document.getElementById("error-form");
   const status = document.getElementById("form-status");
   const btn = document.getElementById("submit-btn");
-  status.style.display = "block"; status.style.color = "#00ff00"; status.innerText = "Odosielam...";
+
+  status.style.display = "block";
+  status.style.color = "#00ff00";
+  status.innerText = "Odosielam...";
   btn.disabled = true;
+
   try {
-    const res = await fetch(FORMSPREE_URL, { method:"POST", headers:{ "Accept":"application/json" }, body: new FormData(form) });
-    if (res.ok) { status.innerText = "Odoslané!"; form.reset(); showToast("Odoslané ✅", true); }
-    else { status.style.color = "#ff4444"; status.innerText = "Chyba."; showToast("Chyba ❌", false); }
-  } catch(e) { status.style.color = "#ff4444"; status.innerText = "Chyba."; showToast("Chyba ❌", false); } finally { btn.disabled = false; }
+    const formData = new FormData(form);
+    const res = await fetch(FORMSPREE_URL, { method:"POST", headers:{ "Accept":"application/json" }, body: formData });
+    if (res.ok) {
+      status.style.color = "#00ff00";
+      status.innerText = "Chyba bola odoslaná!";
+      form.reset();
+      showToast("Odoslané ✅", true);
+    } else {
+      status.style.color = "#ff4444";
+      status.innerText = "Nepodarilo sa odoslať.";
+      showToast("Neodoslané ❌", false);
+    }
+  } catch(e) {
+    status.style.color = "#ff4444";
+    status.innerText = "Nepodarilo sa odoslať.";
+    showToast("Neodoslané ❌", false);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])); }
-function applySongFontSize(px){ fontSize = Math.max(12, Math.min(34, Math.round(px))); localStorage.setItem(LS_SONG_FONT_SIZE, String(fontSize)); renderSong(); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
+}
+
+/* ===== PINCH TO CHANGE SONG TEXT SIZE (DETAIL) ===== */
+function applySongFontSize(px){
+  const v = Math.max(12, Math.min(34, Math.round(px)));
+  fontSize = v;
+  try { localStorage.setItem(LS_SONG_FONT_SIZE, String(v)); } catch(e) {}
+  renderSong();
+}
 
 function initSongPinchToZoom(){
+  // Custom pinch so it works even with viewport user-scalable=no
   const area = document.getElementById('song-detail');
   if (!area) return;
-  let active = false; let startDist = 0; let startSize = fontSize;
-  function dist(t1, t2){ return Math.sqrt(Math.pow(t2.clientX-t1.clientX,2)+Math.pow(t2.clientY-t1.clientY,2)); }
-  area.addEventListener('touchstart', (e) => { if (area.style.display==='none'||!e.touches||e.touches.length!==2) return; active=true; startDist=dist(e.touches[0], e.touches[1]); startSize=fontSize; }, { passive: true });
-  area.addEventListener('touchmove', (e) => { if (!active||!e.touches||e.touches.length!==2) return; const d=dist(e.touches[0],e.touches[1]); if (!startDist) return; applySongFontSize(startSize*(d/startDist)); e.preventDefault(); }, { passive: false });
-  area.addEventListener('touchend', () => { active=false; }, { passive: true });
+
+  let active = false;
+  let startDist = 0;
+  let startSize = fontSize;
+
+  function dist(t1, t2){
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  area.addEventListener('touchstart', (e) => {
+    // only when song detail is visible
+    if (area.style.display === 'none') return;
+    if (!e.touches || e.touches.length !== 2) return;
+    active = true;
+    startDist = dist(e.touches[0], e.touches[1]);
+    startSize = fontSize;
+  }, { passive: true });
+
+  area.addEventListener('touchmove', (e) => {
+    if (!active || !e.touches || e.touches.length !== 2) return;
+    const d = dist(e.touches[0], e.touches[1]);
+    if (!startDist) return;
+    const scale = d / startDist;
+    const next = startSize * scale;
+    applySongFontSize(next);
+    // prevent accidental browser zoom
+    e.preventDefault();
+  }, { passive: false });
+
+  area.addEventListener('touchend', () => { active = false; startDist = 0; }, { passive: true });
+  area.addEventListener('touchcancel', () => { active = false; startDist = 0; }, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE), 10);
-  if (!isNaN(saved)) fontSize = Math.max(12, Math.min(34, saved));
+  // restore song font size (detail)
+  const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
+  if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
   initSongPinchToZoom();
-  toggleSection('dnes', false); toggleSection('playlists', false); toggleSection('all', false);
+
+  toggleSection('dnes', false);
+  toggleSection('playlists', false);
+  toggleSection('all', false);
+
   parseXML();
 });
