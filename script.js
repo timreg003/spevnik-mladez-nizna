@@ -570,6 +570,16 @@ function renderSong() {
   if (!currentSong) return;
   let text = (currentListSource === 'dnes' && currentDnesOrder) ? buildOrderedSongText(currentSong, currentDnesOrder) : currentSong.origText;
 
+  // Zredukuj extrémne medzery (najmä po značkách 1., R:, B:, Predohra..., Transpozícia...)
+  // - odstráni prázdne riadky hneď po značke
+  // - zredukuje viac prázdnych riadkov za sebou
+  text = String(text || '').replace(/^(\d+\.|R\d*:|B\d*:|Predohra.*|Medzihra.*|Dohra.*|Transpozícia:.*)\s*\n\s*\n+/gmi, '$1\n');
+  text = text.replace(/\n\s*\n\s*\n+/g, '\n\n');
+  // Pri poradí (editor "forma") nech sú bloky úplne bez medzier
+  if (currentListSource === 'dnes' && currentDnesOrder) {
+    text = text.replace(/\n\s*\n+/g, '\n');
+  }
+
   if (transposeStep !== 0) {
     text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
   }
@@ -578,8 +588,9 @@ function renderSong() {
   }
 
   // Style special lines / markers (keep \n, rely on pre-wrap in CSS)
-  // If the song starts with +1 / -2 line, show it as Transpozícia
-  text = text.replace(/^([+-]\d+)\s*$/m, 'Transpozícia: $1');
+  // +1 / -2 (samostatný riadok) -> Transpozícia
+  //  - prvý riadok bez "Transpozícia:" premapujeme, potom už len oba tvary zabalíme do jednej HTML šablóny
+  text = text.replace(/^\s*([+-]\d+)\s*\n/, 'Transpozícia: $1\n');
   text = text.replace(/^Transpozícia:\s*([+-]?\d+)\s*$/gm, '<span class="song-transpose-line">Transpozícia: <span class="song-transpose">$1</span></span>');
   text = text.replace(/^(Predohra|Medzihra|Dohra)(:.*)?$/gmi, (m0) => `<span class="song-special">${m0}</span>`);
   text = text.replace(/^(\d+\.|R\d*:|B\d*:)\s*$/gm, '<span class="song-marker">$1</span>');
@@ -1201,6 +1212,14 @@ async function loadPlaylistsFromDrive() {
 
   list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder" && p.name !== "HistoryLog");
   const names = list.map(p => p.name);
+
+  // Vyčisti lokálny cache o playlisty, ktoré už na Drive nie sú
+  try {
+    const cached = getCachedPlaylistNames();
+    cached.forEach(n => {
+      if (!names.includes(n)) localStorage.removeItem('playlist_' + n);
+    });
+  } catch(e) {}
 
   let order = [];
   try {
