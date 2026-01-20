@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <title>Mládežnícky spevník NIŽNÁ</title>
 
-  <link rel="manifest" href="manifest.json?v=13">
+  <link rel="manifest" href="manifest.json?v=14">
   <meta name="theme-color" content="#00bfff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=13">
+  <link rel="apple-touch-icon" href="icon.png?v=14">
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=13"/>
+  <link rel="stylesheet" href="style.css?v=14"/>
 </head>
 
 <body>
@@ -49,11 +49,8 @@
       <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
     </div>
     <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-      <div id="dnes-section" class="list-box">
-        <div class="loading">Načítavam...</div>
-      </div>
+      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div></div>
 
-      <!-- DNES EDITOR -->
       <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
         <h3 class="editor-title">Editor – Piesne na dnes</h3>
 
@@ -79,11 +76,8 @@
       <i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
     </div>
     <div id="playlists-section-wrapper" class="section-content" style="display:none;">
-      <div id="playlists-section" class="list-box">
-        <div class="loading">Načítavam...</div>
-      </div>
+      <div id="playlists-section" class="list-box"><div class="loading">Načítavam...</div></div>
 
-      <!-- PLAYLIST EDITOR -->
       <div id="admin-panel" class="editor-panel" style="display:none;">
         <h3 class="editor-title">Editor playlistu</h3>
 
@@ -109,22 +103,8 @@
       <i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
     </div>
     <div id="all-section-wrapper" class="section-content" style="display:none;">
-      <div id="piesne-list" class="list-box">
-        <div class="loading">Načítavam...</div>
-      </div>
+      <div id="piesne-list" class="list-box"><div class="loading">Načítavam...</div></div>
     </div>
-
-    <!-- UPDATE (offline sa neotvorí) -->
-    <div class="section-header" onclick="toggleUpdateSection()">
-      <h2 class="playlist-header-title">AKTUALIZOVAŤ APLIKÁCIU</h2>
-      <i class="fas fa-chevron-down section-chevron" id="update-chevron"></i>
-    </div>
-    <div id="update-section-wrapper" class="section-content" style="display:none;">
-      <div class="update-box">
-        <button id="btn-update-app" class="btn-update" onclick="hardResetApp()">AKTUALIZOVAŤ APLIKÁCIU</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- SONG DETAIL -->
@@ -192,6 +172,17 @@
 
 </div>
 
-<script src="script.js?v=13"></script>
+<!-- ✅ FLOATING GEAR BUTTON (LEFT) -->
+<div id="fab-update">
+  <button id="fab-btn" onclick="toggleFabMenu(event)" aria-label="Nastavenia">
+    <i class="fas fa-gear"></i>
+  </button>
+
+  <div id="fab-menu" class="fab-menu" aria-hidden="true">
+    <button id="fab-update-btn" onclick="hardResetApp()">Aktualizovať aplikáciu</button>
+  </div>
+</div>
+
+<script src="script.js?v=14"></script>
 </body>
 </html>
