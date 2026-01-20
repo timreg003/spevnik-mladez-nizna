@@ -84,6 +84,25 @@ function todayLabelSk(d){
   return `${day} ${dd}.${mm}.`;
 }
 
+
+async function postToScript(params){
+  // params: {action,name,pwd,content}
+  const body = new URLSearchParams();
+  Object.keys(params || {}).forEach(k => {
+    if (params[k] !== undefined && params[k] !== null) body.append(k, String(params[k]));
+  });
+
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body
+  });
+
+  // If Apps Script doesn't return JSON (or CORS blocks), this may throw.
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch(e) { return { ok: res.ok, raw: txt }; }
+}
+
 /* ===== TOAST ===== */
 let toastTimer = null;
 
@@ -1019,11 +1038,18 @@ async function saveDnesEditor() {
   setDnesTitle(title);
   loadDnesCacheFirst(true);
 
+  // instant feedback
+  showToast("Ukladám…", true);
+
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    const r = await postToScript({ action:'save', name:'PiesneNaDnes', pwd: ADMIN_PWD, content: payload });
+    if (r && r.ok === false) throw new Error(r.error || "Save failed");
     showToast("Uložené ✅", true);
   } catch(e) {
     showToast("Nepodarilo sa uložiť ❌", false);
+  } finally {
+    // always try to re-sync from Drive so other devices see the same data
+    loadDnesFromDrive();
   }
 }
 
@@ -1134,10 +1160,13 @@ async function saveDnesToHistory(){
   loadHistoryCacheFirst(true);
 
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=${HISTORY_NAME}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
+    const r = await postToScript({ action:'save', name:HISTORY_NAME, pwd: ADMIN_PWD, content: JSON.stringify(arr) });
+    if (r && r.ok === false) throw new Error(r.error || "Save failed");
     showToast('Uložené do histórie ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa uložiť do histórie ❌', false);
+  } finally {
+    loadHistoryFromDrive();
   }
 }
 
@@ -1158,13 +1187,23 @@ function openSongFromHistory(ts, songId){
 function deleteHistoryEntry(ts){
   if (!isAdmin) return;
   if (!confirm('Vymazať tento záznam z histórie?')) return;
+
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const next = arr.filter(x => Number(x.ts) !== Number(ts));
   localStorage.setItem(LS_HISTORY, JSON.stringify(next));
   loadHistoryCacheFirst(true);
-  try {
-    fetch(`${SCRIPT_URL}?action=save&name=${HISTORY_NAME}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
-  } catch(e) {}
+
+  (async () => {
+    try {
+      const r = await postToScript({ action:'save', name:HISTORY_NAME, pwd: ADMIN_PWD, content: JSON.stringify(next) });
+      if (r && r.ok === false) throw new Error(r.error || "Save failed");
+      showToast('Vymazané ✅', true);
+    } catch(e) {
+      showToast('Nepodarilo sa vymazať ❌', false);
+    } finally {
+      loadHistoryFromDrive();
+    }
+  })();
 }
 
 /* ===== PLAYLISTY (no flicker) ===== */
@@ -1504,25 +1543,25 @@ const newName = rawName;
 
     // clear editor fields after save so it doesn't overwrite the same playlist
   newPlaylist();
-// persist to Drive
+
+  // persist to Drive (POST)
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
-    // best-effort delete old name on backend if renamed
+    const r1 = await postToScript({ action:'save', name:newName, pwd: ADMIN_PWD, content: payload });
+    if (r1 && r1.ok === false) throw new Error(r1.error || "Save failed");
+
+    const r2 = await postToScript({ action:'save', name:'PlaylistOrder', pwd: ADMIN_PWD, content: JSON.stringify(playlistOrder) });
+    if (r2 && r2.ok === false) throw new Error(r2.error || "Save failed");
+
+    // if renamed, delete old on backend (optional but clean)
     if (oldName && newName !== oldName) {
-      try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' }); } catch(e) {}
+      try { await postToScript({ action:'delete', name:oldName, pwd: ADMIN_PWD }); } catch(e) {}
     }
-    playlistDirty = false;
+
     showToast('Uložené ✅', true);
-    setButtonStateById('playlist-save-btn', false);
-    updatePlaylistSaveEnabled();
-    setButtonStateById('dnes-save-btn', false);
   } catch(e) {
     showToast('Nepodarilo sa uložiť ❌', false);
-    setButtonStateById('playlist-save-btn', false);
-    updatePlaylistSaveEnabled();
-    setButtonStateById('dnes-save-btn', false);
+  } finally {
+    loadPlaylistsFromDrive();
   }
 }
 
@@ -1565,14 +1604,20 @@ async function deletePlaylist(nameEnc){
   if (playlistViewName === name) playlistViewName = null;
 
   renderPlaylistsUI(true);
+  showToast('Vymazávam…', true);
 
   try {
-    try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=__DELETED__`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    const r1 = await postToScript({ action:'delete', name:name, pwd: ADMIN_PWD });
+    if (r1 && r1.ok === false) throw new Error(r1.error || "Delete failed");
+
+    const r2 = await postToScript({ action:'save', name:'PlaylistOrder', pwd: ADMIN_PWD, content: JSON.stringify(playlistOrder) });
+    if (r2 && r2.ok === false) throw new Error(r2.error || "Save failed");
+
     showToast('Vymazané ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa vymazať ❌', false);
+  } finally {
+    loadPlaylistsFromDrive();
   }
 }
 
