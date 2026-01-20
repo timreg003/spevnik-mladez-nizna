@@ -36,6 +36,9 @@ let currentSong = null;
 let currentModeList = [];
 let currentSongOrder = '';
 let currentHistoryTs = null;
+let forceOrderSongId = null;
+let forceOrderValue = '';
+
 let currentListSource = 'all';
 
 let transposeStep = 0, fontSize = 17, chordsVisible = true;
@@ -101,6 +104,38 @@ async function postToScript(params){
   // If Apps Script doesn't return JSON (or CORS blocks), this may throw.
   const txt = await res.text();
   try { return JSON.parse(txt); } catch(e) { return { ok: res.ok, raw: txt }; }
+}
+
+
+async function safeScriptSave(name, content){
+  // Try POST (new script), fallback to legacy GET (no-cors)
+  try {
+    const r = await postToScript({ action:'save', name, pwd: ADMIN_PWD, content });
+    if (r && r.ok === false) throw new Error(r.error || 'Save failed');
+    return { ok:true, method:'POST', resp:r };
+  } catch(e){
+    try {
+      await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(content)}`, { mode:'no-cors' });
+      return { ok:true, method:'GET_NO_CORS' };
+    } catch(e2){
+      return { ok:false, error: String(e2 || e) };
+    }
+  }
+}
+
+async function safeScriptDelete(name){
+  try {
+    const r = await postToScript({ action:'delete', name, pwd: ADMIN_PWD });
+    if (r && r.ok === false) throw new Error(r.error || 'Delete failed');
+    return { ok:true, method:'POST', resp:r };
+  } catch(e){
+    try {
+      await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' });
+      return { ok:true, method:'GET_NO_CORS' };
+    } catch(e2){
+      return { ok:false, error: String(e2 || e) };
+    }
+  }
 }
 
 /* ===== TOAST ===== */
@@ -530,7 +565,13 @@ function openSongById(id, source) {
   if (!s) return;
 
   if (source === 'dnes') {
-    currentSongOrder = (dnesOrderMap[id] || '').trim();
+    if (forceOrderSongId === String(id)) {
+      currentSongOrder = (forceOrderValue || '').trim();
+      forceOrderSongId = null;
+      forceOrderValue = '';
+    } else {
+      currentSongOrder = (dnesOrderMap[id] || '').trim();
+    }
     currentModeList = getDnesIds().map(i => songs.find(x => x.id === i)).filter(Boolean);
   } else if (source === 'playlist') {
     // already set
@@ -773,7 +814,7 @@ function openDnesEditor(silent=false) {
   dnesItems = payload.items.map(it => ({ id: it.id, order: (it.order || '').trim() }));
   dnesSelectedIds = dnesItems.map(it => it.id);
 
-  document.getElementById('dnes-name').value = payload.title || DNES_DEFAULT_TITLE;
+  document.getElementById('dnes-name').value = (payload.items && payload.items.length) ? (payload.title || DNES_DEFAULT_TITLE) : '';
   renderDnesSelected();
   renderDnesAvailable();
 }
@@ -1042,8 +1083,8 @@ async function saveDnesEditor() {
   showToast("Ukladám…", true);
 
   try {
-    const r = await postToScript({ action:'save', name:'PiesneNaDnes', pwd: ADMIN_PWD, content: payload });
-    if (r && r.ok === false) throw new Error(r.error || "Save failed");
+    const r = await safeScriptSave('PiesneNaDnes', payload);
+    if (!r.ok) throw new Error(r.error || 'save');
     showToast("Uložené ✅", true);
   } catch(e) {
     showToast("Nepodarilo sa uložiť ❌", false);
@@ -1160,8 +1201,8 @@ async function saveDnesToHistory(){
   loadHistoryCacheFirst(true);
 
   try {
-    const r = await postToScript({ action:'save', name:HISTORY_NAME, pwd: ADMIN_PWD, content: JSON.stringify(arr) });
-    if (r && r.ok === false) throw new Error(r.error || "Save failed");
+    const r = await safeScriptSave(HISTORY_NAME, JSON.stringify(arr));
+    if (!r.ok) throw new Error(r.error || 'save');
     showToast('Uložené do histórie ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa uložiť do histórie ❌', false);
@@ -1175,12 +1216,15 @@ function openSongFromHistory(ts, songId){
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const h = arr.find(x => Number(x.ts) === Number(ts));
   if (!h) return;
-  // build mode list from that history entry
+
   const ids = (h.items || []).map(it => String(it.songId || it.id));
   currentModeList = ids.map(i => songs.find(x => x.id === i)).filter(Boolean);
   currentListSource = 'dnes';
+
   const it = (h.items || []).find(x => String(x.songId || x.id) === String(songId));
-  currentSongOrder = (it?.order || '').trim();
+  forceOrderSongId = String(songId);
+  forceOrderValue = (it?.order || '').trim();
+
   openSongById(songId, 'dnes');
 }
 
@@ -1195,8 +1239,8 @@ function deleteHistoryEntry(ts){
 
   (async () => {
     try {
-      const r = await postToScript({ action:'save', name:HISTORY_NAME, pwd: ADMIN_PWD, content: JSON.stringify(next) });
-      if (r && r.ok === false) throw new Error(r.error || "Save failed");
+      const r = await safeScriptSave(HISTORY_NAME, JSON.stringify(next));
+      if (!r.ok) throw new Error(r.error || 'save');
       showToast('Vymazané ✅', true);
     } catch(e) {
       showToast('Nepodarilo sa vymazať ❌', false);
@@ -1546,15 +1590,14 @@ const newName = rawName;
 
   // persist to Drive (POST)
   try {
-    const r1 = await postToScript({ action:'save', name:newName, pwd: ADMIN_PWD, content: payload });
-    if (r1 && r1.ok === false) throw new Error(r1.error || "Save failed");
+    const r1 = await safeScriptSave(newName, payload);
+    if (!r1.ok) throw new Error(r1.error || 'save');
 
-    const r2 = await postToScript({ action:'save', name:'PlaylistOrder', pwd: ADMIN_PWD, content: JSON.stringify(playlistOrder) });
-    if (r2 && r2.ok === false) throw new Error(r2.error || "Save failed");
+    const r2 = await safeScriptSave('PlaylistOrder', JSON.stringify(playlistOrder));
+    if (!r2.ok) throw new Error(r2.error || 'save');
 
-    // if renamed, delete old on backend (optional but clean)
     if (oldName && newName !== oldName) {
-      try { await postToScript({ action:'delete', name:oldName, pwd: ADMIN_PWD }); } catch(e) {}
+      try { await safeScriptDelete(oldName); } catch(e) {}
     }
 
     showToast('Uložené ✅', true);
@@ -1607,11 +1650,11 @@ async function deletePlaylist(nameEnc){
   showToast('Vymazávam…', true);
 
   try {
-    const r1 = await postToScript({ action:'delete', name:name, pwd: ADMIN_PWD });
-    if (r1 && r1.ok === false) throw new Error(r1.error || "Delete failed");
+    const r1 = await safeScriptDelete(name);
+    if (!r1.ok) throw new Error(r1.error || 'delete');
 
-    const r2 = await postToScript({ action:'save', name:'PlaylistOrder', pwd: ADMIN_PWD, content: JSON.stringify(playlistOrder) });
-    if (r2 && r2.ok === false) throw new Error(r2.error || "Save failed");
+    const r2 = await safeScriptSave('PlaylistOrder', JSON.stringify(playlistOrder));
+    if (!r2.ok) throw new Error(r2.error || 'save');
 
     showToast('Vymazané ✅', true);
   } catch(e) {
