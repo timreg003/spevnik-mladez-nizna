@@ -50,10 +50,10 @@
       <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
     </div>
     <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div>
-        <h2 class="playlist-header-title" style="margin-top:18px;">HISTÓRIA</h2>
-        <div id="history-section" class="list-box"></div>
-</div>
+      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div></div>
+
+      <h2 class="playlist-header-title" style="margin-top:18px;">HISTÓRIA</h2>
+      <div id="history-section" class="list-box"></div>
 
       <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
         <div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
@@ -71,7 +71,7 @@
         <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
         <div id="dnes-available-list" class="editor-list"></div>
 <div class="btn-row-2">
-          <button id="dnes-save-btn" id="dnes-save-btn" class="btn-save" onclick="saveDnesEditor()">ULOŽIŤ</button>
+          <button id="dnes-save-btn" class="btn-save" onclick="saveDnesEditor()">ULOŽIŤ</button>
           <button class="btn-neutral" onclick="saveDnesToHistory()">ULOŽIŤ DO HISTÓRIE</button>
           <button class="btn-delete" onclick="clearDnesSelection()">VYMAZAŤ</button>
         </div>
