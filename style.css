@@ -438,14 +438,36 @@ button{ background:#1e1e1e; border:none; color:#fff; padding:10px 14px; cursor:p
 
 .form-order{ display:flex; flex-wrap:wrap; gap:8px; }
 .chip{
+  display:flex;
+  align-items:center;
   background:#222;
   color:#fff;
   border-radius:999px;
-  padding:8px 12px;
+  padding:6px 8px;
   font-weight:900;
-  cursor:pointer;
   user-select:none;
 }
+
+.chip-text{
+  padding:0 8px;
+  cursor:pointer;
+  user-select:none;
+  text-align:center;
+}
+
+.chip-move{
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  border:none;
+  background:#2f2f2f;
+  color:#fff;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.chip-move:disabled{ opacity:0.45; cursor:default; }
 .chip.special{
   background:rgba(0,191,255,0.15);
   color:#00bfff;
