@@ -56,8 +56,28 @@ const LS_SONG_FONT_SIZE = 'song_font_size';
 const LS_PLAYLIST_INDEX = "playlist_index";
 const LS_PLAYLIST_ORDER = "playlist_order";
 
+
+function normText(s){
+  return String(s || "")
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'');
+}
+
 /* ===== TOAST ===== */
 let toastTimer = null;
+
+function setSaveButtonState(disabled){
+  document.querySelectorAll('.btn-save').forEach(btn=>{
+    if(disabled){
+      btn.classList.add('disabled');
+      btn.disabled = true;
+    }else{
+      btn.classList.remove('disabled');
+      btn.disabled = false;
+    }
+  });
+}
 function showToast(message, ok=true){
   const t = document.getElementById("toast");
   if (!t) return;
@@ -116,6 +136,19 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ===== SECTIONS ===== */
+
+function toggleEditor(panelId){
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.classList.toggle('collapsed');
+  const ico = panel.querySelector('.editor-toggle-ico');
+  if (ico){
+    ico.className = panel.classList.contains('collapsed')
+      ? 'fas fa-chevron-down editor-toggle-ico'
+      : 'fas fa-chevron-up editor-toggle-ico';
+  }
+}
+
 function toggleSection(section, expand = null) {
   const content = document.getElementById(section + '-section-wrapper');
   const chevron = document.getElementById(section + '-chevron');
@@ -151,7 +184,9 @@ function toggleAdminAuth() {
     isAdmin = true;
     document.getElementById('admin-toggle-text').innerText = "ODHLÁSIŤ";
     document.getElementById('dnes-editor-panel').style.display = 'block';
+    document.getElementById('dnes-editor-panel').classList.add('collapsed');
     document.getElementById('admin-panel').style.display = 'block';
+    document.getElementById('admin-panel').classList.add('collapsed');
 
     openDnesEditor(true);
     openPlaylistEditorNew(true);
@@ -253,9 +288,15 @@ function renderAllSongs() {
   ).join('');
 }
 function filterSongs() {
-  const t = document.getElementById('search').value.toLowerCase();
-  filteredSongs = songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t));
+  const qRaw = document.getElementById('search').value;
+  const q = normText(qRaw).trim();
+  filteredSongs = songs.filter(s => {
+    const title = normText(s.title);
+    const id = normText(s.displayId);
+    return title.includes(q) || id.includes(q);
+  });
   renderAllSongs();
+  if (q.length > 0) toggleSection('all', true);
 }
 
 /* ===== SONG DETAIL ===== */
@@ -473,8 +514,9 @@ function openDnesEditor(silent=false) {
 }
 function filterDnesSearch(){ renderDnesAvailable(); }
 function renderDnesAvailable() {
-  const t = document.getElementById('dnes-search').value.toLowerCase().trim();
-  const list = t ? songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t)) : songs;
+  const tRaw = document.getElementById('dnes-search').value;
+  const t = normText(tRaw).trim();
+  const list = t ? songs.filter(s => normText(s.title).includes(t) || normText(s.displayId).includes(t)) : songs;
 
   const target = document.getElementById('dnes-available-list');
   target.innerHTML = list.map(s => `
@@ -529,6 +571,8 @@ function clearDnesSelection(){
   renderDnesSelected();
 }
 async function saveDnesEditor() {
+  setSaveButtonState(true,'<i class="fas fa-check"></i>');
+  showToast('Ukladám…', true);
   const title = (document.getElementById('dnes-name').value || DNES_DEFAULT_TITLE).trim();
   const payload = JSON.stringify({ title, ids: dnesSelectedIds });
 
@@ -539,8 +583,10 @@ async function saveDnesEditor() {
   try {
     await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
     showToast("Uložené ✅", true);
+    setSaveButtonState(false);
   } catch(e) {
     showToast("Nepodarilo sa uložiť ❌", false);
+    setSaveButtonState(false);
   }
 }
 
@@ -740,8 +786,9 @@ function filterPlaylistSearch(){
 }
 
 function renderPlaylistAvailable(){
-  const t = (document.getElementById('playlist-search')?.value || '').toLowerCase().trim();
-  const list = t ? songs.filter(s => s.title.toLowerCase().includes(t) || s.displayId.toLowerCase().includes(t)) : songs;
+  const tRaw = (document.getElementById('playlist-search')?.value || '');
+  const t = normText(tRaw).trim();
+  const list = t ? songs.filter(s => normText(s.title).includes(t) || normText(s.displayId).includes(t)) : songs;
   const target = document.getElementById('playlist-available-list');
   if (!target) return;
 
@@ -806,6 +853,8 @@ function clearSelection(){
 }
 
 async function savePlaylist(){
+  setSaveButtonState(true,'<i class="fas fa-check"></i>');
+  showToast('Ukladám…', true);
   if (!isAdmin) return;
   const nameEl = document.getElementById('playlist-name');
   const rawName = (nameEl?.value || '').trim();
@@ -870,8 +919,10 @@ async function savePlaylist(){
       try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' }); } catch(e) {}
     }
     showToast('Uložené ✅', true);
+    setSaveButtonState(false);
   } catch(e) {
     showToast('Nepodarilo sa uložiť ❌', false);
+    setSaveButtonState(false);
   }
 }
 
