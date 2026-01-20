@@ -409,7 +409,7 @@ function openSongById(id, source) {
     // pick order for this song (from dnesItems if available, else from stored payload)
     const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || '');
     const it = (payload.items||[]).find(x => String(x.songId) === String(id));
-    currentDnesOrder = (historyActiveOrder || (it ? String(it.order||'') : '')).trim();
+    currentDnesOrder = historyActiveOrder || (it ? String(it.order||'') : '');
   } else if (source === 'playlist') {
     // already set
   } else {
@@ -518,7 +518,7 @@ function buildOrderedSongText(song, orderStr){
   let out = [];
   if (!is999 && topTrans){
     out.push(`Transpozícia: ${topTrans}`);
-  }
+}
 
   const shownTransFor = new Set();
 
@@ -561,22 +561,10 @@ function buildOrderedSongText(song, orderStr){
   return out.join("\n").trim();
 }
 
+
 function renderSong() {
   if (!currentSong) return;
   let text = (currentListSource === 'dnes' && currentDnesOrder) ? buildOrderedSongText(currentSong, currentDnesOrder) : currentSong.origText;
-
-  // DNES: aj bez nastavenej formy zobraz Transpozíciu z 1. riadku (+1 / -2 ...)
-  if (currentListSource === 'dnes' && !currentDnesOrder) {
-    const is999 = String(currentSong.originalId||"").replace(/^0+/,'') === '999';
-    if (!is999) {
-      const lines = (text||"").split(/\r?\n/);
-      const first = (lines[0]||"").trim();
-      if (/^[+-]\d+$/.test(first)) {
-        lines.shift();
-        text = `Transpozícia: ${first}\n` + lines.join("\n");
-      }
-    }
-  }
 
   if (transposeStep !== 0) {
     text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
@@ -585,15 +573,17 @@ function renderSong() {
     text = text.replace(/\[.*?\]/g, '');
   }
 
-  // zvýraznenia (modré a väčšie)
+  // Style special lines / markers (keep \n, rely on pre-wrap in CSS)
+  // If the song starts with +1 / -2 line, show it as Transpozícia
+  text = text.replace(/^([+-]\d+)\s*$/m, 'Transpozícia: $1');
   text = text.replace(/^Transpozícia:\s*([+-]?\d+)\s*$/gm, 'Transpozícia: <span class="song-transpose">$1</span>');
+  text = text.replace(/^Transpozícia:\s*([+-]?\d+)\s*$/gm, '<span class="song-transpose-line">Transpozícia: $1</span>');
   text = text.replace(/^(Predohra|Medzihra|Dohra)(:.*)?$/gmi, (m0) => `<span class="song-special">${m0}</span>`);
   text = text.replace(/^(\d+\.|R\d*:|B\d*:)\s*$/gm, '<span class="song-marker">$1</span>');
 
   const el = document.getElementById('song-content');
   el.innerHTML = text.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
   el.style.fontSize = fontSize + 'px';
-  updateFontSizeLabel();
 }
 
 function transposeChord(c, step) {
@@ -840,26 +830,28 @@ function renderFormModalOrder(){
   box.innerHTML = formModalOrder.map((t, i) => {
     const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
-    const leftDisabled = i === 0 ? 'disabled' : '';
-    const rightDisabled = i === formModalOrder.length - 1 ? 'disabled' : '';
-    return `
-      <div class="${cls}">
-        <button class="chip-move" ${leftDisabled} onclick="event.stopPropagation(); moveOrderToken(${i},-1)"><i class="fas fa-chevron-left"></i></button>
-        <div class="chip-text" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>
-        <button class="chip-move" ${rightDisabled} onclick="event.stopPropagation(); moveOrderToken(${i},1)"><i class="fas fa-chevron-right"></i></button>
-      </div>`;
+    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="removeOrderToken(${i})">${escapeHtml(t)}</div>`;
   }).join('');
 }
+let formDragFrom = null;
 
-function moveOrderToken(i, dir){
-  const j = i + dir;
-  if (i < 0 || i >= formModalOrder.length) return;
-  if (j < 0 || j >= formModalOrder.length) return;
-  const tmp = formModalOrder[i];
-  formModalOrder[i] = formModalOrder[j];
-  formModalOrder[j] = tmp;
+function onFormChipDragStart(i){
+  formDragFrom = i;
+}
+function onFormChipDragOver(ev){
+  ev.preventDefault();
+}
+function onFormChipDrop(i){
+  if (formDragFrom === null) return;
+  const from = formDragFrom;
+  const to = i;
+  formDragFrom = null;
+  if (from === to) return;
+  const item = formModalOrder.splice(from,1)[0];
+  formModalOrder.splice(to,0,item);
   renderFormModalOrder();
 }
+
 
 function addOrderToken(tok){
   const t = (tok||"").trim();
@@ -995,6 +987,8 @@ async function saveDnesEditor() {
 
 /* ===== HISTÓRIA (public) ===== */
 let historyFetchInFlight = false;
+let historyOpen = {}; // ts -> boolean open
+let historySearchQ = "";
 
 function parseHistory(raw){
   const t = (raw || "").trim();
@@ -1003,12 +997,48 @@ function parseHistory(raw){
   catch(e){ return []; }
 }
 
-function loadHistoryCacheFirst(showEmptyAllowed){
+function historyEntryTitle(h){
+  const t = (h && (h.title || h.label || h.date) || "").toString().trim();
+  return t || "Záznam";
+}
+
+function isSong999(song){
+  if (!song) return false;
+  const n = String(song.originalId||"").replace(/^0+/,'');
+  return n === "999";
+}
+
+function entryMatchesSearch(h, qNorm){
+  if (!qNorm) return true;
+  const items = (h.items || []);
+  for (const it of items){
+    const sid = String(it.songId || it.id || "");
+    const s = songs.find(x => String(x.id) === sid);
+    if (!s) continue;
+    if (isSong999(s)) continue; // ignore in search
+    const n = normText(s.title) + " " + normText(s.displayId) + " " + normText(s.originalId);
+    if (n.includes(qNorm)) return true;
+  }
+  return false;
+}
+
+function toggleHistoryEntry(ts){
+  historyOpen[ts] = !historyOpen[ts];
+  renderHistoryUI(true);
+}
+
+function filterHistorySearch(){
+  const el = document.getElementById('history-search');
+  historySearchQ = (el ? el.value : "") || "";
+  renderHistoryUI(true);
+}
+
+function renderHistoryUI(showEmptyAllowed){
   const box = document.getElementById('history-section');
   if (!box) return;
 
-  const items = parseHistory(localStorage.getItem(LS_HISTORY) || "");
-  if (!items.length){
+  const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
+  if (!arr.length){
     if (!showEmptyAllowed && historyFetchInFlight){
       box.innerHTML = '<div class="loading">Načítavam...</div>';
       return;
@@ -1017,44 +1047,68 @@ function loadHistoryCacheFirst(showEmptyAllowed){
     return;
   }
 
-  const sorted = [...items].sort((a,b) => (b.ts||0)-(a.ts||0));
-  box.innerHTML = sorted.map((h) => {
-    const title = h.label || h.date || "Záznam";
-    const delBtn = isAdmin ? `<button class="history-del" onclick="event.stopPropagation(); deleteHistoryEntry(${h.ts||0})">X</button>` : '';
-    const rows = (h.items || []).map(it => {
-      const id = String(it.songId || it.id || "");
-      const s = songs.find(x => x.id === id);
-      if (!s) return '';
-      const form = (it.order || "").trim();
-      const formHint = form ? ` <span style="opacity:.75;font-size:12px;">(${escapeHtml(form)})</span>` : '';
-      return `
-        <div class="song-row" onclick="openSongFromHistory('${s.id}', ${h.ts||0})">
-          <div class="song-id">${escapeHtml(s.displayId)}.</div>
-          <div class="song-title">${escapeHtml(s.title)}${formHint}</div>
-        </div>`;
-    }).join('');
+  const qNorm = normText(historySearchQ.trim());
+  const sorted = [...arr].sort((a,b) => (b.ts||0)-(a.ts||0));
+  const filtered = sorted.filter(h => entryMatchesSearch(h, qNorm));
+
+  if (qNorm){
+    filtered.forEach(h => { historyOpen[h.ts] = true; });
+  }
+
+  if (!filtered.length){
+    box.innerHTML = '<div class="dnes-empty">Nič sa nenašlo.</div>';
+    return;
+  }
+
+  box.innerHTML = filtered.map((h) => {
+    const ts = Number(h.ts||0);
+    const open = !!historyOpen[ts];
+    const delBtn = isAdmin ? `<button class="history-del" onclick="event.stopPropagation(); deleteHistoryEntry(${ts})">X</button>` : '';
+    const title = historyEntryTitle(h);
+    const items = (h.items || []);
+
+    let lines = "";
+    if (open){
+      lines = `<div class="history-songs">` + items.map(it => {
+        const sid = String(it.songId || it.id || "");
+        const s = songs.find(x => String(x.id) === sid);
+        if (!s) return '';
+        if (qNorm && isSong999(s)) return '';
+        const form = (it.order || "").trim();
+        const formTxt = form ? ` (${escapeHtml(form)})` : '';
+        return `
+          <div class="history-line">
+            <div class="hid">${escapeHtml(s.displayId)}.</div>
+            <div class="htitle">${escapeHtml(s.title)}${formTxt}</div>
+          </div>`;
+      }).join('') + `</div>`;
+    }
 
     return `
       <div class="history-card">
-        <div class="history-head">
+        <div class="history-head" onclick="toggleHistoryEntry(${ts})">
           <div class="history-title">${escapeHtml(title)}</div>
           ${delBtn}
         </div>
-        ${rows}
+        ${lines}
       </div>`;
   }).join('');
 }
 
+function loadHistoryCacheFirst(showEmptyAllowed){
+  renderHistoryUI(showEmptyAllowed);
+}
+
 async function loadHistoryFromDrive(){
   historyFetchInFlight = true;
-  loadHistoryCacheFirst(false);
+  renderHistoryUI(false);
   try {
     const data = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(HISTORY_NAME)}`);
     const t = (data && data.text != null) ? String(data.text) : "";
     localStorage.setItem(LS_HISTORY, (t||"").trim());
   } catch(e) {}
   historyFetchInFlight = false;
-  loadHistoryCacheFirst(true);
+  renderHistoryUI(true);
 }
 
 function buildHistoryEntryFromCurrentDnes(){
@@ -1066,7 +1120,9 @@ function buildHistoryEntryFromCurrentDnes(){
   const mm = String(d.getMonth()+1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   const iso = `${yyyy}-${mm}-${dd}`;
-  return { ts: now, date: iso, label: todayLabelSk(d), title: payload.title || DNES_DEFAULT_TITLE, items: items.map(x=>({ songId:String(x.songId||x.id), order:(x.order||"") })) };
+  const title = (payload.title || "").trim();
+  const fallback = todayLabelSk(d);
+  return { ts: now, date: iso, title: title || fallback, items: items.map(x=>({ songId:String(x.songId||x.id), order:(x.order||"") })) };
 }
 
 async function saveDnesToHistory(){
@@ -1076,7 +1132,7 @@ async function saveDnesToHistory(){
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   arr.push(buildHistoryEntryFromCurrentDnes());
   localStorage.setItem(LS_HISTORY, JSON.stringify(arr));
-  loadHistoryCacheFirst(true);
+  renderHistoryUI(true);
 
   try {
     await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
@@ -1094,18 +1150,9 @@ function deleteHistoryEntry(ts){
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const next = arr.filter(x => Number(x.ts) !== Number(ts));
   localStorage.setItem(LS_HISTORY, JSON.stringify(next));
-  loadHistoryCacheFirst(true);
+  renderHistoryUI(true);
   try { fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${ADMIN_PWD}&content=__DELETED__${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
   loadHistoryFromDrive();
-}
-
-function openSongFromHistory(songId, histTs){
-  const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
-  const h = arr.find(x => Number(x.ts) === Number(histTs));
-  const it = h && (h.items||[]).find(x => String(x.songId) === String(songId));
-  historyActiveOrder = (it && it.order) ? String(it.order) : "";
-  openSongById(songId, 'dnes'); // reuse rendering path
-  historyActiveOrder = "";
 }
 
 
@@ -1150,7 +1197,7 @@ async function loadPlaylistsFromDrive() {
   }
 
   list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder" && p.name !== "HistoryLog");
-  const allNames = list.map(p => p.name);
+  const names = list.map(p => p.name);
 
   let order = [];
   try {
@@ -1159,20 +1206,6 @@ async function loadPlaylistsFromDrive() {
     const arr = JSON.parse(txt || "[]");
     if (Array.isArray(arr)) order = arr.map(String);
   } catch(e) {}
-
-  const contents = {};
-  await Promise.all(allNames.map(async (n) => {
-    try {
-      const gd = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(n)}`);
-      const t = (gd && gd.text != null) ? String(gd.text).trim() : "";
-      contents[n] = t;
-      localStorage.setItem('playlist_' + n, t);
-    } catch(e) {
-      contents[n] = (localStorage.getItem('playlist_' + n) || "").trim();
-    }
-  }));
-
-  const names = allNames.filter(n => !isDeletedPlaylistContent(contents[n]));
 
   playlistOrder = applyOrder(names, order);
   localStorage.setItem(LS_PLAYLIST_INDEX, JSON.stringify(names));
@@ -1237,17 +1270,35 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
   }).join('');
 }
 
-function openPlaylist(nameEnc) {
-  const name = decodeURIComponent(nameEnc);
+
+async function openPlaylistAndRender(name){
+  await fetchPlaylistContent(name);
   playlistViewName = name;
   toggleSection('playlists', true);
   renderPlaylistsUI(true);
   window.scrollTo(0,0);
 }
 
+function openPlaylist(nameEnc) {
+  const name = decodeURIComponent(nameEnc);
+  openPlaylistAndRender(name);
+}
+
 function closePlaylistView(){
   playlistViewName = null;
   renderPlaylistsUI(true);
+}
+
+
+async function fetchPlaylistContent(name){
+  try{
+    const gd = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(name)}`);
+    const t = (gd && gd.text != null) ? String(gd.text).trim() : "";
+    localStorage.setItem('playlist_' + name, t);
+    return t;
+  }catch(e){
+    return (localStorage.getItem('playlist_' + name) || "").trim();
+  }
 }
 
 function renderPlaylistSongsView(name){
@@ -1466,7 +1517,7 @@ const newName = rawName;
   }
 }
 
-function editPlaylist(nameEnc){
+async function editPlaylist(nameEnc){
   if (!isAdmin) return;
   const name = decodeURIComponent(nameEnc);
   editingPlaylistName = name;
@@ -1474,7 +1525,9 @@ function editPlaylist(nameEnc){
   if (nameEl) nameEl.value = name;
   updatePlaylistSaveEnabled();
 
-  const raw = (localStorage.getItem('playlist_' + name) || '').trim();
+  let raw = (localStorage.getItem('playlist_' + name) || '').trim();
+  if (!raw) { raw = await fetchPlaylistContent(name); }
+  raw = (raw||'').trim();
   selectedSongIds = raw ? raw.split(',').map(x => x.trim()).filter(Boolean) : [];
 
   // show editor (already visible for admin), and reset search
