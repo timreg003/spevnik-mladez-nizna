@@ -405,9 +405,17 @@ function parseDnesPayload(raw) {
 
   try {
     const obj = JSON.parse(trimmed);
-    if (obj && Array.isArray(obj.ids)) return { title: (obj.title || DNES_DEFAULT_TITLE), ids: obj.ids.map(String) };
+    if (obj && Array.isArray(obj.ids)) {
+      if (obj.ids.length === 0) {
+        return { title: DNES_DEFAULT_TITLE, ids: [] };
+      }
+      return { title: obj.title || DNES_DEFAULT_TITLE, ids: obj.ids.map(String) };
+    }
   } catch(e) {}
 
+  const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
+  return { title: DNES_DEFAULT_TITLE, ids };
+}
   const ids = trimmed.split(',').map(x => x.trim()).filter(Boolean);
   return { title: DNES_DEFAULT_TITLE, ids };
 }
