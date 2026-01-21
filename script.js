@@ -1344,12 +1344,17 @@ function renderFormModalOrder(){
     box.innerHTML = '<div style="opacity:0.75;">Zatiaľ žiadne poradie. Klikni na časti nižšie.</div>';
     return;
   }
+  // Mobile-friendly: arrows + remove (no drag&drop)
   box.innerHTML = formModalOrder.map((t, i) => {
     const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
-    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="onFormChipClick(${i})">` +
-      `<span class="chip-text">${escapeHtml(t)}</span>` +
-      `<button class="chip-x" title="Odstrániť" onclick="event.stopPropagation(); removeOrderToken(${i});">✕</button>` +
+    const leftDisabled = i === 0 ? 'disabled' : '';
+    const rightDisabled = i === formModalOrder.length - 1 ? 'disabled' : '';
+    return `<div class="${cls}">` +
+      `<button class="chip-move" title="Posunúť doľava" ${leftDisabled} onclick="moveOrderToken(${i},-1)">‹</button>` +
+      `<span class="chip-text" title="${isSpecial ? 'Upraviť' : ''}" onclick="onFormChipTextClick(${i})">${escapeHtml(t)}</span>` +
+      `<button class="chip-move" title="Posunúť doprava" ${rightDisabled} onclick="moveOrderToken(${i},+1)">›</button>` +
+      `<button class="chip-x" title="Odstrániť" onclick="removeOrderToken(${i});">✕</button>` +
     `</div>`;
   }).join('');
 }
@@ -1386,15 +1391,23 @@ function removeOrderToken(i){
   renderFormModalOrder();
 }
 
-function onFormChipClick(i){
+function onFormChipTextClick(i){
   if (i < 0 || i >= formModalOrder.length) return;
   const t = String(formModalOrder[i] || '').trim();
   const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
-  if (!isSpecial){
-    removeOrderToken(i);
-    return;
-  }
-  editSpecialToken(i);
+  if (isSpecial) editSpecialToken(i);
+}
+
+function moveOrderToken(i, dir){
+  const from = Number(i);
+  const d = Number(dir);
+  if (!Number.isFinite(from) || !Number.isFinite(d)) return;
+  const to = from + (d < 0 ? -1 : 1);
+  if (from < 0 || from >= formModalOrder.length) return;
+  if (to < 0 || to >= formModalOrder.length) return;
+  const item = formModalOrder.splice(from, 1)[0];
+  formModalOrder.splice(to, 0, item);
+  renderFormModalOrder();
 }
 
 function parseSpecialTokenString(tok){
