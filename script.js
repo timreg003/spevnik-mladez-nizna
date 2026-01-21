@@ -622,11 +622,12 @@ function escapeHTML(s) {
 function parseMarkerOnly(trimmed) {
   const t = String(trimmed || '').trim();
 
-  // 1 / 1.
-  if (/^\d+\.?$/.test(t)) return t.replace('.', '');
+  // 1 / 1. / 1) / 1:
+  let m = t.match(/^(\d+)(?:[\.)]|:)?$/);
+  if (m) return m[1];
 
   // R:, R2:, R
-  let m = t.match(/^R(\d*)\:$/i);
+  m = t.match(/^R(\d*)\:$/i);
   if (m) return 'R' + (m[1] || '');
   m = t.match(/^R(\d*)$/i);
   if (m) return 'R' + (m[1] || '');
@@ -646,8 +647,8 @@ function parseMarkerWithText(trimmed) {
   const t = String(trimmed || '').trim();
   let m;
 
-  // 1 Text...
-  m = t.match(/^(\d+)\.?\s+(.*)$/);
+  // 1 Text... / 1) Text... / 1: Text...
+  m = t.match(/^(\d+)(?:[\.)]|:)?\s+(.*)$/);
   if (m) return { label: m[1], text: m[2] };
 
   // R: text / R2: text / R text
@@ -714,6 +715,9 @@ function songTextToHTML(text) {
   let pendingLabel = '';
   let pendingSpecial = '';
   let sectionOpen = false;
+  // Buffer empty lines so we can drop them if they end up at the end of a section
+  // (sloha/refren/bridge). This saves vertical space without removing spacing inside blocks.
+  let pendingBlanks = 0;
   const out = [];
 
   function openSection(){
@@ -733,14 +737,31 @@ function songTextToHTML(text) {
     const line = String(raw ?? '');
     const trimmed = line.trim();
 
-    // Blank line
+    // Blank line (buffer; we'll decide later whether to render it)
     if (!trimmed) {
-      if (sectionOpen){
-        out.push('<div class="song-line song-blank"><span class="song-label"></span><span class="song-line-text"></span></div>');
-      } else {
-        out.push('<div class="song-line song-blank"><span class="song-label"></span><span class="song-line-text"></span></div>');
-      }
+      pendingBlanks++;
       continue;
+    }
+
+    // If we have buffered blanks, decide whether to flush them now.
+    // - If we are about to close a section or start a new marker section, we DROP them (trailing blanks).
+    // - If we are continuing normal text inside a section, we keep them.
+    const willCloseOrStartNewBlock = (
+      !!parseSpecialMarkerOnly(trimmed) ||
+      !!parseSpecialWithText(trimmed) ||
+      !!parseMarkerOnly(trimmed) ||
+      !!parseMarkerWithText(trimmed) ||
+      /^Transpozícia:\s*([+-]?\d+)\s*$/i.test(trimmed)
+    );
+    if (pendingBlanks > 0) {
+      // If we have a pendingLabel or pendingSpecial, blanks are not useful between marker and first text.
+      const markerWaiting = !!pendingLabel || !!pendingSpecial;
+      if (!willCloseOrStartNewBlock && !markerWaiting) {
+        for (let i = 0; i < pendingBlanks; i++) {
+          out.push('<div class="song-line song-blank"><span class="song-label"></span><span class="song-line-text"></span></div>');
+        }
+      }
+      pendingBlanks = 0;
     }
 
     // Transpozícia (special row)
@@ -768,7 +789,9 @@ function songTextToHTML(text) {
       pendingSpecial = '';
       closeSection();
       const txt = sp.kind + (sp.rest ? `: ${sp.rest}` : ':');
+      out.push('<div class="song-section">');
       out.push(songLineHTML('', txt, 'song-special-row'));
+      out.push('</div>');
       continue;
     }
 
@@ -793,7 +816,9 @@ function songTextToHTML(text) {
     // Ak čaká Predohra/Medzihra/Dohra, prilep ju na prvý nasledujúci textový riadok
     if (pendingSpecial){
       closeSection();
+      out.push('<div class="song-section">');
       out.push(songLineHTML('', `${pendingSpecial}: ${line.trim()}`, 'song-special-row'));
+      out.push('</div>');
       pendingSpecial = '';
       continue;
     }
@@ -1304,7 +1329,10 @@ function renderFormModalOrder(){
   box.innerHTML = formModalOrder.map((t, i) => {
     const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
-    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="onFormChipClick(${i})">${escapeHtml(t)}</div>`;
+    return `<div class="${cls}" draggable="true" ondragstart="onFormChipDragStart(${i})" ondragover="onFormChipDragOver(event)" ondrop="onFormChipDrop(${i})" onclick="onFormChipClick(${i})">` +
+      `<span class="chip-text">${escapeHtml(t)}</span>` +
+      `<button class="chip-x" title="Odstrániť" onclick="event.stopPropagation(); removeOrderToken(${i});">✕</button>` +
+    `</div>`;
   }).join('');
 }
 let formDragFrom = null;
