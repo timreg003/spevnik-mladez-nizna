@@ -175,7 +175,13 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
   padding:6px 8px;
   border:1px solid #333; border-radius:8px;
   background:#1e1e1e;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none; /* umožní drag na mobile */
 }
+
+.draggable-item.touch-dragging{ opacity:.7; }
 
 .small-plus{
   width:28px; height:28px;
