@@ -454,6 +454,10 @@ function openSongById(id, source) {
   if (subj) subj.value = `${s.displayId}. ${s.title}`;
   if (hidden) hidden.value = `${s.displayId}. ${s.title}`;
 
+  // Doplnenie akordov je pri otvorení piesne vždy automaticky zapnuté (ak chceš, vypneš).
+  setChordTemplateEnabled(true);
+  updateChordTemplateUI();
+
   renderSong();
   window.scrollTo(0,0);
 }
@@ -818,6 +822,8 @@ function songTextToHTML(text) {
     const only = parseMarkerOnly(trimmed);
     if (only) {
       // nový blok -> zavri starý
+      // Ak je tu rozpracovaný chordline bez textu, je to sirota -> zahodíme ho
+      pendingChordLine = '';
       closeSection();
       pendingLabel = only;
       continue;
@@ -854,13 +860,22 @@ function songTextToHTML(text) {
     if (pendingLabel) {
       closeSection();
       openSection();
-      // If there is a pending chordline, render it ABOVE the first text line, but keep label for text.
+
+      // If there is a pending chordline, put it on the SAME row as the verse label.
+      // Then render the lyric text on the next row (without a label).
       if (pendingChordLine){
-        out.push(songLineHTML('', pendingChordLine, 'song-chordline'));
+        out.push(songLineHTML(pendingLabel, pendingChordLine, 'song-chordline'));
         pendingChordLine = '';
+        out.push(songLineHTML('', line));
+        pendingLabel = '';
+      } else {
+        out.push(songLineHTML(pendingLabel, line));
+        pendingLabel = '';
       }
-      out.push(songLineHTML(pendingLabel, line));
-      pendingLabel = '';
+    } else {
+        out.push(songLineHTML(pendingLabel, line));
+        pendingLabel = '';
+      }
     } else {
       // pokračovanie aktuálneho bloku (ak existuje), inak voľný text
       if (sectionOpen){
@@ -873,6 +888,8 @@ function songTextToHTML(text) {
     }
   }
 
+  // Ak ostal chordline bez nasledujúceho textu, nezobrazuj ho
+  pendingChordLine = '';
   closeSection();
   return out.join('');
 }
@@ -926,7 +943,11 @@ function stripChordsFromLine(line){
 
 function isChordOnlyLine(line){
   if (!hasChordInLine(line)) return false;
-  return stripChordsFromLine(line).trim() === '';
+  // Allow common repeat / bar markers on chord lines (/: :/ | - etc.)
+  const rest = stripChordsFromLine(line)
+    .replace(/[|:\/\-.,]/g, '')
+    .trim();
+  return rest === '';
 }
 
 function extractChordsInline(line){
@@ -985,14 +1006,21 @@ function getLyricInfos(blockBody){
   const infos = [];
   const body = Array.isArray(blockBody) ? blockBody : [];
 
-  // Map chord-only lines to the immediate next line index (even if blank).
-  // This keeps the "line index" mapping stable for template alignment.
+  // Map chord-only lines to the next *non-blank* non-chord-only line index.
+  // This keeps template alignment stable even when there are blank lines.
   const chordlineForIndex = new Map();
-  for (let i=0; i<body.length-1; i++){
+  for (let i=0; i<body.length; i++){
     const line = String(body[i] ?? '');
-    if (isChordOnlyLine(line)){
-      chordlineForIndex.set(i+1, line.trim());
+    if (!isChordOnlyLine(line)) continue;
+
+    let j = i + 1;
+    while (j < body.length) {
+      const nxt = String(body[j] ?? '');
+      if (isChordOnlyLine(nxt)) { j++; continue; }
+      if (!nxt.trim()) { j++; continue; }
+      break;
     }
+    if (j < body.length) chordlineForIndex.set(j, line.trim());
   }
 
   for (let i=0; i<body.length; i++){
@@ -1000,6 +1028,9 @@ function getLyricInfos(blockBody){
 
     // chord-only line itself is not a lyric line
     if (isChordOnlyLine(line)) continue;
+
+    // treat blank lines as spacing; don't count them as lyric lines for template mapping
+    if (!line.trim()) continue;
 
     let chordPattern = chordlineForIndex.get(i) || '';
     let inline = [];
