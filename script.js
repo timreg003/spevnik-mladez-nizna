@@ -847,8 +847,29 @@ function songTextToHTML(text) {
     const only = parseMarkerOnly(trimmed);
     if (only) {
       // nový blok -> zavri starý
-      // Ak je tu rozpracovaný chordline bez textu, je to sirota -> zahodíme ho
-      pendingChordLines.length = 0;
+      // Ak máme rozpracovaný blok, kde prišiel marker (napr. "1"),
+      // nasledovali iba akordové riadky (bez textu) a potom prišiel nový marker,
+      // NESMIEME tieto akordy zahodiť. Je to bežné pri niektorých piesňach (aj 999),
+      // kde je obsahom slohy iba sled akordov.
+      if (pendingLabel && pendingChordLines.length) {
+        closeSection();
+        openSection();
+        out.push(songLineHTML(pendingLabel, pendingChordLines[0], 'song-chordline'));
+        for (let k = 1; k < pendingChordLines.length; k++) {
+          out.push(songLineHTML('', pendingChordLines[k], 'song-chordline'));
+        }
+        pendingChordLines.length = 0;
+        pendingLabel = '';
+        closeSection();
+      } else if (pendingChordLines.length) {
+        // Akordy bez labelu (pred prvým markerom) – zobraz ich, aby sa nestratili.
+        closeSection();
+        openSection();
+        for (const cl of pendingChordLines) out.push(songLineHTML('', cl, 'song-chordline'));
+        pendingChordLines.length = 0;
+        closeSection();
+      }
+
       closeSection();
       pendingLabel = only;
       continue;
