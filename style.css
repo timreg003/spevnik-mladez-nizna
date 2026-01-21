@@ -341,6 +341,52 @@ body.present #presentControls{ display:flex; }
   color:#00bfff;
   font-weight:900;
 }
+
+/* Predohra/Medzihra/Dohra + Transpozícia majú byť vždy úplne vľavo (bez odsadenia label stĺpcom) */
+#song-content .song-special-row,
+#song-content .song-transpose-row{
+  grid-template-columns: 0 1fr;
+  column-gap: 0;
+}
+#song-content .song-special-row .song-label,
+#song-content .song-transpose-row .song-label{
+  width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+#song-content .song-special-row .song-line-text,
+#song-content .song-transpose-row .song-line-text{
+  text-align: left;
+}
+
+/* Chip remove (krížik) */
+.chip{
+  position: relative;
+  padding-right: 34px;
+}
+.chip .chip-x{
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(0,0,0,.25);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
+}
+.chip.special .chip-x{
+  border-color: rgba(0,191,255,.35);
+  color: #00bfff;
+}
 .chord{ color:#00bfff; font-weight:bold; background:#252525; padding:1px 4px; border-radius:4px; position:relative; top:-0.12em; }
 .tiny-label{ font-size:10px; color:#00bfff; margin-top:4px; font-weight:bold; }
 
@@ -556,10 +602,11 @@ body.present #presentControls{ display:flex; }
   background:#222;
   color:#fff;
   border-radius:999px;
-  padding:8px 12px;
+  padding:8px 34px 8px 12px; /* right padding for X */
   font-weight:900;
   cursor:pointer;
   user-select:none;
+  position: relative;
 }
 .chip.special{
   background:rgba(0,191,255,0.15);
