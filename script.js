@@ -834,12 +834,19 @@ function songTextToHTML(text) {
     if (withText) {
       closeSection();
       openSection();
-      if (pendingChordLine){ out.push(songLineHTML('', pendingChordLine, 'song-chordline')); pendingChordLine=''; }
-      out.push(songLineHTML(withText.label, withText.text));
+
+      // If there is a pending chordline, put it on the SAME row as the marker label (e.g. "2").
+      // Then render the lyric text on the next row (without a label).
+      if (pendingChordLine){
+        out.push(songLineHTML(withText.label, pendingChordLine, 'song-chordline'));
+        pendingChordLine = '';
+        out.push(songLineHTML('', withText.text));
+      } else {
+        out.push(songLineHTML(withText.label, withText.text));
+      }
       continue;
     }
-
-    // Ak čaká Predohra/Medzihra/Dohra, prilep ju na prvý nasledujúci textový riadok
+// Ak čaká Predohra/Medzihra/Dohra, prilep ju na prvý nasledujúci textový riadok
     if (pendingSpecial){
       closeSection();
       out.push('<div class="song-section">');
@@ -867,17 +874,15 @@ function songTextToHTML(text) {
         out.push(songLineHTML(pendingLabel, pendingChordLine, 'song-chordline'));
         pendingChordLine = '';
         out.push(songLineHTML('', line));
-        pendingLabel = '';
       } else {
+        // No chordline -> render the lyric line with the label as usual
         out.push(songLineHTML(pendingLabel, line));
-        pendingLabel = '';
       }
-    } else {
-        out.push(songLineHTML(pendingLabel, line));
-        pendingLabel = '';
-      }
+      pendingLabel = '';
+      continue;
     } else {
       // pokračovanie aktuálneho bloku (ak existuje), inak voľný text
+
       if (sectionOpen){
         if (pendingChordLine){ out.push(songLineHTML('', pendingChordLine, 'song-chordline')); pendingChordLine=''; }
         out.push(songLineHTML('', line));
