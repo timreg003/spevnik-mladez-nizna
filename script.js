@@ -65,6 +65,7 @@ let currentSong = null;
 let currentModeList = [];
 let currentListSource = 'all';
 let currentDnesOrder = '';
+let dnesShowOriginal = false; // v detaile piesne z 'Piesne na dnes' prepínač: DNES vs ORIGINÁL
 
 let transposeStep = 0, fontSize = 17, chordsVisible = true;
 const scale = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
@@ -458,6 +459,9 @@ function openSongById(id, source) {
   const __is999 = String(s.originalId||"").replace(/^0+/,'') === '999';
   setChordTemplateEnabled(!__is999);
   updateChordTemplateUI();
+
+  // V detaile piesne z 'Piesne na dnes' vždy defaultne zobraz verziu DNES
+  setDnesShowOriginal(false);
 
   renderSong();
   window.scrollTo(0,0);
@@ -1010,6 +1014,42 @@ function updateChordTemplateUI(){
   lab.textContent = on ? 'ON' : 'OFF';
 }
 
+/* ===== DNES: PREPÍNAČ ZOBRAZENIA (DNES vs ORIGINÁL) ===== */
+function updateDnesViewUI(){
+  const grp = document.getElementById('dnes-view-group');
+  const btn = document.getElementById('dnes-view-btn');
+  const lab = document.getElementById('dnes-view-label');
+  if (!grp || !btn || !lab) return;
+
+  const isDnes = (currentListSource === 'dnes');
+  grp.style.display = isDnes ? '' : 'none';
+
+  if (!isDnes) return;
+
+  if (dnesShowOriginal){
+    lab.textContent = 'ORIG';
+    btn.title = 'Zobraziť verziu na dnes';
+    btn.classList.add('active');
+  } else {
+    lab.textContent = 'DNES';
+    btn.title = 'Zobraziť originál';
+    btn.classList.remove('active');
+  }
+}
+
+function setDnesShowOriginal(v){
+  dnesShowOriginal = !!v;
+  updateDnesViewUI();
+}
+
+function toggleDnesView(){
+  if (currentListSource !== 'dnes') return;
+  dnesShowOriginal = !dnesShowOriginal;
+  updateDnesViewUI();
+  renderSong();
+}
+
+
 
 function hasChordInLine(line){
   return /\[[^\]]+\]/.test(String(line||''));
@@ -1263,7 +1303,7 @@ function applyChordTemplateOverlay(text){
 
 function renderSong() {
   if (!currentSong) return;
-  let text = (currentListSource === 'dnes' && currentDnesOrder)
+  let text = (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal)
     ? buildOrderedSongText(currentSong, currentDnesOrder)
     : currentSong.origText;
 
@@ -1280,7 +1320,7 @@ function renderSong() {
   text = text.replace(/\n\s*\n\s*\n+/g, '\n\n');
 
   // Pri poradí (editor "forma") nech sú bloky úplne bez medzier
-  if (currentListSource === 'dnes' && currentDnesOrder) {
+  if (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal) {
     text = text.replace(/\n\s*\n+/g, '\n');
   }
 
@@ -1292,6 +1332,29 @@ function renderSong() {
   // Hide chords if needed
   if (!chordsVisible) {
     text = text.replace(/\[.*?\]/g, '');
+
+    // Predohra/Medzihra/Dohra:
+    // Keď vypneme akordy, riadok môže byť typu "Predohra: [G] [D] ...".
+    // Po odstránení akordov ostane len label + prázdno. Chceme ponechať len label,
+    // a text za ním zobraziť iba vtedy, keď tam naozaj nejaký text ostal.
+    text = text
+      .split('\n')
+      .map(line => {
+        const m1 = line.match(/^(Predohra|Medzihra|Dohra)\s*:\s*(.*)$/i);
+        if (m1) {
+          const label = m1[1];
+          const rest = (m1[2] || '').trim();
+          return rest ? `${label}: ${rest}` : `${label}:`;
+        }
+        const m2 = line.match(/^(Predohra|Medzihra|Dohra)\s+(.*)$/i);
+        if (m2) {
+          const label = m2[1];
+          const rest = (m2[2] || '').trim();
+          return rest ? `${label}: ${rest}` : `${label}:`;
+        }
+        return line;
+      })
+      .join('\n');
   }
 
   // Failsafe: never show empty content
