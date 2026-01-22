@@ -31,7 +31,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDF
 
 // Build info (for diagnostics)
 const APP_BUILD = 'v22';
-const APP_CACHE_NAME = 'spevnik-v22';
+const APP_CACHE_NAME = 'spevnik-v23';
 
 // Diagnostics state
 let lastXmlShownAt = 0;   // when we last rendered from cache/network
@@ -1452,30 +1452,50 @@ function renderSong() {
 
   // Hide chords if needed
   if (!chordsVisible) {
-    text = text.replace(/\[.*?\]/g, '');
+    // Bežne pri OFF vyhadzujeme všetky [akordy].
+    // ALE: pri riadkoch Predohra/Medzihra/Dohra chceme vždy zobraziť presne to,
+    // čo je v zdrojovom riadku – aj keď sú tam iba akordy.
+    // Platí to aj pre obsahový riadok/riadky hneď za markerom "Predohra:" (marker-only).
+    const lines = String(text || '').split('\n');
+    let keepChordsMode = false; // po "Predohra:" necháme akordy aj v nasledujúcich chord-only riadkoch
 
-    // Predohra/Medzihra/Dohra:
-    // Keď vypneme akordy, riadok môže byť typu "Predohra: [G] [D] ...".
-    // Po odstránení akordov ostane len label + prázdno. Chceme ponechať len label,
-    // a text za ním zobraziť iba vtedy, keď tam naozaj nejaký text ostal.
-    text = text
-      .split('\n')
-      .map(line => {
-        const m1 = line.match(/^(Predohra|Medzihra|Dohra)\s*:\s*(.*)$/i);
-        if (m1) {
-          const label = m1[1];
-          const rest = (m1[2] || '').trim();
-          return rest ? `${label}: ${rest}` : `${label}:`;
+    text = lines.map((line) => {
+      const trimmed = (line || '').trim();
+
+      const isSpecialLine = /^(Predohra|Medzihra|Dohra)\b/i.test(trimmed);
+      const isSpecialMarkerOnly = /^(Predohra|Medzihra|Dohra)\s*:?\s*$/i.test(trimmed);
+
+      // Začiatok špeciálneho bloku: nechaj všetko tak a zapni režim pre následné akordové riadky
+      if (isSpecialLine) {
+        keepChordsMode = !!isSpecialMarkerOnly;
+        return line; // nič neodstraňuj
+      }
+
+      // Režim po marker-only Predohra/Medzihra/Dohra:
+      // - ak nasledujú chord-only riadky, nechaj ich (aby sa neprilepili na text slohy)
+      // - ak príde bežný text, tento riadok spracuj bežne a režim ukonči
+      if (keepChordsMode) {
+        // Ak narazíme na nový marker (1., R:, B:, Refren, Bridge...), ukonči režim
+        if (parseMarkerOnly(trimmed) || parseMarkerWithText(trimmed) || parseSpecialWithText(trimmed) || parseSpecialMarkerOnly(trimmed)) {
+          keepChordsMode = false;
+        } else if (trimmed === '') {
+          // prázdny riadok ukončí špeciálny blok
+          keepChordsMode = false;
+        } else if (!isChordOnlyLine(line)) {
+          // normálny text: tento riadok spracuj bežne, potom režim ukonči
+          const out = String(line).replace(/\[.*?\]/g, '');
+          keepChordsMode = false;
+          return out;
         }
-        const m2 = line.match(/^(Predohra|Medzihra|Dohra)\s+(.*)$/i);
-        if (m2) {
-          const label = m2[1];
-          const rest = (m2[2] || '').trim();
-          return rest ? `${label}: ${rest}` : `${label}:`;
-        }
-        return line;
-      })
-      .join('\n');
+
+        // chord-only: nechaj bez zásahu
+        if (keepChordsMode) return line;
+        // ak sme režim práve vypli (kvôli markeru), spadneme ďalej na bežné spracovanie
+      }
+
+      // Bežné spracovanie: odstráň akordy
+      return String(line).replace(/\[.*?\]/g, '');
+    }).join('\n');
   }
 
   // Failsafe: never show empty content
