@@ -444,6 +444,30 @@ body.present #presentControls{ display:flex; }
 }
 #fab-btn:active{ transform: scale(0.98); }
 
+/* 🔄 Update badge button (shows only when new data available) */
+#fab-newdata-btn{
+  position: fixed;
+  left: 78px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: #1e1e1e;
+  color: #00bfff;
+  font-size: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  display: none;
+}
+#fab-newdata-btn:active{ transform: scale(0.98); }
+#fab-newdata-btn i{ animation: spevnikSpin 1.2s linear infinite; }
+
+@keyframes spevnikSpin{
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
 .fab-menu{
   display: none;
   position: absolute;
