@@ -29,9 +29,99 @@
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
 
+// ===== META UPDATE BADGE (export + PiesneNaDnes + PlaylistOrder) =====
+const LS_META_SEEN = 'spevnik_meta_seen_v1';
+let lastRemoteMeta = null;
+
+function getSeenMeta(){
+  try { return JSON.parse(localStorage.getItem(LS_META_SEEN) || 'null'); } catch(e) { return null; }
+}
+function setSeenMeta(meta){
+  try { localStorage.setItem(LS_META_SEEN, JSON.stringify(meta || null)); } catch(e) {}
+}
+function metaIsNewer(remote, seen){
+  if (!remote || !seen) return false;
+  const rE = Number(remote.export || 0);
+  const rD = Number(remote.dnes || 0);
+  const rO = Number(remote.order || 0);
+  const sE = Number(seen.export || 0);
+  const sD = Number(seen.dnes || 0);
+  const sO = Number(seen.order || 0);
+  return (rE > sE) || (rD > sD) || (rO > sO);
+}
+function setUpdateBadgeVisible(on){
+  const btn = document.getElementById('fab-newdata-btn');
+  if (!btn) return;
+  btn.style.display = on ? 'inline-flex' : 'none';
+}
+
+async function fetchRemoteMeta(){
+  const data = await jsonpRequest(`${SCRIPT_URL}?action=meta`);
+  const meta = (data && data.meta) ? data.meta : (data || null);
+  if (meta && typeof meta === 'object') {
+    return { export: Number(meta.export||0), dnes: Number(meta.dnes||0), order: Number(meta.order||0) };
+  }
+  return null;
+}
+
+async function checkMetaAndToggleBadge(){
+  if (!navigator.onLine){
+    setUpdateBadgeVisible(false);
+    return;
+  }
+  try {
+    const remote = await fetchRemoteMeta();
+    if (!remote) return;
+
+    lastRemoteMeta = remote;
+
+    const seen = getSeenMeta();
+    if (!seen){
+      // prvé spustenie: nastav a neotravuj badge-om
+      setSeenMeta(remote);
+      setUpdateBadgeVisible(false);
+      return;
+    }
+    setUpdateBadgeVisible(metaIsNewer(remote, seen));
+  } catch(e) {}
+}
+
+function startMetaPolling(){
+  // okamžite po štarte + každú minútu
+  checkMetaAndToggleBadge();
+  setInterval(checkMetaAndToggleBadge, 60 * 1000);
+  window.addEventListener('online', () => checkMetaAndToggleBadge());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMetaAndToggleBadge(); });
+}
+
+async function runUpdateNow(){
+  if (!navigator.onLine){
+    showToast("Si offline – aktualizácia nie je dostupná.", false);
+    return;
+  }
+  // zavri FAB menu (ak je otvorené)
+  try { closeFabMenu(); } catch(e) {}
+  setUpdateBadgeVisible(false);
+
+  showToast("Aktualizujem...", true);
+
+  // fetch meta (aby sme po update vedeli badge schovať)
+  try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
+
+  // stiahni a ulož nové dáta
+  try { await parseXML(); } catch(e) {}
+  try { await Promise.allSettled([loadDnesFromDrive(), loadPlaylistsFromDrive(), loadHistoryFromDrive()]); } catch(e) {}
+
+  if (lastRemoteMeta) setSeenMeta(lastRemoteMeta);
+
+  // najstabilnejšie: tvrdý reload UI
+  setTimeout(() => location.reload(), 120);
+}
+
+
 // Build info (for diagnostics)
-const APP_BUILD = 'v25';
-const APP_CACHE_NAME = 'spevnik-v25';
+const APP_BUILD = 'v22';
+const APP_CACHE_NAME = 'spevnik-v23';
 
 // Diagnostics state
 let lastXmlShownAt = 0;   // when we last rendered from cache/network
@@ -301,31 +391,6 @@ async function copyDiagnostics(){
   }
 }
 
-// Rýchla aktualizácia dát (bez mazania cache) – výrazne rýchlejšie hlavne na iPhone/iPad.
-async function quickUpdateApp(){
-  try { closeFabMenu(); } catch(e) {}
-  if (!navigator.onLine){
-    showToast('Si offline – aktualizácia nie je dostupná.', false);
-    return;
-  }
-  showToast('Aktualizujem dáta...', false);
-
-  // update SW (best effort)
-  try {
-    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) reg.update();
-    }
-  } catch(e) {}
-
-  // načítaj nové dáta na pozadí
-  try { parseXML(); } catch(e) {}
-  try { loadDnesFromDrive(); } catch(e) {}
-  try { loadPlaylistsFromDrive(); } catch(e) {}
-
-  showToast('Hotovo.', true);
-}
-
 // click on overlay closes
 document.addEventListener('click', (e) => {
   const modal = document.getElementById('diag-modal');
@@ -590,9 +655,6 @@ function openSongById(id, source) {
   document.getElementById('song-list').style.display = 'none';
   document.getElementById('song-detail').style.display = 'block';
 
-  // keep screen awake while using song detail (best effort)
-  try { enableKeepAwake(); } catch(e) {}
-
   document.getElementById('render-title').innerText = `${s.displayId}. ${s.title}`;
 
   const firstChordMatch = s.origText.match(/\[(.*?)\]/);
@@ -607,6 +669,14 @@ function openSongById(id, source) {
   const __is999 = String(s.originalId||"").replace(/^0+/,'') === '999';
   setChordTemplateEnabled(!__is999);
   updateChordTemplateUI();
+
+  // PWA offline
+  if ('serviceWorker' in navigator) {
+    try { navigator.serviceWorker.register('sw.js'); } catch(e) {}
+  }
+
+  // META update badge polling (1x/min)
+  startMetaPolling();
 
   // V detaile piesne z 'Piesne na dnes' vždy defaultne zobraz verziu DNES
   setDnesShowOriginal(false);
@@ -740,7 +810,7 @@ function buildOrderedSongText(song, orderStr){
     for (const tokRaw of tokens){
       const tok = normalizeOrderToken(tokRaw);
 
-      const m = tok.match(/^(PREDOHRA|MEDZIHRA|DOHRA)(?:\((.*)\))?$/i);
+      const m = tok.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\((.*)\))?$/i);
       if (m){
         const kind = m[1].toUpperCase();
         const txt = (m[2] || '').trim();
@@ -769,7 +839,7 @@ function buildOrderedSongText(song, orderStr){
   for (const tokRaw of tokens){
     const tok = normalizeOrderToken(tokRaw);
 
-    const m = tok.match(/^(PREDOHRA|MEDZIHRA|DOHRA)(?:\((.*)\))?$/i);
+    const m = tok.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\((.*)\))?$/i);
     if (m){
       const kind = m[1].toUpperCase();
       const note = (m[2]||"").trim();
@@ -874,17 +944,26 @@ function parseMarkerWithText(trimmed) {
 }
 
 // Predohra / Medzihra / Dohra – podporí aj formát "Predohra: text" aj "Predohra text"
+function normalizeSpecialKind(name){
+  const t = String(name || '').trim();
+  if (/^predohra$/i.test(t)) return 'Predohra';
+  if (/^medzihra$/i.test(t)) return 'Medzihra';
+  if (/^dohra$/i.test(t)) return 'Dohra';
+  if (/^pozn[aá]mka$/i.test(t) || /^poznamka$/i.test(t)) return 'Poznámka';
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+}
+
 function parseSpecialWithText(trimmed){
   const t = String(trimmed || '').trim();
-  let m = t.match(/^(Predohra|Medzihra|Dohra)\s*:\s*(.*)$/i);
+  let m = t.match(/^(Predohra|Medzihra|Dohra|Poznámka|Poznamka)\s*:\s*(.*)$/i);
   if (m){
-    const kind = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    const kind = normalizeSpecialKind(m[1]);
     const rest = (m[2]||'').trim();
     return { kind, rest };
   }
-  m = t.match(/^(Predohra|Medzihra|Dohra)\s+(.*)$/i);
+  m = t.match(/^(Predohra|Medzihra|Dohra|Poznámka|Poznamka)\s+(.*)$/i);
   if (m){
-    const kind = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    const kind = normalizeSpecialKind(m[1]);
     const rest = (m[2]||'').trim();
     return { kind, rest };
   }
@@ -893,14 +972,28 @@ function parseSpecialWithText(trimmed){
 
 function parseSpecialMarkerOnly(trimmed){
   const t = String(trimmed || '').trim();
-  const m = t.match(/^(Predohra|Medzihra|Dohra)\s*:?\s*$/i);
+  const m = t.match(/^(Predohra|Medzihra|Dohra|Poznámka|Poznamka)\s*:?\s*$/i);
   if (!m) return '';
-  return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+  return normalizeSpecialKind(m[1]);
+}
+
+
+function normalizeChordName(ch){
+  const c = String(ch||'').trim();
+  // požiadavka: A# -> B, A#m -> B (m sa zahodí)
+  const m = c.match(/^A#(.*)$/i);
+  if (m){
+    let rest = m[1] || '';
+    if (rest.startsWith('m') || rest.startsWith('M')) rest = rest.slice(1);
+    return 'B' + rest;
+  }
+  return c;
 }
 
 function songLineHTML(label, text, extraClass) {
   const safeLabel = escapeHTML(label || '');
-  let safeText = escapeHTML(text || '');
+  const rawText = String(text || '').replace(/\[(.*?)\]/g, (m, inner) => `[${normalizeChordName(inner)}]`);
+  let safeText = escapeHTML(rawText);
 
   // chords -> span
   safeText = safeText.replace(/\[(.*?)\]/g, '<span class="chord">$1</span>');
@@ -908,6 +1001,8 @@ function songLineHTML(label, text, extraClass) {
   const cls = extraClass ? `song-line ${extraClass}` : 'song-line';
   return `<div class="${cls}"><span class="song-label">${safeLabel}</span><span class="song-line-text">${safeText}</span></div>`;
 }
+
+
 
 function songTextToHTML(text) {
   const lines = String(text || '').split('\n');
@@ -931,6 +1026,16 @@ function songTextToHTML(text) {
       out.push('</div>');
       sectionOpen = false;
     }
+  }
+
+  function flushPendingSpecialEmpty(){
+    if (!pendingSpecial) return;
+    closeSection();
+    out.push('<div class="song-section">');
+    out.push(songLineHTML('', `${pendingSpecial}:`, 'song-special-row'));
+    out.push('<div class="song-line song-blank"><span class="song-label"></span><span class="song-line-text"></span></div>');
+    out.push('</div>');
+    pendingSpecial = '';
   }
 
   for (const raw of lines) {
@@ -968,7 +1073,7 @@ function songTextToHTML(text) {
     const mt = trimmed.match(/^Transpozícia:\s*([+-]?\d+)\s*$/i);
     if (mt) {
       pendingLabel = '';
-      pendingSpecial = '';
+      flushPendingSpecialEmpty();
       closeSection();
       out.push(
         `<div class="song-line song-transpose-row"><span class="song-label"></span><span class="song-line-text">Transpozícia: <span class="song-transpose">${escapeHTML(mt[1])}</span></span></div>`
@@ -980,13 +1085,14 @@ function songTextToHTML(text) {
     const spOnly = parseSpecialMarkerOnly(trimmed);
     if (spOnly){
       pendingLabel = '';
+      flushPendingSpecialEmpty();
       pendingSpecial = spOnly;
       continue;
     }
     const sp = parseSpecialWithText(trimmed);
     if (sp){
       pendingLabel = '';
-      pendingSpecial = '';
+      flushPendingSpecialEmpty();
       closeSection();
       const txt = sp.kind + (sp.rest ? `: ${sp.rest}` : ':');
       out.push('<div class="song-section">');
@@ -995,25 +1101,11 @@ function songTextToHTML(text) {
       continue;
     }
 
-    // Ak čaká Predohra/Medzihra/Dohra (marker-only) a prišiel NOVÝ marker (1., R:, B: ...),
-    // nesmie sa stať, že sa "prilepí" do nasledujúcej slohy/refrenu.
-    // V takom prípade ju vyrenderuj ako samostatný riadok (prázdny obsah) a pokračuj.
-    const __maybeMarkerOnly = parseMarkerOnly(trimmed);
-    const __maybeMarkerWithText = __maybeMarkerOnly ? null : parseMarkerWithText(trimmed);
-    if (pendingSpecial && (__maybeMarkerOnly || __maybeMarkerWithText)) {
-      closeSection();
-      out.push('<div class="song-section">');
-      out.push(songLineHTML('', `${pendingSpecial}:`, 'song-special-row'));
-      // prázdny riadok pod tým (užívateľ chcel, aby prázdna medzihra zostala ako prázdny riadok)
-      out.push(songLineHTML('', '', 'song-blank'));
-      out.push('</div>');
-      pendingSpecial = '';
-      // nepohlcuj chordlines – patria do nasledujúceho bloku
-    }
-
     // Marker-only line (1., R:, B:, Refren, Bridge...)
-    const only = __maybeMarkerOnly;
+    const only = parseMarkerOnly(trimmed);
     if (only) {
+      // ak čaká špeciál a prišiel nový marker, zobraz špeciál ako prázdny blok
+      flushPendingSpecialEmpty();
       // nový blok -> zavri starý
       // Ak máme rozpracovaný blok, kde prišiel marker (napr. "1"),
       // nasledovali iba akordové riadky (bez textu) a potom prišiel nový marker,
@@ -1048,8 +1140,9 @@ function songTextToHTML(text) {
     }
 
     // Marker + text in one line (e.g. "1 Text", "R: Text", "Bridge text")
-    const withText = __maybeMarkerWithText;
+    const withText = parseMarkerWithText(trimmed);
     if (withText) {
+      flushPendingSpecialEmpty();
       closeSection();
       openSection();
 
@@ -1068,20 +1161,26 @@ function songTextToHTML(text) {
       }
       continue;
     }
-// Ak čaká Predohra/Medzihra/Dohra, prilep ju na prvý nasledujúci TEXTOVÝ riadok.
-// Pozor: chord-only riadky nechávame ako samostatné (inak by sa medzihra "zlepila" s akordmi zo slohy).
-    if (pendingSpecial){
-      // Ak je nasledujúci riadok chord-only, znamená to, že užívateľ nechal medzihru bez textu
-      // (alebo nasledujú akordy patriace inam). Vyrenderuj prázdnu medzihru a chord-only nechaj ďalej spracovať.
-      if (isChordOnlyLine(line)){
+    // Ak čaká špeciálny blok (Predohra/Medzihra/Dohra/Poznámka):
+    // - pri zapnutej akordovej šablóne (doplnenie akordov) NESMIEME chytiť akordy z nasledujúcej slohy,
+    //   preto chord-only riadky necháme pre ďalší blok.
+    if (pendingSpecial && isChordOnlyLine(line)) {
+      if (typeof chordTemplateEnabled === 'function' && chordTemplateEnabled()) {
+        flushPendingSpecialEmpty();
+        pendingChordLines.push(line);
+        continue;
+      } else {
         closeSection();
         out.push('<div class="song-section">');
-        out.push(songLineHTML('', `${pendingSpecial}:`, 'song-special-row'));
-        out.push(songLineHTML('', '', 'song-blank'));
+        out.push(songLineHTML('', `${pendingSpecial}: ${line.trim()}`, 'song-special-row'));
         out.push('</div>');
         pendingSpecial = '';
-        // Nezahoď chordline; spadne do chord-only vetvy nižšie.
-      } else {
+        pendingChordLines.length = 0;
+        continue;
+      }
+    }
+    // štandardne prilep špeciál na prvý nasledujúci textový riadok
+    if (pendingSpecial){
       closeSection();
       out.push('<div class="song-section">');
       out.push(songLineHTML('', `${pendingSpecial}: ${line.trim()}`, 'song-special-row'));
@@ -1089,8 +1188,8 @@ function songTextToHTML(text) {
       pendingSpecial = '';
       pendingChordLines.length = 0;
       continue;
-      }
     }
+
 
         // Chord-only line: buffer it and render above the next content line.
     // If the section/song ends with chord-only lines, we will render them at the end.
@@ -1133,17 +1232,10 @@ function songTextToHTML(text) {
     }
   }
 
+  // ak ostal rozpracovaný špeciál bez obsahu, zobraz ho ako prázdny blok
+  flushPendingSpecialEmpty();
+
   // If chord-only lines remain without following lyric (e.g., chord-only songs/verses), render them now.
-  // If a special marker-only (Predohra/Medzihra/Dohra) remains at the end,
-  // render it as a standalone row + one blank line.
-  if (pendingSpecial) {
-    closeSection();
-    out.push('<div class="song-section">');
-    out.push(songLineHTML('', `${pendingSpecial}:`, 'song-special-row'));
-    out.push(songLineHTML('', '', 'song-blank'));
-    out.push('</div>');
-    pendingSpecial = '';
-  }
   if (pendingLabel && pendingChordLines.length){
     closeSection();
     openSection();
@@ -1316,22 +1408,13 @@ function getLyricInfos(blockBody){
   const chordlineForIndex = new Map();
   for (let i=0; i<body.length; i++){
     const line = String(body[i] ?? '');
-    const trimmed = line.trim();
-
-    // Špeciálne riadky nepočítaj ako lyric riadky (aby sa do nich nič nedopĺňalo).
-    if (parseSpecialMarkerOnly(trimmed) || parseSpecialWithText(trimmed) || /^Transpozícia:\s*([+-]?\d+)\s*$/i.test(trimmed)) {
-      continue;
-    }
     if (!isChordOnlyLine(line)) continue;
 
     let j = i + 1;
     while (j < body.length) {
       const nxt = String(body[j] ?? '');
-      const nt = nxt.trim();
       if (isChordOnlyLine(nxt)) { j++; continue; }
       if (!nxt.trim()) { j++; continue; }
-      // Preskoč špeciálne riadky; nepatria do mapovania šablóny
-      if (parseSpecialMarkerOnly(nt) || parseSpecialWithText(nt) || /^Transpozícia:\s*([+-]?\d+)\s*$/i.test(nt)) { j++; continue; }
       break;
     }
     if (j < body.length) chordlineForIndex.set(j, line.trim());
@@ -1339,17 +1422,12 @@ function getLyricInfos(blockBody){
 
   for (let i=0; i<body.length; i++){
     const line = String(body[i] ?? '');
-    const trimmed = line.trim();
-
-    // Špeciálne riadky (Predohra/Medzihra/Dohra/Transpozícia) NEPOVAŽUJEME za "lyric" riadky,
-    // aby sa do nich nikdy nevkladali doplnené akordy zo šablóny slohy 1.
-    if (parseSpecialMarkerOnly(trimmed) || parseSpecialWithText(trimmed) || /^Transpozícia:\s*([+-]?\d+)\s*$/i.test(trimmed)) continue;
 
     // chord-only line itself is not a lyric line
     if (isChordOnlyLine(line)) continue;
 
     // treat blank lines as spacing; don't count them as lyric lines for template mapping
-    if (!trimmed) continue;
+    if (!line.trim()) continue;
 
     let chordPattern = chordlineForIndex.get(i) || '';
     let inline = [];
@@ -1544,7 +1622,7 @@ function renderSong() {
       const trimmed = (line || '').trim();
 
       const isSpecialLine = /^(Predohra|Medzihra|Dohra)\b/i.test(trimmed);
-      const isSpecialMarkerOnly = /^(Predohra|Medzihra|Dohra)\s*:?\s*$/i.test(trimmed);
+      const isSpecialMarkerOnly = /^(Predohra|Medzihra|Dohra|Poznámka|Poznamka)\s*:?\s*$/i.test(trimmed);
 
       // Začiatok špeciálneho bloku: nechaj všetko tak a zapni režim pre následné akordové riadky
       if (isSpecialLine) {
@@ -1616,10 +1694,6 @@ function renderSong() {
 
 function transposeChord(c, step) {
   return c.replace(/[A-H][#b]?/g, (n) => {
-    // Normalizácia (SK/DE): A# = B (t.j. Bb). Toto zlepší aj transpozíciu, lebo A# nie je v scale.
-    // V reťazcoch typu "A#m" sa nahradí iba koreň "A#" -> vznikne "Bm".
-    if (n === 'A#') n = 'B';
-    if (n === 'a#') n = 'B';
     const idx = scale.indexOf(n);
     if (idx === -1) return n;
     let newIdx = (idx + step) % 12;
@@ -1630,62 +1704,11 @@ function transposeChord(c, step) {
 function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep; renderSong(); }
 function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
-function changeFontSize(d) {
-  applySongFontSize(fontSize + d);
-  try { localStorage.setItem(LS_SONG_FONT_SIZE, String(fontSize)); } catch(e) {}
-}
+function changeFontSize(d) { applySongFontSize(fontSize + d); }
 
 /* ===== PREZENTAČNÝ REŽIM ===== */
 let presentationActive = false;
-// Udržanie displeja (Android/iOS – podľa podpory prehliadača)
 let __wakeLock = null;
-let __wakeKeep = false;
-let __wakePresent = false;
-
-async function updateWakeLock(){
-  const need = (__wakeKeep || __wakePresent);
-  if (!('wakeLock' in navigator)) return;
-
-  // Re-žiadaj po návrate z pozadia (iOS/Android to často uvoľní)
-  if (need && !__wakeLock){
-    try {
-      __wakeLock = await navigator.wakeLock.request('screen');
-      try { __wakeLock.addEventListener('release', () => { __wakeLock = null; }); } catch(e) {}
-    } catch (e) { __wakeLock = null; }
-  }
-  if (!need && __wakeLock){
-    try { await __wakeLock.release(); } catch (e) {}
-    __wakeLock = null;
-  }
-}
-
-function enableKeepAwake(){
-  __wakeKeep = true;
-  updateWakeLock();
-}
-function disableKeepAwake(){
-  __wakeKeep = false;
-  updateWakeLock();
-}
-
-function armKeepAwake(){
-  // WakeLock väčšinou nevyžaduje gesto, ale na niektorých zariadeniach je to spoľahlivejšie.
-  // Preto to "naštartujeme" po prvom dotyku/kliku.
-  if (armKeepAwake._armed) return;
-  armKeepAwake._armed = true;
-
-  const start = () => {
-    enableKeepAwake();
-  };
-  document.addEventListener('pointerdown', start, { once:true, passive:true });
-  document.addEventListener('touchstart', start, { once:true, passive:true });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && (__wakeKeep || __wakePresent)) {
-      updateWakeLock();
-    }
-  });
-}
 
 async function enterPresentationMode() {
   presentationActive = true;
@@ -1701,8 +1724,11 @@ async function enterPresentationMode() {
   } catch (e) {}
 
   // wake lock (best effort)
-  __wakePresent = true;
-  try { await updateWakeLock(); } catch(e) {}
+  try {
+    if ('wakeLock' in navigator) {
+      __wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (e) { __wakeLock = null; }
 
   updatePresentationUI();
 }
@@ -1713,8 +1739,12 @@ async function exitPresentationMode() {
   const pc = document.getElementById('presentControls');
   if (pc) pc.setAttribute('aria-hidden', 'true');
 
-  __wakePresent = false;
-  try { await updateWakeLock(); } catch(e) {}
+  try {
+    if (__wakeLock) {
+      await __wakeLock.release();
+      __wakeLock = null;
+    }
+  } catch (e) { __wakeLock = null; }
 
   try {
     if (document.fullscreenElement && document.exitFullscreen) {
@@ -1901,37 +1931,25 @@ let formModalSongId = null;
 
 function extractAvailableMarkersFromSong(song){
   const lines = (song.origText || "").split(/\r?\n/);
-  const set = new Set();
+  const seen = new Set();
+  const arr = [];
 
   for (const ln of lines){
     const t = (ln || '').trim();
     if (!t) continue;
     const mk = parseBlockMarker(t);
     if (mk){
-      set.add(String(mk.key || '').replace(/\s+/g,''));
+      const key = String(mk.key || '').replace(/\s+/g,'');
+      if (!seen.has(key)){
+        seen.add(key);
+        arr.push(key);
+      }
     }
   }
-
-  // zoradenie: čísla, potom R, potom B
-  const arr = Array.from(set);
-  arr.sort((a,b)=>{
-    const an = /^\d+\./.test(a), bn = /^\d+\./.test(b);
-    if (an && bn) return parseInt(a) - parseInt(b);
-    if (an && !bn) return -1;
-    if (!an && bn) return 1;
-
-    const ar = /^R\d*:/.test(a), br = /^R\d*:/.test(b);
-    if (ar && !br) return -1;
-    if (!ar && br) return 1;
-
-    const ab = /^B\d*:/.test(a), bb = /^B\d*:/.test(b);
-    if (ab && !bb) return -1;
-    if (!ab && bb) return 1;
-
-    return a.localeCompare(b,'sk');
-  });
+  // nezoraďovať – chceme poradie podľa textu konkrétnej piesne
   return arr;
 }
+
 
 
 function buildPreviewHtml(song){
@@ -2004,7 +2022,7 @@ function normalizeOrderString(orderStr){
     if (!s) return '';
 
     // špeciálne kroky (Predohra/Medzihra/Dohra)
-    let m = s.match(/^(PREDOHRA|MEDZIHRA|DOHRA)(?:\((.*)\))?$/i);
+    let m = s.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\((.*)\))?$/i);
     if (m){
       const kind = m[1].toUpperCase();
       const note = (m[2] || '').trim();
@@ -2105,7 +2123,7 @@ function renderFormModalOrder(){
   }
   // Mobile-friendly: arrows + remove (no drag&drop)
   box.innerHTML = formModalOrder.map((t, i) => {
-    const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
+    const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)\b/i.test(t);
     const cls = isSpecial ? 'chip special' : 'chip';
     const leftDisabled = i === 0 ? 'disabled' : '';
     const rightDisabled = i === formModalOrder.length - 1 ? 'disabled' : '';
@@ -2153,7 +2171,7 @@ function removeOrderToken(i){
 function onFormChipTextClick(i){
   if (i < 0 || i >= formModalOrder.length) return;
   const t = String(formModalOrder[i] || '').trim();
-  const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA)\b/i.test(t);
+  const isSpecial = /^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)\b/i.test(t);
   if (isSpecial) editSpecialToken(i);
 }
 
@@ -2171,7 +2189,7 @@ function moveOrderToken(i, dir){
 
 function parseSpecialTokenString(tok){
   const t = String(tok || '').trim();
-  const m = t.match(/^(PREDOHRA|MEDZIHRA|DOHRA)(?:\((.*)\))?$/i);
+  const m = t.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\((.*)\))?$/i);
   if (!m) return null;
   return { kind: m[1].toUpperCase(), note: (m[2] || '').trim() };
 }
@@ -2180,7 +2198,7 @@ function editSpecialToken(i){
   const parsed = parseSpecialTokenString(formModalOrder[i]);
   if (!parsed) return;
 
-  const kindSk = parsed.kind === 'PREDOHRA' ? 'Predohra' : (parsed.kind === 'MEDZIHRA' ? 'Medzihra' : 'Dohra');
+  const kindSk = (parsed.kind === 'PREDOHRA' ? 'Predohra' : (parsed.kind === 'MEDZIHRA' ? 'Medzihra' : (parsed.kind === 'DOHRA' ? 'Dohra' : 'Poznámka')));
   const hint = `Poznámka pre ${kindSk} (prázdne = bez poznámky).\nZadaj /del pre odstránenie kroku.`;
   const next = prompt(hint, parsed.note || '');
   if (next === null) return;
@@ -2194,14 +2212,19 @@ function editSpecialToken(i){
 }
 
 function addSpecialStep(kind){
-  // Umožni vložiť Predohra/Medzihra/Dohra viackrát (bez obmedzenia na 1 výskyt).
-  // Poznámku vždy ponúkneme (voliteľná).
+  // Ak už existuje, radšej ho uprav
+  const re = new RegExp('^' + String(kind || '').toUpperCase() + '(\\(|$)', 'i');
+  const existingIdx = formModalOrder.findIndex(t => re.test(String(t || '').trim()));
+  if (existingIdx >= 0){
+    editSpecialToken(existingIdx);
+    return;
+  }
 
   // Predvyplň poznámku z textu piesne, ak existuje "Predohra: ..." atď.
   let preset = '';
   const s = songs.find(x => x.id === formModalSongId);
   if (s && s.origText){
-    const kindSk = String(kind||'').toUpperCase() === 'PREDOHRA' ? 'Predohra' : (String(kind||'').toUpperCase() === 'MEDZIHRA' ? 'Medzihra' : 'Dohra');
+    const kindSk = (String(kind||'').toUpperCase() === 'PREDOHRA' ? 'Predohra' : (String(kind||'').toUpperCase() === 'MEDZIHRA' ? 'Medzihra' : (String(kind||'').toUpperCase() === 'DOHRA' ? 'Dohra' : 'Poznámka')));
     const rx = new RegExp('^' + kindSk + '\\s*:\\s*(.*)$', 'im');
     const m = String(s.origText).match(rx);
     if (m && m[1]) preset = String(m[1]).trim();
@@ -3121,9 +3144,8 @@ function applySongFontSize(px){
   const v = Math.max(12, Math.min(34, Math.round(px)));
   fontSize = v;
   updateFontSizeLabel();
-  // Ne-renderuj celý text pri každej zmene (na iOS to seká). Stačí zmeniť font-size kontajnera.
-  const el = document.getElementById('song-content');
-  if (el) el.style.fontSize = fontSize + 'px';
+  try { localStorage.setItem(LS_SONG_FONT_SIZE, String(v)); } catch(e) {}
+  renderSong();
 }
 
 function initSongPinchToZoom(){
@@ -3134,8 +3156,6 @@ function initSongPinchToZoom(){
   let active = false;
   let startDist = 0;
   let startSize = fontSize;
-  let raf = 0;
-  let pendingPx = null;
 
   function dist(t1, t2){
     const dx = t2.clientX - t1.clientX;
@@ -3157,38 +3177,17 @@ function initSongPinchToZoom(){
     const d = dist(e.touches[0], e.touches[1]);
     if (!startDist) return;
     const scale = d / startDist;
-    pendingPx = startSize * scale;
-    if (!raf) {
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        if (pendingPx != null) applySongFontSize(pendingPx);
-      });
-    }
+    const next = startSize * scale;
+    applySongFontSize(next);
     // prevent accidental browser zoom
     e.preventDefault();
   }, { passive: false });
 
-  function commit(){
-    if (!active) return;
-    active = false;
-    startDist = 0;
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    pendingPx = null;
-    // ulož až na konci gestá (plynulejšie)
-    try { localStorage.setItem(LS_SONG_FONT_SIZE, String(fontSize)); } catch(e) {}
-  }
-  area.addEventListener('touchend', commit, { passive: true });
-  area.addEventListener('touchcancel', commit, { passive: true });
+  area.addEventListener('touchend', () => { active = false; startDist = 0; }, { passive: true });
+  area.addEventListener('touchcancel', () => { active = false; startDist = 0; }, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Service Worker (offline). Predtým sa neregistroval, preto offline prestal fungovať.
-  try {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=25').catch(() => {});
-    }
-  } catch(e) {}
-
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
   if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
@@ -3203,9 +3202,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const __pn = document.getElementById('playlist-name');
   if (__pn) __pn.addEventListener('input', () => { updatePlaylistSaveEnabled(); playlistDirty = true; });
   updatePlaylistSaveEnabled();
-
-  // Neuspávať displej (best effort). Aktivuje sa po prvom dotyku/kliku.
-  try { armKeepAwake(); } catch(e) {}
 
   // ak užívateľ ukončí fullscreen (napr. systémovým gestom), vypni prezentáciu
   document.addEventListener('fullscreenchange', () => {
