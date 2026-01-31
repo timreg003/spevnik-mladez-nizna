@@ -66,17 +66,23 @@ async function fetchRemoteMeta(){
 }
 
 async function checkMetaAndToggleBadge(){
-  // status line
+  // Badge check runs every minute. Keep bottom status clean:
+  // - show "Offline" when offline
+  // - do NOT spam "Aktualizované" every minute
   if (!navigator.onLine){
     setUpdateBadgeVisible(false);
     setSyncStatus("Offline", "sync-warn");
     return;
   }
-  setSyncStatus("Aktualizujem…", "sync-warn");
+
+  // If we just came back online, clear the offline label
+  const st = document.getElementById('syncStatus');
+  if (st && st.textContent === "Offline") setSyncStatus("", null);
+
   try {
     const remote = await fetchRemoteMeta();
     if (!remote) {
-      setSyncStatus("Aktualizované", "sync-ok");
+      setUpdateBadgeVisible(false);
       return;
     }
 
@@ -84,19 +90,16 @@ async function checkMetaAndToggleBadge(){
 
     const seen = getSeenMeta();
     if (!seen){
-      // prvé spustenie: nastav a neotravuj badge-om
+      // first run: mark as seen, no badge
       setSeenMeta(remote);
       setUpdateBadgeVisible(false);
-      setSyncStatus("Aktualizované", "sync-ok");
       return;
     }
 
     const hasUpdate = metaIsNewer(remote, seen);
     setUpdateBadgeVisible(hasUpdate);
-    // aj keď je update, status nech zostane "Aktualizované" (ikonka to indikuje)
-    setSyncStatus("Aktualizované", "sync-ok");
   } catch(e) {
-    setSyncStatus("Aktualizované", "sync-ok");
+    // ignore – keep previous badge state
   }
 }
 
@@ -140,8 +143,8 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v29';
-const APP_CACHE_NAME = 'spevnik-v29';
+const APP_BUILD = 'v30';
+const APP_CACHE_NAME = 'spevnik-v30';
 
 
 const SPEVNIK_XML_CACHE_KEY = 'spevnik-export.xml';
@@ -269,6 +272,7 @@ function todayLabelSk(d){
 
 /* ===== TOAST ===== */
 let toastTimer = null;
+let syncStatusTimer = null;
 
 function setSaveButtonState(disabled){
   document.querySelectorAll('.btn-save').forEach(btn=>{
@@ -332,9 +336,28 @@ function showToast(message, ok=true){
 function setSyncStatus(text, kind){
   const el = document.getElementById('syncStatus');
   if (!el) return;
+
+  // clear any pending auto-hide timer
+  if (syncStatusTimer){
+    clearTimeout(syncStatusTimer);
+    syncStatusTimer = null;
+  }
+
   el.textContent = text || '';
   el.classList.remove('sync-ok','sync-warn','sync-err');
   if (kind) el.classList.add(kind);
+
+  // Auto-hide "Aktualizované" after a short moment
+  if (el.textContent === "Aktualizované"){
+    syncStatusTimer = setTimeout(() => {
+      const el2 = document.getElementById('syncStatus');
+      if (!el2) return;
+      if (el2.textContent === "Aktualizované"){
+        el2.textContent = "";
+        el2.classList.remove('sync-ok','sync-warn','sync-err');
+      }
+    }, 1600);
+  }
 }
 
 
