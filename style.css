@@ -794,3 +794,40 @@ body.present #presentControls{ display:flex; }
 
 #tmpl-btn.active{ background:#00bfff !important; color:black !important; }
 
+
+
+/* Sync status pill (bottom) */
+.sync-status{
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: rgba(30,30,30,0.92);
+  color: #9fdcff;
+  border: 1px solid rgba(0,191,255,0.35);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  user-select: none;
+  pointer-events: none;
+  text-align: center;
+  max-width: calc(100vw - 24px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sync-status.sync-ok{ color: #7dffb6; border-color: rgba(125,255,182,0.35); }
+.sync-status.sync-warn{ color: #ffd07d; border-color: rgba(255,208,125,0.35); }
+.sync-status.sync-err{ color: #ff7d7d; border-color: rgba(255,125,125,0.35); }
+
+
+/* Hard reset button in FAB menu */
+#fab-hardreset-btn{
+  background: #b93333;
+}
+#fab-hardreset-btn:hover{
+  background: #d13d3d;
+}
