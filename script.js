@@ -32,6 +32,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDF
 // ===== META UPDATE BADGE (export + PiesneNaDnes + PlaylistOrder) =====
 const LS_META_SEEN = 'spevnik_meta_seen_v1';
 let lastRemoteMeta = null;
+let metaPollingStarted = false;
 
 function getSeenMeta(){
   try { return JSON.parse(localStorage.getItem(LS_META_SEEN) || 'null'); } catch(e) { return null; }
@@ -87,6 +88,8 @@ async function checkMetaAndToggleBadge(){
 }
 
 function startMetaPolling(){
+  if (metaPollingStarted) return;
+  metaPollingStarted = true;
   // okamžite po štarte + každú minútu
   checkMetaAndToggleBadge();
   setInterval(checkMetaAndToggleBadge, 60 * 1000);
@@ -120,8 +123,8 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v22';
-const APP_CACHE_NAME = 'spevnik-v23';
+const APP_BUILD = 'v27';
+const APP_CACHE_NAME = 'spevnik-v27';
 
 // Diagnostics state
 let lastXmlShownAt = 0;   // when we last rendered from cache/network
@@ -670,13 +673,6 @@ function openSongById(id, source) {
   setChordTemplateEnabled(!__is999);
   updateChordTemplateUI();
 
-  // PWA offline
-  if ('serviceWorker' in navigator) {
-    try { navigator.serviceWorker.register('sw.js'); } catch(e) {}
-  }
-
-  // META update badge polling (1x/min)
-  startMetaPolling();
 
   // V detaile piesne z 'Piesne na dnes' vždy defaultne zobraz verziu DNES
   setDnesShowOriginal(false);
@@ -1371,20 +1367,40 @@ function splitTextIntoSegments(text){
 
   for (const line of lines){
     const trimmed = String(line).trim();
+
+    // --- SPECIAL blocks (Predohra / Medzihra / Dohra / Poznámka) ---
+    const spOnly = parseSpecialMarkerOnly(trimmed);
+    const spWith = parseSpecialWithText(trimmed);
+    if (spOnly || spWith){
+      pushCur();
+      // keep original line in header, collect following lines into body until next marker
+      cur = { kind:'special', label: spOnly || (spWith ? spWith.kind : ''), type:'special', header: line, body: [] };
+      continue;
+    }
+
     const only = parseMarkerOnly(trimmed);
     const withText = parseMarkerWithText(trimmed);
 
     if (only){
       pushCur();
       const cls = classifyLabel(only);
-      cur = { kind:'block', label: only, type: cls.type, index: cls.index, header: line, body: [] };
+      // normalize header to marker only (so chord-template never ends up "before" marker)
+      cur = { kind:'block', label: only, type: cls.type, index: cls.index, header: only, body: [] };
       continue;
     }
+
     if (withText){
       pushCur();
       const cls = classifyLabel(withText.label);
-      // marker+text je súčasť tela (zachováme originálny riadok)
-      cur = { kind:'block', label: withText.label, type: cls.type, index: cls.index, header: null, body: [line] };
+
+      // For verse/chorus/bridge: normalize to marker on its own line.
+      // This prevents a synthetic chordline from being inserted *above* a "2 text" line (which would escape into previous block).
+      if (cls.type === 'verse' || cls.type === 'chorus' || cls.type === 'bridge'){
+        cur = { kind:'block', label: withText.label, type: cls.type, index: cls.index, header: withText.label, body: [withText.text] };
+      } else {
+        // preserve original line for other kinds
+        cur = { kind:'block', label: withText.label, type: cls.type, index: cls.index, header: null, body: [line] };
+      }
       continue;
     }
 
@@ -3145,8 +3161,14 @@ function applySongFontSize(px){
   fontSize = v;
   updateFontSizeLabel();
   try { localStorage.setItem(LS_SONG_FONT_SIZE, String(v)); } catch(e) {}
-  renderSong();
+
+  // Fast: change font-size without re-rendering (prevents lag on iOS/Android)
+  const el = document.getElementById('song-content');
+  if (el) el.style.fontSize = v + 'px';
+
+  try { updatePresentationUI(); } catch(e) {}
 }
+
 
 function initSongPinchToZoom(){
   // Custom pinch so it works even with viewport user-scalable=no
@@ -3167,10 +3189,11 @@ function initSongPinchToZoom(){
     // only when song detail is visible
     if (area.style.display === 'none') return;
     if (!e.touches || e.touches.length !== 2) return;
+    if (e.cancelable) e.preventDefault();
     active = true;
     startDist = dist(e.touches[0], e.touches[1]);
     startSize = fontSize;
-  }, { passive: true });
+  }, { passive: false });
 
   area.addEventListener('touchmove', (e) => {
     if (!active || !e.touches || e.touches.length !== 2) return;
@@ -3185,6 +3208,15 @@ function initSongPinchToZoom(){
 
   area.addEventListener('touchend', () => { active = false; startDist = 0; }, { passive: true });
   area.addEventListener('touchcancel', () => { active = false; startDist = 0; }, { passive: true });
+
+// iOS Safari: block native page zoom while we handle pinch ourselves
+document.addEventListener('gesturestart', (e) => {
+  if (area.style.display !== 'none' && e.cancelable) e.preventDefault();
+}, { passive: false });
+document.addEventListener('gesturechange', (e) => {
+  if (area.style.display !== 'none' && e.cancelable) e.preventDefault();
+}, { passive: false });
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3194,6 +3226,19 @@ document.addEventListener('DOMContentLoaded', () => {
   updateFontSizeLabel();
   initSongPinchToZoom();
   updateChordTemplateUI();
+// Try to request persistent storage (helps iOS/Android keep offline cache longer)
+try {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+} catch(e) {}
+
+// PWA offline
+if ('serviceWorker' in navigator) {
+  try { navigator.serviceWorker.register('sw.js'); } catch(e) {}
+}
+
+// META update badge polling (1x/min) – start immediately (not only in song detail)
+startMetaPolling();
+
 
   toggleSection('dnes', false);
   toggleSection('playlists', false);
