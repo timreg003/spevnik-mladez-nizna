@@ -66,13 +66,19 @@ async function fetchRemoteMeta(){
 }
 
 async function checkMetaAndToggleBadge(){
+  // status line
   if (!navigator.onLine){
     setUpdateBadgeVisible(false);
+    setSyncStatus("Offline", "sync-warn");
     return;
   }
+  setSyncStatus("Aktualizujem…", "sync-warn");
   try {
     const remote = await fetchRemoteMeta();
-    if (!remote) return;
+    if (!remote) {
+      setSyncStatus("Aktualizované", "sync-ok");
+      return;
+    }
 
     lastRemoteMeta = remote;
 
@@ -81,10 +87,17 @@ async function checkMetaAndToggleBadge(){
       // prvé spustenie: nastav a neotravuj badge-om
       setSeenMeta(remote);
       setUpdateBadgeVisible(false);
+      setSyncStatus("Aktualizované", "sync-ok");
       return;
     }
-    setUpdateBadgeVisible(metaIsNewer(remote, seen));
-  } catch(e) {}
+
+    const hasUpdate = metaIsNewer(remote, seen);
+    setUpdateBadgeVisible(hasUpdate);
+    // aj keď je update, status nech zostane "Aktualizované" (ikonka to indikuje)
+    setSyncStatus("Aktualizované", "sync-ok");
+  } catch(e) {
+    setSyncStatus("Aktualizované", "sync-ok");
+  }
 }
 
 function startMetaPolling(){
@@ -106,6 +119,8 @@ async function runUpdateNow(){
   try { closeFabMenu(); } catch(e) {}
   setUpdateBadgeVisible(false);
 
+  setSyncStatus("Aktualizujem…", "sync-warn");
+
   showToast("Aktualizujem...", true);
 
   // fetch meta (aby sme po update vedeli badge schovať)
@@ -117,14 +132,16 @@ async function runUpdateNow(){
 
   if (lastRemoteMeta) setSeenMeta(lastRemoteMeta);
 
+  setSyncStatus("Aktualizované", "sync-ok");
+
   // najstabilnejšie: tvrdý reload UI
   setTimeout(() => location.reload(), 120);
 }
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v28';
-const APP_CACHE_NAME = 'spevnik-v28';
+const APP_BUILD = 'v29';
+const APP_CACHE_NAME = 'spevnik-v29';
 
 
 const SPEVNIK_XML_CACHE_KEY = 'spevnik-export.xml';
@@ -310,6 +327,16 @@ function showToast(message, ok=true){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.style.display = "none"; }, 1700);
 }
+
+
+function setSyncStatus(text, kind){
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.remove('sync-ok','sync-warn','sync-err');
+  if (kind) el.classList.add(kind);
+}
+
 
 /* ===== FAB (gear) ===== */
 function closeFabMenu(){
@@ -3153,12 +3180,19 @@ function enableTouchReorder(container, ctx) {
 }
 
 /* Update app (offline blocked) */
+
+// Backwards-compatible alias
+function hardReset(){
+  return hardResetApp();
+}
+
 async function hardResetApp() {
   if (!navigator.onLine){
     showToast("Si offline – aktualizácia nie je dostupná.", false);
     return;
   }
   closeFabMenu();
+  setSyncStatus("Aktualizujem…", "sync-warn");
   if (!confirm("Vymazať pamäť?")) return;
 
   localStorage.clear();
@@ -3166,6 +3200,7 @@ async function hardResetApp() {
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
   } catch (e) {}
+  setSyncStatus("Aktualizované", "sync-ok");
   location.reload(true);
 }
 
@@ -3281,6 +3316,7 @@ document.addEventListener('gesturechange', (e) => {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "sync-warn" : "sync-warn");
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
   if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
