@@ -124,7 +124,7 @@ async function runUpdateNow(){
 
   setSyncStatus("Aktualizujem…", "sync-warn");
 
-  showToast("Aktualizujem...", true);
+  showToast("Aktualizujem...", true, 0);
 
   // fetch meta (aby sme po update vedeli badge schovať)
   try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
@@ -138,13 +138,18 @@ async function runUpdateNow(){
   setSyncStatus("Aktualizované", "sync-ok");
 
   // najstabilnejšie: tvrdý reload UI
-  setTimeout(() => location.reload(), 120);
+  try{ renderAllSongs(); }catch(e){}
+  try{ renderDnesUI(); }catch(e){}
+  try{ renderPlaylistsUI(true); }catch(e){}
+  try{ loadHistoryCacheFirst(true); }catch(e){}
+
+  showToast("Aktualizované", true, 2000);
 }
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v31';
-const APP_CACHE_NAME = 'spevnik-v31';
+const APP_BUILD = 'v38';
+const APP_CACHE_NAME = 'spevnik-v38';
 
 
 const SPEVNIK_XML_CACHE_KEY = 'spevnik-export.xml';
@@ -322,14 +327,17 @@ function confirmDiscardEdits(){
   }
   return true;
 }
-function showToast(message, ok=true){
+function showToast(message, ok=true, durationMs=1700){
   const t = document.getElementById("toast");
   if (!t) return;
   t.style.display = "block";
   t.innerText = message;
   t.style.borderColor = ok ? "#00c853" : "#ff4444";
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.display = "none"; }, 1700);
+  // durationMs <= 0 => sticky (nechaj zobrazené)
+  if (typeof durationMs === 'number' && durationMs > 0){
+    toastTimer = setTimeout(() => { t.style.display = "none"; }, durationMs);
+  }
 }
 
 
@@ -3351,6 +3359,17 @@ document.addEventListener('gesturechange', (e) => {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 🔒 vždy začni so zavretými sekciami (aj keď prehliadač obnovil stav formulárov)
+  try{
+    const search = document.getElementById('search');
+    if (search) search.value = '';
+    document.querySelectorAll('.section-content').forEach(el => { el.style.display = 'none'; });
+    ['dnes','playlists','all','lit','history'].forEach(id => {
+      const ch = document.getElementById(id+'-chevron');
+      if (ch) ch.className = 'fas fa-chevron-down section-chevron';
+    });
+  }catch(e){}
+
   setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "sync-warn" : "sync-warn");
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
@@ -3621,13 +3640,13 @@ async function loadLiturgiaForUI(iso, {force=false}={}){
     } else {
       if (status){
         status.classList.remove('loading');
-        status.textContent = 'Liturgické čítania sa nepodarilo načítať.';
+        status.textContent = (data && data.error) ? ('Liturgické čítania sa nepodarilo načítať: ' + data.error) : 'Liturgické čítania sa nepodarilo načítať.';
       }
     }
   }catch(e){
     if (status){
       status.classList.remove('loading');
-      status.textContent = 'Liturgické čítania sa nepodarilo načítať.';
+      status.textContent = 'Liturgické čítania sa nepodarilo načítať. Skontroluj, či Google Script je publikovaný ako Web app pre „Anyone“ a či je správny link v SCRIPT_URL.';
     }
   }
 }
@@ -3645,11 +3664,13 @@ function initLitCalendarUI(){
   // klik na tlačidlo – pokus o showPicker (Chrome), inak click na input
   btn.addEventListener('click', () => {
     try{
+      // Chrome/Edge: showPicker funguje, ak je input viditeľný v DOM
       if (typeof input.showPicker === 'function') input.showPicker();
-      else input.click();
-    }catch(e){
-      try{ input.click(); }catch(e2){}
-    }
+      // fallback: zameraj a vyvolaj natívny picker (niektoré prehliadače blokujú programmatic click)
+      input.focus();
+      input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+      input.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    }catch(e){}
   });
 
   input.addEventListener('change', () => {
