@@ -831,38 +831,107 @@ body.present #presentControls{ display:flex; }
 #fab-hardreset-btn:hover{
   background: #d13d3d;
 }
-
-
-/* ===== LITURGICKÝ KALENDÁR ===== */
-.lit-box{ padding: 14px 14px 12px; }
-.lit-top{ display:flex; flex-direction:column; gap:10px; }
-.lit-head-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
-.lit-date-line{ font-size:18px; font-weight:800; color:#eaeaea; }
-.lit-feast-line{ font-size:14px; color:#bdbdbd; line-height:1.35; flex:1; min-width:220px; text-align:right; }
-.lit-variant-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.lit-variant-label{ font-size:14px; color:#bdbdbd; }
-.lit-variant-select{ flex:1; min-width:220px; padding:10px 12px; border-radius:10px; border:1px solid #2a2a2a; background:#171717; color:#eaeaea; }
-.lit-btn-row{ display:flex; align-items:center; gap:10px; }
-.lit-date-btn{
-  display:inline-flex; align-items:center; gap:10px;
-  padding:10px 14px; border-radius:12px;
-  border:1px solid #2a2a2a; background:#1b1b1b; color:#eaeaea;
-  cursor:pointer; user-select:none;
+/* --- Liturgický kalendár --- */
+.lit-box{
+  background:#121212;
+  border:1px solid #333;
+  border-radius:12px;
+  padding:12px;
+  margin:10px 12px 14px;
 }
-.lit-date-btn:active{ transform: scale(0.99); }
+.lit-head{ display:flex; flex-direction:column; gap:10px; }
+.lit-header{
+  font-weight:900;
+  color:#9fdcff;
+  letter-spacing:0.4px;
+  line-height:1.25;
+}
+.lit-subheader{
+  color:#cfcfcf;
+  font-size:13px;
+  opacity:0.9;
+}
+.lit-options{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.lit-options-label{ color:#bbb; font-size:13px; }
+.lit-variant{
+  flex:1;
+  min-width:180px;
+  background:#1e1e1e;
+  border:1px solid #333;
+  color:#fff;
+  border-radius:10px;
+  padding:10px 12px;
+}
+.lit-pick-row{ display:flex; }
+.lit-pick-btn{
+  position:relative;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  padding:12px 12px;
+  border-radius:12px;
+}
 .lit-date-input{
   position:absolute;
-  left:-9999px;
-  width:1px; height:1px;
-  opacity:0.01;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0.01; /* iOS needs it "clickable" */
+  border:none;
+  background:transparent;
+  color:transparent;
+  -webkit-appearance:none;
+  appearance:none;
 }
-.lit-content{ margin-top:4px; padding-top:6px; }
-.lit-reading-title{ margin:14px 0 6px; color:#00bfff; font-weight:900; letter-spacing:0.3px; }
-.lit-reading-text{ white-space:pre-wrap; line-height:1.5; color:#eaeaea; font-size:15px; }
-.lit-error{ color:#777; padding:20px 0; text-align:center; }
-
-/* ===== ALELUJA (999) selector ===== */
-.ale-lit-selector{ margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; border:1px solid #2a2a2a; background:#151515; }
-.ale-lit-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.ale-lit-label{ color:#bdbdbd; font-size:14px; display:flex; align-items:center; gap:10px; }
-.ale-lit-variant-select{ flex:1; min-width:220px; padding:10px 12px; border-radius:10px; border:1px solid #2a2a2a; background:#171717; color:#eaeaea; }
+.lit-content{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid #333;
+  border-radius:12px;
+  background:#0f0f0f;
+  color:#fff;
+  white-space:pre-wrap;
+  line-height:1.35;
+  font-size:14px;
+}
+.lit-error{
+  color:#ffb3b3;
+  font-weight:700;
+  text-align:center;
+  padding:8px 0;
+}
+.lit-mini{
+  margin:10px 0 6px;
+  padding:10px 12px;
+  border:1px solid rgba(0,191,255,0.35);
+  background:rgba(0,191,255,0.08);
+  border-radius:12px;
+  color:#dff6ff;
+}
+.lit-mini select{
+  width:100%;
+  margin-top:8px;
+  background:#1e1e1e;
+  border:1px solid #333;
+  color:#fff;
+  border-radius:10px;
+  padding:10px 12px;
+}
+.dnes-lit-block{
+  margin:10px 0;
+  padding:10px 12px;
+  border:1px solid rgba(0,191,255,0.35);
+  background:rgba(0,191,255,0.06);
+  border-radius:12px;
+  white-space:pre-wrap;
+  line-height:1.35;
+}
+.dnes-lit-label{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:0.5px;
+  color:#9fdcff;
+  margin-bottom:6px;
+}
