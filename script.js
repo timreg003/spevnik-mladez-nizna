@@ -3638,14 +3638,24 @@ function litFeastSummary(variants){
 function setLitHeader(iso, variants){
   const left = document.getElementById('lit-head-left');
   const right = document.getElementById('lit-head-right');
+
   if (left){
     const w = weekdaySkFromISO(iso);
     left.textContent = `${dmyFromISO(iso)}${w ? ' ' + w.toLowerCase() : ''}`;
   }
-  // vpravo už nič netreba (dátum je pekne vľavo)
-  if (right) right.textContent = '';
-}
 
+  let title = '';
+  try{
+    if (Array.isArray(variants) && variants.length){
+      const idx = Math.min(getLitChoiceIndex(iso), variants.length-1);
+      const v = variants[idx] || variants[0];
+      title = (v && (v.title || v.label)) ? String(v.title || v.label).trim() : '';
+      if (!title) title = litFeastSummary(variants);
+    }
+  }catch(e){}
+
+  if (right) right.textContent = title || '';
+}
 
 function trimLitTextStart(text){
   const lines = String(text||'').replace(/\r/g,'').split('\n').map(l=>String(l||'').trim());
@@ -3658,137 +3668,193 @@ function trimLitTextStart(text){
   );
   const cut = idx >= 0 ? idx : 0;
   const sliced = lines.slice(cut);
-  // odstráň úplne krátke "šumy" (napr. 'Z', 'A', 'B', 'C' samostatne)
-  const cleaned = [];
-  for (const l of sliced){
-    if (!l) { cleaned.push(''); continue; }
-    if (l.length <= 2 && /^[A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]$/i.test(l)) continue;
-    cleaned.push(l);
-  }
-  // zredukuj veľké medzery
-  return cleaned.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-}
-
-function litTextToCardsHTML(text){
+  // odstráň úplne krátke "šumy" (napr. function litTextToCardsHTML(text){
   const t = trimLitTextStart(text);
   if (!t) return '<div style="opacity:.8;">—</div>';
 
-  const rawLines = t.replace(/\r/g,'').split('\n').map(l=>String(l||''));
-  // prvý neprázdny riadok = názov dňa/slávenia (napr. "4. nedeľa v Cezročnom období")
-  let i = 0;
-  while (i < rawLines.length && !rawLines[i].trim()) i++;
-  const feast = (rawLines[i]||'').trim();
-  i++;
+  const lines = t.replace(/\r/g,'').split('\n').map(l=>String(l||''));
+  const out = [];
 
+  function esc(s){ return escapeHtml(String(s||'')); }
+  function isHeader(line){
+    const l = String(line||'').trim();
+    if (!l) return false;
+    return (/^Čítanie\s+z\b/i.test(l) ||
+            /^Responzóriový\s+žalm\b/i.test(l) ||
+            /^Alelujový\s+verš\b/i.test(l) ||
+            /^Evanjelium\b/i.test(l) ||
+            /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l) ||
+            /^Prvé\s+čítanie\b/i.test(l) ||
+            /^Druhé\s+čítanie\b/i.test(l));
+  }
+  function looksLikeRef(line){
+    const l = String(line||'').trim();
+    if (!l) return false;
+    if (l.length > 80) return false;
+    if (!/\d/.test(l)) return false;
+    return (/^(Ž|Žalm)\s*\d/i.test(l) || /^[0-9]?[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{1,8}\s*\d/.test(l));
+  }
+  function splitBadge(line){
+    const l = String(line||'').trim().replace(/\s+/g,' ');
+    const m = l.match(/^(.*?)(?:\s+)([A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ])$/);
+    if (m && m[1] && m[2] && m[1].length>3) return { txt: m[1].trim(), badge: m[2] };
+    return { txt: l, badge: '' };
+  }
+  function paraHtml(bodyLines){
+    // bodyLines includes possible empty lines (paragraph breaks)
+    const ps = [];
+    let buf = [];
+    function flush(){
+      if (!buf.length) return;
+      const joined = buf.map(x=>String(x||'')).join('\n');
+      // Lines: keep <br>, but highlight response lines starting with "R."
+      const escaped = joined.split('\n').map(ln=>{
+        const s = String(ln||'');
+        const trimmed = s.trim();
+        if (/^\(?\s*ľubovoľná\s+spomienka\s*\)?$/i.test(trimmed)) {
+          return `<span class="lit-muted"><em>${esc(trimmed)}</em></span>`;
+        }
+        if (/^R\s*\./i.test(trimmed)) {
+          return `<span class="lit-response">${esc(s)}</span>`;
+        }
+        return esc(s);
+      }).join('<br>');
+      ps.push(`<p class="lit-p">${escaped}</p>`);
+      buf = [];
+    }
+    for (const ln of bodyLines){
+      if (!String(ln||'').trim()){
+        flush();
+      } else {
+        buf.push(ln);
+      }
+    }
+    flush();
+    return ps.join('');
+  }
+
+  // --- TOP AREA (like on lc.kbs.sk) ---
+  let i = 0;
+  while (i < lines.length && !lines[i].trim()) i++;
+
+  const feastLines = [];
+  const refLines = [];
+  const noteLines = [];
+  for (; i < lines.length; i++){
+    const l = lines[i].trim();
+    if (!l) { if (refLines.length || noteLines.length) break; else continue; }
+    if (isHeader(l)) break;
+
+    // references block
+    if (looksLikeRef(l)){
+      refLines.push(lines[i]);
+      continue;
+    }
+
+    // short notes right under refs (often "Aleluja..." etc.)
+    if (refLines.length && (/^Aleluja\b/i.test(l) || /^R\s*\./i.test(l))){
+      noteLines.push(lines[i]);
+      continue;
+    }
+
+    feastLines.push(lines[i]);
+  }
+
+  out.push('<div class="lit-page">');
+
+  if (feastLines.length){
+    out.push('<div class="lit-top">');
+    // first line = main title (big blue)
+    const main = splitBadge(feastLines[0]);
+    out.push(`<div class="lit-title">${esc(main.txt)}${main.badge ? ` <span class="lit-badge">${esc(main.badge)}</span>` : ''}</div>`);
+    // other lines (often "alebo ...")
+    for (let k=1;k<feastLines.length;k++){
+      const ln = feastLines[k].trim();
+      if (!ln) continue;
+      const sp = splitBadge(ln);
+      const isAlt = /^alebo\b/i.test(sp.txt);
+      out.push(`<div class="lit-subline ${isAlt?'lit-altline':''}">${esc(sp.txt)}${sp.badge ? ` <span class="lit-badge">${esc(sp.badge)}</span>` : ''}</div>`);
+    }
+    // refs
+    if (refLines.length){
+      out.push('<div class="lit-refs">');
+      for (const r of refLines){
+        out.push(`<div class="lit-ref-item"><i class="fas fa-check-square"></i><span>${esc(r.trim())}</span></div>`);
+      }
+      if (noteLines.length){
+        out.push('<div class="lit-top-notes">');
+        out.push(noteLines.map(x=>`<div class="lit-note">${esc(String(x).trim())}</div>`).join(''));
+        out.push('</div>');
+      }
+      out.push('</div>');
+    }
+    out.push('</div>'); // lit-top
+  }
+
+  // --- SECTIONS ---
   const sections = [];
   let cur = null;
 
   function pushCur(){
     if (!cur) return;
-    const body = cur.body.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-    if (cur.title || cur.sub || body){
-      sections.push({ title: cur.title, sub: cur.sub, body });
-    }
+    sections.push(cur);
     cur = null;
   }
-  function start(title){
+  function startSection(titleLine){
     pushCur();
-    cur = { title: title||'', sub:'', body:[] };
+    cur = { title: String(titleLine||'').trim(), ref:'', body:[] };
   }
 
-  function looksLikeRef(line){
-    const l = line.trim();
-    if (!l) return false;
-    // typicky "Sof 2, 3; 3, 12-13" alebo "Ž 146, 6c-7..."
-    if (l.length > 70) return false;
-    if (!/\d/.test(l)) return false;
-    return (/^[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽŽ]{1,8}\s*\d/.test(l) || /^Ž\s*\d/.test(l));
-  }
+  // if we're already at a header, start there; otherwise skip to next header
+  while (i < lines.length && !isHeader(lines[i])) i++;
 
-  function headerType(line){
-    const l = line.trim();
-    if (!l) return '';
-    if (/^Responzóriový\s+žalm\b/i.test(l) || /^Žalm\b/i.test(l)) return 'Žalm';
-    if (/^Alelujový\s+verš\b/i.test(l)) return 'Alelujový verš';
-    if (/^Druhé\s+čítanie\b/i.test(l)) return 'Druhé čítanie';
-    if (/^Prvé\s+čítanie\b/i.test(l)) return 'Prvé čítanie';
-    if (/^Evanjelium\b/i.test(l) || /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l)) return 'Evanjelium';
-    if (/^Čítanie\s+z\b/i.test(l)) return l; // chceme presný nadpis "Čítanie z ..."
-    return '';
-  }
+  for (; i < lines.length; i++){
+    const raw = lines[i];
+    const trimmed = String(raw||'').trim();
 
-  // default: začni prvým čítaním, ak ho nájdeme
-  start('Prvé čítanie');
-
-  for (; i < rawLines.length; i++){
-    const raw = rawLines[i];
-    const l = raw.trim();
-
-    if (!l){
-      if (cur) cur.body.push('');
+    if (isHeader(trimmed)){
+      startSection(trimmed);
       continue;
     }
 
-    // implicitné začiatky blokov podľa referencií
-    if (/^Ž\s*\d/.test(l) && cur && cur.title !== 'Žalm'){
-      start('Žalm');
-      // tento riadok je sub (referencia)
-      cur.sub = l;
+    if (!cur){
+      // ignore leading noise until first header
+      if (!trimmed) continue;
+      // sometimes first section heading is missing - treat as first reading
+      startSection('Prvé čítanie');
+    }
+
+    // first ref line inside section
+    if (!cur.ref && looksLikeRef(trimmed)){
+      cur.ref = trimmed;
       continue;
     }
 
-    if (/^Aleluja\b/i.test(l) && cur && cur.title !== 'Alelujový verš' && cur.title !== 'Evanjelium'){
-      start('Alelujový verš');
-      // ak je riadok len "Aleluja, aleluja, aleluja.", nech ho nedávame
-      if (!/^Aleluja[\s,!.]*$/i.test(l)) cur.body.push(raw);
-      continue;
-    }
-
-    // explicitné hlavičky blokov
-    const ht = headerType(l);
-    if (ht){
-      // pri "Čítanie z ..." chceme title = celý riadok
-      if (ht === 'Žalm' || ht === 'Alelujový verš' || ht === 'Druhé čítanie' || ht === 'Prvé čítanie' || ht === 'Evanjelium'){
-        start(ht);
-      } else {
-        // ht je plný text "Čítanie z ..."
-        // ak už máme niečo v prvom čítaní, ďalšie "Čítanie z" bude druhé čítanie (typicky)
-        if (cur && (cur.title === 'Prvé čítanie' || /^Čítanie\s+z\b/i.test(cur.title))){
-          start('Druhé čítanie');
-        } else {
-          start('Prvé čítanie');
-        }
-        // zároveň si tento riadok uložíme ako "nadpis čítania z..."
-        cur.title = l;
-      }
-      continue;
-    }
-
-    // subref (prvý krát v sekcii)
-    if (cur && !cur.sub && looksLikeRef(l)){
-      cur.sub = l;
-      continue;
-    }
-
-    if (!cur) start('');
     cur.body.push(raw);
   }
   pushCur();
 
-  // Vyskladaj HTML
-  const out = ['<div class="lit-cards">'];
-
-  if (feast){
-    out.push('<div class="lit-block lit-feast">');
-    out.push('<div class="lit-h">'+escapeHtml(feast)+'</div>');
+  if (sections.length){
+    out.push('<div class="lit-sections">');
+    for (const s of sections){
+      const head = splitBadge(s.title);
+      out.push('<div class="lit-section">');
+      out.push('<div class="lit-section-head">');
+      out.push(`<div class="lit-section-title">${esc(head.txt)}${head.badge ? ` <span class="lit-badge">${esc(head.badge)}</span>` : ''}</div>`);
+      out.push(`<div class="lit-section-ref">${s.ref ? esc(s.ref) : ''}</div>`);
+      out.push('</div>');
+      out.push('<div class="lit-section-body">');
+      out.push(paraHtml(s.body));
+      out.push('</div>');
+      out.push('</div>');
+    }
     out.push('</div>');
   }
 
-  for (const s of sections){
-    // preskoč úplne prázdne
-    if (!s.title && !s.sub && !s.body) continue;
-
-    out.push('<div class="lit-block">');
+  out.push('</div>'); // lit-page
+  return out.join('');
+}
+ss="lit-block">');
     if (s.title) out.push('<div class="lit-h">'+escapeHtml(s.title)+'</div>');
     if (s.sub) out.push('<div class="lit-sub">'+escapeHtml(s.sub)+'</div>');
     if (s.body) out.push('<pre>'+escapeHtml(s.body)+'</pre>');
