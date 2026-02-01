@@ -15,7 +15,7 @@
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=29"/>
+  <link rel="stylesheet" href="style.css?v=35"/>
 </head>
 
 <body>
@@ -116,38 +116,31 @@
     </div>
     <div id="all-section-wrapper" class="section-content" style="display:none;">
       <div id="piesne-list" class="list-box"><div class="loading">Načítavam...</div></div>
-  </div>
-
-
-    <!-- LITURGICKÝ KALENDÁR -->
-    <div class="section-header" onclick="toggleSection('lit'); onLitSectionOpened()">
+      <!-- LITURGICKÝ KALENDÁR -->
+    <div class="section-header" onclick="toggleSection('liturgia')">
       <h2 class="playlist-header-title">LITURGICKÝ KALENDÁR</h2>
-      <i id="lit-chevron" class="fas fa-chevron-down section-chevron"></i>
+      <i class="fas fa-chevron-down section-chevron" id="liturgia-chevron"></i>
     </div>
-    <div id="lit-section-wrapper" class="section-content" style="display:none;">
-      <div id="lit-section" class="list-box lit-box">
-        <div class="lit-top">
-          <div class="lit-head-row">
-            <div id="lit-date-line" class="lit-date-line">—</div>
-            <div id="lit-feast-line" class="lit-feast-line"></div>
+    <div id="liturgia-section-wrapper" class="section-content" style="display:none;">
+      <div class="lit-box">
+        <div class="lit-head">
+          <div id="lit-header" class="lit-header">—</div>
+          <div class="lit-options" id="lit-options" style="display:none;">
+            <div class="lit-options-label">Možnosť:</div>
+            <select id="lit-variant" class="lit-variant" onchange="onLitVariantChange()"></select>
           </div>
-
-          <div id="lit-variant-row" class="lit-variant-row" style="display:none;">
-            <label class="lit-variant-label">Možnosť:</label>
-            <select id="lit-variant-select" class="lit-variant-select" onchange="onLitVariantChange()"></select>
-          </div>
-
-          <div class="lit-btn-row">
-            <label for="lit-date-input" class="lit-date-btn"><i class="fas fa-calendar-alt"></i> Vybrať deň</label>
-            <input id="lit-date-input" class="lit-date-input" type="date" onchange="onLitDatePicked(this.value)" />
+          <div class="lit-pick-row">
+            <button type="button" class="btn-neutral lit-pick-btn">
+              <i class="fas fa-calendar-alt"></i> Vybrať deň
+              <input id="lit-date" class="lit-date-input" type="date" />
+            </button>
           </div>
         </div>
-
-        <div id="lit-content" class="lit-content">
-          <div class="loading">Načítavam...</div>
-        </div>
+        <div id="lit-content" class="lit-content"><div class="loading">Načítavam...</div></div>
       </div>
     </div>
+
+</div>
 
     <!-- HISTORY (public) -->
     <div class="section-header" onclick="toggleSection('history')">
@@ -165,13 +158,6 @@
   <!-- SONG DETAIL -->
   <div id="song-detail" style="display:none;">
     <h2 id="render-title"></h2>
-    <div id="ale-lit-selector" class="ale-lit-selector" style="display:none;">
-      <div class="ale-lit-row">
-        <span class="ale-lit-label"><i class="fas fa-book-bible"></i> Žalm / Alelujový verš:</span>
-        <select id="ale-lit-variant-select" class="ale-lit-variant-select" onchange="onAleLitVariantChange()"></select>
-      </div>
-    </div>
-
     <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
 
     <div class="controls">
@@ -286,7 +272,7 @@
   <button id="psExit" onclick="exitPresentationMode()" aria-label="Ukončiť"><i class="fas fa-xmark"></i></button>
 </div>
 
-<script src="script.js?v=31"></script>
+<script src="script.js?v=35"></script>
 
   <!-- FORM EDITOR MODAL -->
   <div id="form-modal" class="modal-overlay" style="display:none;">
