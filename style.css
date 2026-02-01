@@ -929,107 +929,6 @@ body.present #presentControls{ display:flex; }
 
 
 
-
-/* ===== Liturgia – vzhľad podobný lc.kbs.sk, ale zladený s appkou ===== */
-.lit-content{ white-space: normal; }
-
-.lit-page{ display:block; }
-.lit-top{ margin: 6px 0 14px 0; }
-
-.lit-title{
-  font-size: 22px;
-  font-weight: 700;
-  color: #00bfff;
-  line-height: 1.2;
-  margin: 4px 0 6px 0;
-}
-
-.lit-subline{
-  color: rgba(255,255,255,0.92);
-  line-height: 1.25;
-  margin: 2px 0;
-}
-.lit-altline{
-  color: rgba(180,190,200,0.95);
-  font-style: italic;
-}
-
-.lit-badge{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  background: rgba(0,191,255,0.22);
-  color: #fff;
-  vertical-align: middle;
-}
-
-.lit-refs{
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-left: 3px solid #00bfff;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.12);
-}
-.lit-ref-item{
-  display:flex;
-  gap: 10px;
-  align-items:flex-start;
-  color: rgba(255,255,255,0.95);
-  line-height: 1.25;
-  margin: 6px 0;
-}
-.lit-ref-item i{
-  color: #00bfff;
-  margin-top: 2px;
-}
-.lit-top-notes{ margin-top: 8px; }
-.lit-note{ color: rgba(200,210,220,0.95); margin: 3px 0; }
-
-.lit-sections{ display:block; }
-.lit-section{
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.14);
-}
-.lit-section-head{
-  display:flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.lit-section-title{
-  color: #00bfff;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1.2;
-}
-.lit-section-ref{
-  color: rgba(170,180,190,0.9);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.lit-section-body{
-  color: rgba(255,255,255,0.96);
-  line-height: 1.55;
-  font-size: 15px;
-}
-.lit-section-body strong{
-  color: #00bfff;
-}
-.lit-p{ margin: 0 0 10px 0; }
-.lit-response{
-  color: #00bfff;
-  font-weight: 700;
-}
-.lit-muted{ color: rgba(170,180,190,0.9); }
-
 /* ===== Liturgia – pekné "chlieviky" ===== */
 .lit-content{ white-space: normal; }
 .lit-cards{ display:flex; flex-direction:column; gap:10px; }
@@ -1084,3 +983,14 @@ body.present #presentControls{ display:flex; }
   font-family: inherit;
   font-size: 15px;
 }
+
+
+/* --- Liturgický kalendár: farby a typografia v štýle Spevníka --- */
+#section-lit .lit-h { color: var(--accent); font-weight: 700; font-size: 18px; }
+#section-lit .lit-feast .lit-h { font-size: 22px; }
+#section-lit .lit-sub { color: rgba(255,255,255,0.70); font-size: 14px; margin-top: 2px; }
+#section-lit .lit-body { white-space: pre-wrap; font-family: inherit; font-size: 15px; line-height: 1.5; color: #fff; }
+#section-lit b, #section-lit strong { color: var(--accent); font-weight: 700; }
+#section-lit .lit-guidelines { margin-top: 10px; margin-bottom: 6px; color: rgba(255,255,255,0.9); }
+#section-lit .lit-guidelines .g { margin: 2px 0; }
+#section-lit .lit-guidelines .g.gray { color: rgba(255,255,255,0.55); }
