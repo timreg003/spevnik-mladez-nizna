@@ -831,107 +831,85 @@ body.present #presentControls{ display:flex; }
 #fab-hardreset-btn:hover{
   background: #d13d3d;
 }
+
+
+
 /* --- Liturgický kalendár --- */
-.lit-box{
-  background:#121212;
-  border:1px solid #333;
-  border-radius:12px;
-  padding:12px;
-  margin:10px 12px 14px;
+.lit-card{
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 10px 0;
 }
-.lit-head{ display:flex; flex-direction:column; gap:10px; }
 .lit-header{
-  font-weight:900;
-  color:#9fdcff;
-  letter-spacing:0.4px;
-  line-height:1.25;
-}
-.lit-subheader{
-  color:#cfcfcf;
-  font-size:13px;
-  opacity:0.9;
-}
-.lit-options{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.lit-options-label{ color:#bbb; font-size:13px; }
-.lit-variant{
-  flex:1;
-  min-width:180px;
-  background:#1e1e1e;
-  border:1px solid #333;
-  color:#fff;
-  border-radius:10px;
-  padding:10px 12px;
-}
-.lit-pick-row{ display:flex; }
-.lit-pick-btn{
-  position:relative;
-  width:100%;
   display:flex;
-  align-items:center;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.lit-head-left{
+  font-weight:700;
+  color:#64d6ff;
+  font-size:18px;
+}
+.lit-head-right{
+  font-weight:600;
+  color:#d8d8d8;
+  font-size:14px;
+  text-align:right;
+}
+.lit-picker{
+  position:relative;
+  margin: 8px 0 10px 0;
+}
+#lit-date-btn{
+  width:100%;
   justify-content:flex-start;
   gap:10px;
-  padding:12px 12px;
-  border-radius:12px;
 }
-.lit-date-input{
+#lit-date-input{
   position:absolute;
-  inset:0;
+  left:0; top:0;
   width:100%;
   height:100%;
-  opacity:0.01; /* iOS needs it "clickable" */
+  opacity:0;
+  cursor:pointer;
   border:none;
-  background:transparent;
-  color:transparent;
-  -webkit-appearance:none;
-  appearance:none;
+}
+.lit-variant-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin: 6px 0 10px 0;
+}
+#lit-variant-select{
+  flex:1;
+  padding:10px 12px;
+  border-radius:12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color:#fff;
+}
+.lit-status{
+  margin-top:10px;
 }
 .lit-content{
   margin-top:10px;
-  padding:12px;
-  border:1px solid #333;
-  border-radius:12px;
-  background:#0f0f0f;
-  color:#fff;
   white-space:pre-wrap;
-  line-height:1.35;
+  line-height:1.5;
+  color:#eaeaea;
   font-size:14px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
 }
-.lit-error{
-  color:#ffb3b3;
-  font-weight:700;
-  text-align:center;
-  padding:8px 0;
-}
-.lit-mini{
-  margin:10px 0 6px;
-  padding:10px 12px;
-  border:1px solid rgba(0,191,255,0.35);
-  background:rgba(0,191,255,0.08);
-  border-radius:12px;
-  color:#dff6ff;
-}
-.lit-mini select{
-  width:100%;
-  margin-top:8px;
-  background:#1e1e1e;
-  border:1px solid #333;
-  color:#fff;
-  border-radius:10px;
-  padding:10px 12px;
-}
-.dnes-lit-block{
-  margin:10px 0;
-  padding:10px 12px;
-  border:1px solid rgba(0,191,255,0.35);
-  background:rgba(0,191,255,0.06);
-  border-radius:12px;
-  white-space:pre-wrap;
-  line-height:1.35;
-}
-.dnes-lit-label{
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:0.5px;
-  color:#9fdcff;
-  margin-bottom:6px;
+.aleluja-controls{
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
 }
