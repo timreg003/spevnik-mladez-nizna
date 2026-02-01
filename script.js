@@ -3366,6 +3366,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }catch(e){}
 
+  // vždy začni na domovskej obrazovke (zoznam)
+  try{ closeSong(); }catch(e){}
+
   setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "sync-warn" : "sync-warn");
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
@@ -3753,11 +3756,7 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
     out.push(av);
   }
 
-  return out.join('
-').replace(/
-{3,}/g,'
-
-').trim();
+  return out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 
 
