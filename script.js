@@ -575,7 +575,6 @@ function toggleSection(section, expand = null) {
   }
 }
 
-}
 
 /* ===== HOME UI ===== */
 function goHomeUI() {
@@ -2646,8 +2645,7 @@ function addSpecialStep(kind){
     if (presets.length === 1){
       preset = presets[0];
     } else if (presets.length > 1){
-      const opts = presets.map((v,i)=>`${i+1}) ${v}`).join('
-');
+      const opts = presets.map((v,i)=>`${i+1}) ${v}`).join('\n');
       const ans = prompt(`${kindSk} – našiel som viac možností.
 
 ${opts}
