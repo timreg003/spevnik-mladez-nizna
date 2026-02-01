@@ -1,4 +1,43 @@
-/* ✅ ANTI PULL-TO-REFRESH (Android)
+/*
+function extractSpecialPresetsFromSongText(songText, kindSk){
+  const text = String(songText||"");
+  const out = [];
+  const kind = String(kindSk||"").trim();
+  if (!kind) return out;
+
+  // normalize: accept "Predohra:" or "[Predohra]" or "[Predohra: ...]"
+  const lines = text.split(/\r?\n/);
+  const kindRe = new RegExp('^\s*(\['+escapeRegExp(kind)+'\]|'+escapeRegExp(kind)+')\s*(?::\s*)?(.*)$', 'i');
+
+  for (let i=0;i<lines.length;i++){
+    const ln = String(lines[i]||"").trim();
+    const m = ln.match(kindRe);
+    if (!m) continue;
+    let rest = (m[2]||"").trim();
+    // If it's like "[Predohra: [G] [D]]" the rest might still have trailing ']'
+    rest = rest.replace(/^\s*\[?/,'').replace(/\]\s*$/,'').trim();
+    if (rest) out.push(rest);
+  }
+
+  // Also allow inline tags anywhere: e.g. "... [Predohra: ...] ..."
+  const inlineRe = new RegExp('\[\s*'+escapeRegExp(kind)+'\s*:?\s*([^\]]+)\]', 'gi');
+  let mm;
+  while ((mm = inlineRe.exec(text)) !== null){
+    const v = String(mm[1]||"").trim();
+    if (v) out.push(v);
+  }
+
+  // unique
+  const seen = {};
+  return out.filter(v => {
+    const k = v.trim();
+    if (!k) return false;
+    if (seen[k]) return false;
+    seen[k]=true;
+    return true;
+  });
+}
+ ✅ ANTI PULL-TO-REFRESH (Android)
    Zablokuje refresh pri ťahu dole, keď je stránka úplne hore.
    Nezabíja scroll v listoch (editor-list, list-box, song-content).
 */
@@ -526,313 +565,16 @@ function toggleSection(section, expand = null) {
   const show = expand !== null ? expand : (content.style.display === 'none');
   content.style.display = show ? 'block' : 'none';
   chevron.className = show ? 'fas fa-chevron-up section-chevron' : 'fas fa-chevron-down section-chevron';
-}
 
-
-/* ===== LITURGICKÝ KALENDÁR + ALELUJA 999 (ŽALM/VERŠ) ===== */
-
-let litInitDone = false;
-let litCurrentDateIso = null;
-let litCurrentData = null;
-let lit999Context = null; // {dateIso, data, idx, psalmText, alleluiaVerse}
-
-function todayIso(){
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const dd = String(d.getDate()).padStart(2,'0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function parseFolderDateToIso(title){
-  const t = String(title||'');
-  const m = t.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?/);
-  if (!m) return null;
-  const d = Number(m[1]), mo = Number(m[2]);
-  if (!(d>=1 && d<=31 && mo>=1 && mo<=12)) return null;
-  const y = m[3] ? Number(m[3]) : (new Date()).getFullYear();
-  const yyyy = String(y).padStart(4,'0');
-  const mm = String(mo).padStart(2,'0');
-  const dd = String(d).padStart(2,'0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function getDnesDateIsoFromTitle(){
-  const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || '');
-  return parseFolderDateToIso(payload.title || '') || todayIso();
-}
-
-function formatDateLineSk(iso){
-  try{
-    const [y,m,d] = iso.split('-').map(Number);
-    const dt = new Date(y, (m||1)-1, d||1);
-    const days = ['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
-    const dow = days[dt.getDay()] || '';
-    return `${d}.${m}.${y} (${dow})`;
-  }catch(e){
-    return iso;
+  if (show && section === 'liturgia') {
+    try {
+      initLiturgiaUI();
+      const inp = document.getElementById('lit-date');
+      if (inp) inp.dispatchEvent(new Event('change'));
+    } catch(e){}
   }
 }
 
-function litCacheKey(dateIso){ return `lit_cache_${dateIso}`; }
-function litChoiceKey(dateIso){ return `lit_choice_${dateIso}`; }
-
-function getLitChoiceIndex(dateIso){
-  const v = localStorage.getItem(litChoiceKey(dateIso));
-  const n = Number(v);
-  return Number.isFinite(n) && n>=0 ? n : 0;
-}
-function setLitChoiceIndex(dateIso, idx){
-  try{ localStorage.setItem(litChoiceKey(dateIso), String(idx)); }catch(e){}
-}
-
-function readLitCache(dateIso){
-  try{
-    const raw = localStorage.getItem(litCacheKey(dateIso));
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object') return null;
-    return obj;
-  }catch(e){ return null; }
-}
-function writeLitCache(dateIso, obj){
-  try{
-    const toSave = Object.assign({}, obj, { _savedAt: Date.now() });
-    localStorage.setItem(litCacheKey(dateIso), JSON.stringify(toSave));
-  }catch(e){}
-}
-
-function normalizeLitData(dateIso, data){
-  const out = {
-    dateIso,
-    title: (data && data.title) ? String(data.title) : '',
-    text: (data && data.text) ? String(data.text) : '',
-    variants: []
-  };
-
-  if (data && Array.isArray(data.variants) && data.variants.length){
-    out.variants = data.variants.map(v => ({
-      label: String(v.label || '').trim() || 'Féria',
-      title: String(v.title || '').trim(),
-      psalmText: String(v.psalmText || '').trim(),
-      alleluiaVerse: String(v.alleluiaVerse || '').trim()
-    }));
-  } else {
-    out.variants = [{
-      label: 'Féria',
-      title: out.title,
-      psalmText: String((data && data.psalmText) || '').trim(),
-      alleluiaVerse: String((data && data.alleluiaVerse) || '').trim()
-    }];
-  }
-
-  // header: keď nemáme title, skús z variantov
-  if (!out.title){
-    out.title = out.variants.map(v => v.title).filter(Boolean)[0] || '';
-  }
-  return out;
-}
-
-const litInFlight = new Map(); // dateIso -> Promise<{data,changed}>
-
-async function ensureLiturgiaForDate(dateIso, opts = {}){
-  const preferCacheOnly = !!opts.cacheOnly;
-
-  const cached = readLitCache(dateIso);
-  if (preferCacheOnly){
-    return { data: cached, changed: false };
-  }
-
-  // offline: vráť cache (ak je)
-  if (!navigator.onLine){
-    return { data: cached, changed: false };
-  }
-
-  if (litInFlight.has(dateIso)) return litInFlight.get(dateIso);
-
-  const p = (async()=>{
-    try{
-      const resp = await jsonpRequest(`${SCRIPT_URL}?action=liturgia&den=${encodeURIComponent(dateIso)}`);
-      if (!resp || resp.ok === false) throw new Error(resp && resp.error ? resp.error : 'lit-fail');
-      const norm = normalizeLitData(dateIso, resp);
-      const prevRaw = cached ? JSON.stringify(cached) : '';
-      const nextRaw = JSON.stringify(norm);
-      const changed = prevRaw !== nextRaw;
-      writeLitCache(dateIso, norm);
-      return { data: norm, changed };
-    }catch(e){
-      return { data: cached, changed: false };
-    } finally {
-      litInFlight.delete(dateIso);
-    }
-  })();
-
-  litInFlight.set(dateIso, p);
-  return p;
-}
-
-function setLitUiLoading(){
-  const box = document.getElementById('lit-content');
-  if (box) box.innerHTML = '<div class="loading">Načítavam...</div>';
-}
-
-function renderLiturgiaUi(dateIso, data){
-  litCurrentDateIso = dateIso;
-  litCurrentData = data || null;
-
-  const dateLine = document.getElementById('lit-date-line');
-  if (dateLine) dateLine.textContent = formatDateLineSk(dateIso);
-
-  const feastLine = document.getElementById('lit-feast-line');
-  const variantRow = document.getElementById('lit-variant-row');
-  const variantSel = document.getElementById('lit-variant-select');
-
-  if (!data){
-    if (feastLine) feastLine.textContent = '';
-    if (variantRow) variantRow.style.display = 'none';
-    const box = document.getElementById('lit-content');
-    if (box) box.innerHTML = '<div class="lit-error">Liturgické čítania sa nepodarilo načítať.</div>';
-    return;
-  }
-
-  const labels = Array.from(new Set((data.variants||[]).map(v => v.label).filter(Boolean)));
-  if (feastLine) feastLine.textContent = labels.length ? labels.join(' / ') : (data.title || '');
-
-  const variants = data.variants || [];
-  const showVariants = variants.length > 1;
-
-  if (variantRow) variantRow.style.display = showVariants ? 'flex' : 'none';
-  if (variantSel){
-    if (showVariants){
-      variantSel.innerHTML = variants.map((v,i)=>`<option value="${i}">${escapeHtml(v.label)}</option>`).join('');
-      const idx = Math.min(getLitChoiceIndex(dateIso), variants.length-1);
-      variantSel.value = String(idx);
-    } else {
-      variantSel.innerHTML = '';
-    }
-  }
-
-  const idx = Math.min(getLitChoiceIndex(dateIso), Math.max(0, variants.length-1));
-  const chosen = variants[idx] || variants[0] || { psalmText:'', alleluiaVerse:'' };
-
-  const parts = [];
-  parts.push(`<div class="lit-reading-title">ŽALM</div>`);
-  parts.push(`<div class="lit-reading-text">${escapeHtml(chosen.psalmText || '(Žalm sa nepodarilo načítať.)')}</div>`);
-  parts.push(`<div class="lit-reading-title">ALELUJOVÝ VERŠ</div>`);
-  parts.push(`<div class="lit-reading-text">${escapeHtml(chosen.alleluiaVerse || '(Alelujový verš sa nepodarilo načítať.)')}</div>`);
-
-  if (data.text){
-    parts.push(`<div class="lit-reading-title">ČÍTANIA (plný text)</div>`);
-    parts.push(`<div class="lit-reading-text">${escapeHtml(data.text)}</div>`);
-  }
-
-  const box = document.getElementById('lit-content');
-  if (box) box.innerHTML = parts.join('');
-}
-
-function onLitSectionOpened(){
-  // volá sa z onclick headeru
-  const wrapper = document.getElementById('lit-section-wrapper');
-  if (!wrapper || wrapper.style.display !== 'block') return;
-
-  const input = document.getElementById('lit-date-input');
-  const iso = (input && input.value) ? String(input.value) : todayIso();
-  if (input && !input.value) input.value = iso;
-
-  // default: ukáž hneď cache (ak existuje), potom skús sieť
-  setLitUiLoading();
-  const cached = readLitCache(iso);
-  renderLiturgiaUi(iso, cached);
-
-  ensureLiturgiaForDate(iso).then(({data})=>{
-    renderLiturgiaUi(iso, data);
-  });
-
-  litInitDone = true;
-}
-
-function onLitDatePicked(iso){
-  const dateIso = String(iso||'').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) return;
-  setLitUiLoading();
-  const cached = readLitCache(dateIso);
-  renderLiturgiaUi(dateIso, cached);
-  ensureLiturgiaForDate(dateIso).then(({data})=>{
-    renderLiturgiaUi(dateIso, data);
-  });
-}
-
-function onLitVariantChange(){
-  const dateIso = litCurrentDateIso || todayIso();
-  const sel = document.getElementById('lit-variant-select');
-  if (!sel) return;
-  const idx = Number(sel.value);
-  if (!Number.isFinite(idx) || idx < 0) return;
-  setLitChoiceIndex(dateIso, idx);
-  // rerender z pamäte
-  const cached = readLitCache(dateIso);
-  renderLiturgiaUi(dateIso, cached);
-}
-
-/* ===== ALELUJA 999 integrácia ===== */
-
-function injectLitTokensInto999Order(orderStr){
-  const s = String(orderStr||'').trim();
-  if (!s) return s;
-  // nezdupľovať
-  const already = s.toUpperCase().includes('ZALM') || s.toUpperCase().includes('AVER');
-  if (already) return s;
-  return `ZALM,${s},AVER`;
-}
-
-function hideAleLitSelectorUI(){
-  const wrap = document.getElementById('ale-lit-selector');
-  if (wrap) wrap.style.display = 'none';
-}
-function updateAleLitSelectorUI(dateIso){
-  const wrap = document.getElementById('ale-lit-selector');
-  const sel = document.getElementById('ale-lit-variant-select');
-  if (!wrap || !sel) return;
-
-  const cached = readLitCache(dateIso);
-  const data = cached ? cached : (lit999Context && lit999Context.dateIso === dateIso ? lit999Context.data : null);
-  if (!data || !data.variants || data.variants.length <= 1){
-    wrap.style.display = 'none';
-    return;
-  }
-
-  sel.innerHTML = data.variants.map((v,i)=>`<option value="${i}">${escapeHtml(v.label)}</option>`).join('');
-  const idx = Math.min(getLitChoiceIndex(dateIso), data.variants.length-1);
-  sel.value = String(idx);
-  wrap.style.display = 'block';
-}
-
-function onAleLitVariantChange(){
-  if (!lit999Context || !lit999Context.dateIso) return;
-  const sel = document.getElementById('ale-lit-variant-select');
-  if (!sel) return;
-  const idx = Number(sel.value);
-  if (!Number.isFinite(idx) || idx < 0) return;
-  setLitChoiceIndex(lit999Context.dateIso, idx);
-  prepareLit999Context(lit999Context.dateIso);
-  renderSong();
-}
-
-function prepareLit999Context(dateIso){
-  const cached = readLitCache(dateIso);
-  if (!cached){
-    lit999Context = { dateIso, data:null, idx:0, psalmText:'', alleluiaVerse:'' };
-    return;
-  }
-  const idx = Math.min(getLitChoiceIndex(dateIso), Math.max(0, (cached.variants||[]).length-1));
-  const chosen = (cached.variants||[])[idx] || (cached.variants||[])[0] || { psalmText:'', alleluiaVerse:'' };
-  lit999Context = {
-    dateIso,
-    data: cached,
-    idx,
-    psalmText: String(chosen.psalmText || '').trim(),
-    alleluiaVerse: String(chosen.alleluiaVerse || '').trim()
-  };
 }
 
 /* ===== HOME UI ===== */
@@ -1211,29 +953,6 @@ function buildOrderedSongText(song, orderStr){
     const markerRe = /^(\d+\.|R\d*:|B\d*:)$/
     for (const tokRaw of tokens){
       const tok = normalizeOrderToken(tokRaw);
-
-      // Auto bloky pre Aleluja 999 (Žalm pred + Alelujový verš po)
-      if (tok === 'ZALM'){
-        out.push('ŽALM:');
-        const ps = (lit999Context && lit999Context.psalmText) ? lit999Context.psalmText : '';
-        if (ps){
-          out.push(...String(ps).split(/\r?\n/));
-        } else {
-          out.push('(Žalm sa nepodarilo načítať.)');
-        }
-        out.push(''); // medzera medzi blokmi
-        continue;
-      }
-      if (tok === 'AVER'){
-        out.push('ALELUJOVÝ VERŠ:');
-        const av = (lit999Context && lit999Context.alleluiaVerse) ? lit999Context.alleluiaVerse : '';
-        if (av){
-          out.push(...String(av).split(/\r?\n/));
-        } else {
-          out.push('(Alelujový verš sa nepodarilo načítať.)');
-        }
-        continue;
-      }
 
       const m = tok.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\((.*)\))?$/i);
       if (m){
@@ -2040,43 +1759,11 @@ function applyChordTemplateOverlay(text){
 
 function renderSong() {
   if (!currentSong) return;
-
-  let orderStr = currentDnesOrder;
-
-  const is999 = String(currentSong.originalId||"").replace(/^0+/,'') === '999';
-  const is999InDnes = (is999 && currentListSource === 'dnes' && orderStr && !dnesShowOriginal);
-
-  if (is999InDnes){
-    const dateIso = getDnesDateIsoFromTitle();
-    prepareLit999Context(dateIso);
-    orderStr = injectLitTokensInto999Order(orderStr);
-
-    // selector (ak je viac možností)
-    updateAleLitSelectorUI(dateIso);
-
-    // v pozadí obnov z webu (ak sme online). rerender len keď sa niečo zmenilo.
-    ensureLiturgiaForDate(dateIso).then(({changed})=>{
-      if (!changed) return;
-      // stále musíme byť na tej istej piesni a v DNES režime
-      if (!currentSong) return;
-      const still999 = String(currentSong.originalId||"").replace(/^0+/,'') === '999';
-      if (!still999) return;
-      if (!(currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal)) return;
-
-      prepareLit999Context(dateIso);
-      updateAleLitSelectorUI(dateIso);
-      // bezpečne prekresli
-      setTimeout(() => { try { renderSong(); } catch(e) {} }, 0);
-    }).catch(()=>{});
-  } else {
-    hideAleLitSelectorUI();
-    lit999Context = null;
-  }
-
-  let text = (currentListSource === 'dnes' && orderStr && !dnesShowOriginal)
-    ? buildOrderedSongText(currentSong, orderStr)
+  let text = (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal)
+    ? buildOrderedSongText(currentSong, currentDnesOrder)
     : currentSong.origText;
 
+  const is999 = String(currentSong.originalId||"").replace(/^0+/,'') === '999';
 
   try {
   if (!is999){
@@ -2393,10 +2080,58 @@ function loadDnesCacheFirst(showEmptyAllowed) {
     return;
   }
 
+    const iso = parseISOFromDnesTitle(payload.title);
+  const lit = iso ? loadLitFromCache(iso) : null;
+
+  // Ak nemáme cache a sme online, skús to dotiahnuť na pozadí (aby žalm/verš naskočil aj bez refreshu)
+  if (iso && navigator.onLine && !lit && !window.__litFetchInFlight){
+    window.__litFetchInFlight = true;
+    fetchLiturgia(iso).then(fresh => {
+      saveLitToCache(iso, fresh);
+      window.__litFetchInFlight = false;
+      // pre-render so blocks appear
+      loadDnesCacheFirst(true);
+    }).catch(_ => { window.__litFetchInFlight = false; });
+  }
+
+  function buildLitChoiceSelect(){
+    if (!iso || !lit || !lit.variants || lit.variants.length <= 1) return '';
+    const picked = pickLitVariant(lit);
+    const options = lit.variants.map(v => {
+      const sel = (picked && v.label === picked.label) ? ' selected' : '';
+      return `<option value="${escapeHtml(v.label)}"${sel}>${escapeHtml(v.label)}</option>`;
+    }).join('');
+    return `
+      <div class="lit-mini">
+        <div class="dnes-lit-label">Žalm / Alelujový verš:</div>
+        <select onchange="setLitChoice('${escapeHtml(iso)}', this.value); loadDnesCacheFirst(true);">${options}</select>
+      </div>
+    `;
+  }
+
+  function buildPsalmBlock(){
+    if (!lit) return '';
+    const picked = pickLitVariant(lit);
+    if (!picked || !picked.psalmText) return '';
+    return `<div class="dnes-lit-block"><div class="dnes-lit-label">ŽALM</div>${litTextToHtml(picked.psalmText)}</div>`;
+  }
+  function buildAlleluiaBlock(){
+    if (!lit) return '';
+    const picked = pickLitVariant(lit);
+    if (!picked || !picked.alleluiaVerse) return '';
+    return `<div class="dnes-lit-block"><div class="dnes-lit-label">ALELUJOVÝ VERŠ</div>${litTextToHtml(picked.alleluiaVerse)}</div>`;
+  }
+
   box.innerHTML = payload.ids.map(id => {
     const s = songs.find(x => x.id === id);
     if (!s) return '';
-    return songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','dnes')`);
+    const row = songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','dnes')`);
+
+    // Ak je Aleluja (999), vlož žalm pred a alelujový verš po (podľa dátumu z názvu priečinka)
+    if (String(s.id) === '999' && iso){
+      return buildLitChoiceSelect() + buildPsalmBlock() + row + buildAlleluiaBlock();
+    }
+    return row;
   }).join('');
 }
 async function loadDnesFromDrive() {
@@ -2410,6 +2145,204 @@ async function loadDnesFromDrive() {
   dnesFetchInFlight = false;
   loadDnesCacheFirst(true);
   if (isAdmin) openDnesEditor(true);
+}
+
+
+/* ---------------- LITURGIA (KBS cez Google Apps Script) ---------------- */
+
+const WEEKDAYS_SK = ['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
+
+function toISODate(d){
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function fmtDMY(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso || '';
+  const y = m[1], mo = String(parseInt(m[2],10)), da = String(parseInt(m[3],10));
+  return `${da}.${mo}.${y}`;
+}
+function weekdaySkFromISO(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  const d = new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10));
+  return WEEKDAYS_SK[d.getDay()] || '';
+}
+
+function parseISOFromDnesTitle(title){
+  // Accept: "Piatok 30.1", "Piatok 30.1.", "Piatok 30.1.2026"
+  const t = String(title||'');
+  const m = t.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\.?/);
+  if (!m) return null;
+  const day = parseInt(m[1],10);
+  const mon = parseInt(m[2],10);
+  let year = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
+  if (!(day>=1 && day<=31 && mon>=1 && mon<=12)) return null;
+  return `${year}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
+function getLitCacheKey(iso){ return `liturgia_${iso}`; }
+function getLitChoiceKey(iso){ return `liturgia_choice_${iso}`; }
+
+function loadLitFromCache(iso){
+  try{
+    const raw = localStorage.getItem(getLitCacheKey(iso));
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    return obj && typeof obj === 'object' ? obj : null;
+  }catch(e){ return null; }
+}
+function saveLitToCache(iso, data){
+  try{
+    localStorage.setItem(getLitCacheKey(iso), JSON.stringify(data));
+  }catch(e){}
+}
+function getLitChoice(iso){
+  return (localStorage.getItem(getLitChoiceKey(iso)) || '').trim();
+}
+function setLitChoice(iso, label){
+  try{ localStorage.setItem(getLitChoiceKey(iso), String(label||'')); }catch(e){}
+}
+
+async function fetchLiturgia(iso){
+  const data = await jsonpRequest(`${SCRIPT_URL}?action=liturgia&den=${encodeURIComponent(iso)}`);
+  if (!data || !data.ok) throw new Error((data && data.error) ? data.error : 'load_failed');
+  // Normalize variants
+  const variants = Array.isArray(data.variants) ? data.variants : null;
+  const out = {
+    iso: iso,
+    title: String(data.title || ''),
+    variants: variants ? variants.map(v => ({
+      label: String(v.label || v.title || 'Féria'),
+      title: String(v.title || ''),
+      psalmText: String(v.psalmText || ''),
+      alleluiaVerse: String(v.alleluiaVerse || '')
+    })) : [{
+      label: 'Féria',
+      title: String(data.title || ''),
+      psalmText: String(data.psalmText || ''),
+      alleluiaVerse: String(data.alleluiaVerse || '')
+    }]
+  };
+  return out;
+}
+
+function pickLitVariant(lit){
+  if (!lit || !Array.isArray(lit.variants) || !lit.variants.length) return null;
+  const choice = getLitChoice(lit.iso);
+  if (choice){
+    const hit = lit.variants.find(v => v.label === choice);
+    if (hit) return hit;
+  }
+  // default: if exists label "Féria", else first
+  const feria = lit.variants.find(v => /^féri/i.test(v.label));
+  return feria || lit.variants[0];
+}
+
+function buildLitHeaderText(iso, lit){
+  const datePart = `${fmtDMY(iso)} (${weekdaySkFromISO(iso)})`;
+  if (!lit || !Array.isArray(lit.variants) || !lit.variants.length) return datePart;
+  // show all labels in header
+  const labels = lit.variants.map(v => v.label).filter(Boolean);
+  const uniq = [];
+  labels.forEach(x => { if (!uniq.includes(x)) uniq.push(x); });
+  const suffix = uniq.length ? (' — ' + uniq.join(' / ')) : '';
+  return datePart + suffix;
+}
+
+function renderLiturgiaPanel(iso, lit, errMsg){
+  const header = document.getElementById('lit-header');
+  const content = document.getElementById('lit-content');
+  const optRow = document.getElementById('lit-options');
+  const sel = document.getElementById('lit-variant');
+
+  if (header) header.textContent = buildLitHeaderText(iso, lit);
+
+  if (errMsg){
+    if (content) content.innerHTML = `<div class="lit-error">Liturgické čítania sa nepodarilo načítať.</div>`;
+    if (optRow) optRow.style.display = 'none';
+    return;
+  }
+
+  if (!lit){
+    if (content) content.innerHTML = `<div class="loading">Načítavam...</div>`;
+    if (optRow) optRow.style.display = 'none';
+    return;
+  }
+
+  // variants select
+  if (optRow && sel){
+    if (lit.variants && lit.variants.length > 1){
+      optRow.style.display = 'flex';
+      sel.innerHTML = lit.variants.map(v => `<option value="${escapeHtml(v.label)}">${escapeHtml(v.label)}</option>`).join('');
+      const picked = pickLitVariant(lit);
+      if (picked) sel.value = picked.label;
+    } else {
+      optRow.style.display = 'none';
+    }
+  }
+
+  // main text: show chosen variant title + (optional) psalm + alleluia + full text (if you want full)
+  const picked = pickLitVariant(lit) || (lit.variants ? lit.variants[0] : null);
+  const parts = [];
+  if (picked && picked.title) parts.push(picked.title);
+  if (picked && picked.psalmText) parts.push(`\nRESPO NZÓRIOVÝ ŽALM\n${picked.psalmText}`.replace('RESPO NZÓRIOVÝ','RESPONZÓRIOVÝ'));
+  if (picked && picked.alleluiaVerse) parts.push(`\nALELUJOVÝ VERŠ\n${picked.alleluiaVerse}`);
+  // Full readings text: to avoid huge wall, show only if exists in cache (we don't render it here by default).
+  // If you want full text visible, uncomment next line:
+  // if (lit.fullText) parts.push(`\n\n${lit.fullText}`);
+
+  if (content) content.textContent = parts.filter(Boolean).join('\n\n').trim();
+}
+
+function onLitVariantChange(){
+  const iso = document.getElementById('lit-date') ? document.getElementById('lit-date').value : '';
+  const sel = document.getElementById('lit-variant');
+  if (!iso || !sel) return;
+  setLitChoice(iso, sel.value);
+  const lit = loadLitFromCache(iso);
+  renderLiturgiaPanel(iso, lit, null);
+  // update dnes view blocks too
+  loadDnesCacheFirst(true);
+}
+
+function initLiturgiaUI(){
+  const inp = document.getElementById('lit-date');
+  if (!inp) return;
+  const todayIso = toISODate(new Date());
+  if (!inp.value) inp.value = todayIso;
+
+  // When section opened, we want default day loaded
+  inp.addEventListener('change', async () => {
+    const iso = inp.value;
+    if (!iso) return;
+    const cached = loadLitFromCache(iso);
+    renderLiturgiaPanel(iso, cached, null);
+    try{
+      const fresh = await fetchLiturgia(iso);
+      saveLitToCache(iso, fresh);
+      renderLiturgiaPanel(iso, fresh, null);
+    }catch(e){
+      // keep cached if exists
+      if (!cached) renderLiturgiaPanel(iso, null, 'err');
+    }
+  });
+
+  // pre-load today for UI (silent)
+  setTimeout(async () => {
+    const iso = inp.value || todayIso;
+    const cached = loadLitFromCache(iso);
+    renderLiturgiaPanel(iso, cached, null);
+    try{
+      const fresh = await fetchLiturgia(iso);
+      saveLitToCache(iso, fresh);
+      renderLiturgiaPanel(iso, fresh, null);
+    }catch(e){
+      if (!cached) renderLiturgiaPanel(iso, null, 'err');
+    }
+  }, 50);
 }
 
 /* dnes editor (zachované) */
@@ -2702,67 +2635,32 @@ function editSpecialToken(i){
 }
 
 function addSpecialStep(kind){
-  const K = String(kind||'').toUpperCase();
 
-  // Predvyplň poznámku z textu piesne, ak existuje (aj v [] a aj viac krát).
+  // Predvyplň poznámku z textu piesne (aj keď sú akordy v []), môže byť aj viackrát
+  let preset = '';
   const s = songs.find(x => x.id === formModalSongId);
-  const candidates = [];
   if (s && s.origText){
-    const lines = String(s.origText).split(/
-?
-/);
-    const names = {
-      'PREDOHRA':'Predohra',
-      'MEDZIHRA':'Medzihra',
-      'DOHRA':'Dohra',
-      'POZNAMKA':'Poznámka',
-      'POZNÁMKA':'Poznámka'
-    };
-    const labelSk = names[K] || K;
+    const k = String(kind||'').toUpperCase();
+    const kindSk = (k === 'PREDOHRA' ? 'Predohra' : (k === 'MEDZIHRA' ? 'Medzihra' : (k === 'DOHRA' ? 'Dohra' : 'Poznámka')));
+    const presets = extractSpecialPresetsFromSongText(s.origText, kindSk);
+    if (presets.length === 1){
+      preset = presets[0];
+    } else if (presets.length > 1){
+      const opts = presets.map((v,i)=>`${i+1}) ${v}`).join('
+');
+      const ans = prompt(`${kindSk} – našiel som viac možností.
 
-    const rx1 = new RegExp('^\s*\[?\s*' + labelSk + '\s*\]?\s*[:\-]?\s*(.*)\s*$', 'i');
-    const rx2 = new RegExp('^\s*\[\s*' + labelSk + '\s*[:\-]\s*([^\]]*)\]\s*(.*)$', 'i'); // [Predohra: ...]
-    for (const ln of lines){
-      const t = String(ln||'').trim();
-      if (!t) continue;
-      let m2 = t.match(rx2);
-      if (m2){
-        const inside = (m2[1]||'').trim();
-        const after = (m2[2]||'').trim();
-        const v = (inside + (after ? (' ' + after) : '')).trim();
-        candidates.push(v);
-        continue;
-      }
-      const m1 = t.match(rx1);
-      if (m1){
-        const v = String(m1[1]||'').trim();
-        candidates.push(v);
-      }
+${opts}
+
+Zadaj číslo (1-${presets.length}) alebo 0 pre vlastný text:`, '1');
+      const n = parseInt(String(ans||'').trim(),10);
+      if (n >= 1 && n <= presets.length) preset = presets[n-1];
     }
   }
 
-  // vyber prednastavenie
-  let preset = '';
-  const uniq = Array.from(new Set(candidates.map(x => String(x||'').trim()))).filter(Boolean);
-
-  if (uniq.length === 1){
-    preset = uniq[0];
-  } else if (uniq.length > 1){
-    const menu = uniq.map((v,i)=>`${i+1}) ${v}`).join('
-');
-    const pick = prompt(`${K} – našiel som viac možností v texte piesne.
-Vyber číslo (1-${uniq.length}) alebo 0 pre vlastný text:
-
-${menu}`, "1");
-    if (pick === null) return;
-    const n = Number(String(pick).trim());
-    if (!Number.isFinite(n) || n < 0 || n > uniq.length) return;
-    preset = (n === 0) ? '' : uniq[n-1];
-  }
-
-  const note = prompt(`${K} – poznámka (voliteľné):`, preset);
+  const note = prompt(`${kind} – poznámka (voliteľné):`, preset);
   if (note === null) return;
-  const token = String(note).trim() ? `${K}(${String(note).trim()})` : `${K}`;
+  const token = String(note).trim() ? `${String(kind).toUpperCase()}(${String(note).trim()})` : `${String(kind).toUpperCase()}`;
   formModalOrder.push(token);
   renderFormModalOrder();
 }
@@ -3675,6 +3573,10 @@ function escapeHtml(s) {
 function updateFontSizeLabel(){
   const el = document.getElementById('font-size-label');
   if (el) el.innerText = String(fontSize);
+}
+
+function litTextToHtml(t){
+  return escapeHtml(String(t||'')).replace(/\n/g,'<br>');
 }
 
 /* ===== PINCH TO CHANGE SONG TEXT SIZE (DETAIL) ===== */
