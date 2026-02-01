@@ -2339,29 +2339,104 @@ function editSpecialToken(i){
   renderFormModalOrder();
 }
 
+function extractSpecialNotesFromText(origText, kind){
+  const text = String(origText || '');
+  if (!text) return [];
+  const kindUpper = String(kind || '').toUpperCase();
+  const kindSk = (kindUpper === 'PREDOHRA' ? 'Predohra'
+                : (kindUpper === 'MEDZIHRA' ? 'Medzihra'
+                : (kindUpper === 'DOHRA' ? 'Dohra' : 'Poznámka')));
+
+  const lines = text.split(/\r?\n/);
+  const out = [];
+  const label = (kindSk === 'Poznámka' ? '(?:Poznámka|Poznamka)' : kindSk);
+  const labelRe = new RegExp('^\\s*\\[?\\s*' + label + '\\s*\\]?\\s*(?:[:\\-–—])?\\s*(.*)\\s*$', 'i');
+
+  for (let i = 0; i < lines.length; i++){
+    let line = String(lines[i] || '').trim();
+    if (!line) continue;
+
+    // allow forms like "[Predohra: ...]" (whole line wrapped)
+    let candidateLine = line;
+    if (candidateLine.startsWith('[') && candidateLine.endsWith(']') && candidateLine.length > 2){
+      candidateLine = candidateLine.slice(1, -1).trim();
+    }
+
+    const m = candidateLine.match(labelRe);
+    if (!m) continue;
+
+    let note = String(m[1] || '').trim();
+
+    // If label is alone (e.g. "[Predohra]"), take next non-empty line as note
+    if (!note){
+      for (let j = i + 1; j < lines.length; j++){
+        const next = String(lines[j] || '').trim();
+        if (!next) continue;
+        note = next;
+        break;
+      }
+    }
+
+    if (note){
+      // if any trailing bracket left from odd formatting, trim one
+      note = note.replace(/\]$/, '').trim();
+      out.push(note);
+    }
+  }
+
+  // dedupe while preserving order
+  const seen = new Set();
+  return out.filter(x => {
+    const k = String(x || '').trim();
+    if (!k) return false;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 function addSpecialStep(kind){
-  // Ak už existuje, radšej ho uprav
-  const re = new RegExp('^' + String(kind || '').toUpperCase() + '(\\(|$)', 'i');
-  const existingIdx = formModalOrder.findIndex(t => re.test(String(t || '').trim()));
-  if (existingIdx >= 0){
-    editSpecialToken(existingIdx);
+  if (!isAdmin) return;
+  const kindU = String(kind || '').toUpperCase();
+
+  const makeToken = (note) => {
+    const v = String(note || '').trim();
+    return v ? `${kindU}(${v})` : kindU;
+  };
+
+  // Try auto-preset from song text (supports both plain text and chords like [G] [D] ...)
+  let presets = [];
+  const s = songs.find(x => x.id === formModalSongId);
+  if (s && s.origText){
+    presets = extractSpecialNotesFromText(s.origText, kindU);
+  }
+
+  // If there is exactly one match in the song, insert it automatically (can be edited by tapping the chip)
+  if (presets.length === 1){
+    formModalOrder.push(makeToken(presets[0]));
+    renderFormModalOrder();
     return;
   }
 
-  // Predvyplň poznámku z textu piesne, ak existuje "Predohra: ..." atď.
-  let preset = '';
-  const s = songs.find(x => x.id === formModalSongId);
-  if (s && s.origText){
-    const kindSk = (String(kind||'').toUpperCase() === 'PREDOHRA' ? 'Predohra' : (String(kind||'').toUpperCase() === 'MEDZIHRA' ? 'Medzihra' : (String(kind||'').toUpperCase() === 'DOHRA' ? 'Dohra' : 'Poznámka')));
-    const rx = new RegExp('^' + kindSk + '\\s*:\\s*(.*)$', 'im');
-    const m = String(s.origText).match(rx);
-    if (m && m[1]) preset = String(m[1]).trim();
+  // If there are multiple matches, let user choose one
+  if (presets.length > 1){
+    const preview = presets.map((p, idx) => `${idx + 1}) ${p.length > 90 ? (p.slice(0, 87) + '…') : p}`).join('\n');
+    const pick = prompt(`Našiel som viac možností pre ${kindU} v texte piesne.\nVyber číslo alebo zadaj 0 pre vlastný text:\n\n${preview}`, '1');
+    if (pick === null) return;
+    const n = parseInt(String(pick).trim(), 10);
+    if (Number.isFinite(n) && n >= 1 && n <= presets.length){
+      formModalOrder.push(makeToken(presets[n - 1]));
+      renderFormModalOrder();
+      return;
+    }
+    if (String(pick).trim() !== '0') return; // invalid -> cancel
+    // fallthrough to custom
   }
 
-  const note = prompt(`${kind} – poznámka (voliteľné):`, preset);
+  // No preset or user chose custom
+  const note = prompt(`${kindU} – poznámka (voliteľné):`, '');
   if (note === null) return;
-  const token = String(note).trim() ? `${String(kind).toUpperCase()}(${String(note).trim()})` : `${String(kind).toUpperCase()}`;
-  formModalOrder.push(token);
+  formModalOrder.push(makeToken(note));
   renderFormModalOrder();
 }
 
@@ -3229,11 +3304,26 @@ async function hardResetApp() {
 }
 
 /* Formspree */
+function updateFormOnlineState(){
+  const btn = document.getElementById("submit-btn");
+  if (!btn) return;
+  btn.disabled = !navigator.onLine;
+}
+
 async function submitErrorForm(event) {
   event.preventDefault();
   const form = document.getElementById("error-form");
   const status = document.getElementById("form-status");
   const btn = document.getElementById("submit-btn");
+
+  // Offline: do not attempt sending
+  if (!navigator.onLine) {
+    status.style.display = "block";
+    status.style.color = "#ff4444";
+    status.innerText = "Si offline – nedá sa odoslať.";
+    try { showToast("Si offline – neodoslané ❌", false); } catch(e) {}
+    return;
+  }
 
   status.style.display = "block";
   status.style.color = "#00ff00";
@@ -3341,16 +3431,15 @@ document.addEventListener('gesturechange', (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "sync-warn" : "sync-warn");
+  updateFormOnlineState();
+  window.addEventListener('online', updateFormOnlineState);
+  window.addEventListener('offline', updateFormOnlineState);
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
   if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
   updateFontSizeLabel();
   initSongPinchToZoom();
   updateChordTemplateUI();
-// Try to request persistent storage (helps iOS/Android keep offline cache longer)
-try {
-  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
-} catch(e) {}
 
 // PWA offline
 if ('serviceWorker' in navigator) {
