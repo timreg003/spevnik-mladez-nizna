@@ -1233,8 +1233,32 @@ function songTextToHTML(text) {
     // Aleluja 999 – vložené bloky (Žalm / Alelujový verš) ako samostatné chlieviky
     const litM = trimmed.match(/^\[\[LIT-(PSALM|VERSE)\|(.*)\]\]$/);
     if (litM){
-      // zatvor otvorenú sekciu piesne, nech sa to nemieša s gridom
-      closeSection();
+      // pred vloženým blokom dofúkni rozpracovanú slohu (najmä chord-only poslednú slohu),
+      // inak by sa zahodila pri prechode na LIT blok.
+      flushPendingSpecialEmpty();
+
+      if (pendingLabel && pendingChordLines.length){
+        closeSection();
+        openSection();
+        out.push(songLineHTML(pendingLabel, pendingChordLines[0], 'song-chordline'));
+        for (let k=1; k<pendingChordLines.length; k++){
+          out.push(songLineHTML('', pendingChordLines[k], 'song-chordline'));
+        }
+        pendingChordLines.length = 0;
+        pendingLabel = '';
+        closeSection();
+      } else if (pendingChordLines.length){
+        if (!sectionOpen) openSection();
+        for (const cl of pendingChordLines) out.push(songLineHTML('', cl, 'song-chordline'));
+        pendingChordLines.length = 0;
+        closeSection();
+      } else {
+        // zatvor otvorenú sekciu piesne, nech sa to nemieša s gridom
+        closeSection();
+        pendingLabel = '';
+      }
+
+      // reset stavu pre LIT blok
       pendingLabel = '';
       pendingSpecial = '';
       pendingChordLines = [];
@@ -1245,16 +1269,35 @@ function songTextToHTML(text) {
       try { payload = decodeURIComponent(litM[2] || ''); } catch(e){ payload = ''; }
 
       if (kind === 'PSALM'){
-        // payload typicky začína "R.: ..." – chceme "Žalm: <refren>" v hlavičke a pod tým slohy
-        const lines = String(payload||'').replace(/\r/g,'').split('\n').map(l=>String(l||'').trim()).filter(Boolean);
+        // payload typicky obsahuje refrén ako "R.: ..." (niekedy uprostred riadku alebo v tom istom riadku ako odkazy).
+        // Chceme "Žalm" + refrén na tom istom riadku a pod tým text žalmu.
+        let raw = String(payload||'').replace(/\r/g,'');
+        // ak je "R.:" uprostred riadku, oddeľ ho na nový riadok, aby sa ľahšie našiel
+        raw = raw.replace(/([^\n])\s+(R\.?\s*:\s*)/g, '$1\n$2');
+
+        const lines = raw.split('\n').map(l=>String(l||'').trim()).filter(Boolean);
         let refrain = '';
         let bodyLines = lines.slice();
-        const rLineIdx = bodyLines.findIndex(l => /^R\.?\s*:?/i.test(l));
-        if (rLineIdx >= 0){
-          const rLine = bodyLines[rLineIdx];
-          refrain = rLine.replace(/^R\.?\s*:?\s*/i,'').trim();
-          bodyLines.splice(rLineIdx, 1);
+
+        // 1) nájdi klasický refrén "R.: ..." kdekoľvek
+        for (let i=0;i<bodyLines.length;i++){
+          const mR = bodyLines[i].match(/R\.?\s*:\s*(.+)$/i);
+          if (mR){
+            refrain = (mR[1]||'').trim();
+            bodyLines.splice(i,1);
+            break;
+          }
         }
+
+        // 2) fallback: prvý riadok končiaci ", R." (bežné opakovanie refrénu v texte)
+        if (!refrain){
+          const j = bodyLines.findIndex(l => /\sR\.$/i.test(l));
+          if (j >= 0){
+            const cand = bodyLines[j].replace(/\s*,?\s*R\.$/i,'').trim();
+            if (cand.length >= 6) refrain = cand;
+          }
+        }
+
         payload = bodyLines.join('\n').trim();
         out.push('<div class="aleluja-insert">');
         // "Žalm" + refrén na tom istom riadku
@@ -1266,6 +1309,7 @@ function songTextToHTML(text) {
         );
         if (payload) out.push(`<div class="aleluja-pre">${escapeHtml(payload).replace(/\n/g,'<br>')}</div>`);
         out.push('</div>');
+
         continue;
       } else {
         // Alelujový verš – bez "Aleluja, aleluja, aleluja."
@@ -3867,7 +3911,7 @@ function extractLitTitleFromHtml(html, fallbackText){
   }catch(e){ return ''; }
 }
 
-function extractLitFragmentFromHtml(html){
+function extractLitFragmentFromHtml(html, headTitle){
   const src = String(html||'');
   if (!src.trim()) return '';
   try{
@@ -3878,47 +3922,101 @@ function extractLitFragmentFromHtml(html){
     const phrases = ['Responzóriový žalm','Alelujový verš','Evanjelium','Čítanie z','Čítanie zo','Druhé čítanie','Prvé čítanie'];
     const candidates = Array.from(doc.body.querySelectorAll('main,article,section,div'));
 
+    // vyber najmenší "hlavný" blok, ktorý obsahuje čo najviac kľúčových fráz
     let best = null;
-    let bestScore = 0;
+    let bestScore = -1;
+    let bestLen = 1e18;
     for (const el of candidates){
       const txt = (el.textContent || '').replace(/\s+/g,' ');
-      if (txt.length < 400) continue;
+      const len = txt.length;
+      if (len < 350) continue;
       let score = 0;
       for (const p of phrases){ if (txt.includes(p)) score++; }
-      if (score > bestScore){ bestScore = score; best = el; }
+      if (score > bestScore || (score === bestScore && len < bestLen)){
+        bestScore = score;
+        bestLen = len;
+        best = el;
+      }
     }
     const root = (bestScore >= 2 && best) ? best : doc.body;
 
-    // ak sa vnútri nachádza prvý "titulový" element, odstráň ho (titul zobrazíme samostatne v hlavičke)
-    const maybeTitle = Array.from(root.querySelectorAll('h1,h2,h3,div,p,span')).find(el => {
-      const tx = (el.textContent || '').replace(/\s+/g,' ').trim();
-      return tx.length >= 8 && tx.length <= 220 && litTitleRegexTest(tx);
-    });
-    if (maybeTitle) {
-      // odstráň len ak je úplne na začiatku a nie je to priamo nadpis čítania
-      const tx = (maybeTitle.textContent || '').trim();
-      if (litTitleRegexTest(tx)) {
-        const nextTxt = (maybeTitle.nextElementSibling && maybeTitle.nextElementSibling.textContent) ? maybeTitle.nextElementSibling.textContent : '';
-        if (!/Čítanie\s+z|Responzóriový\s+žalm|Evanjelium/i.test(String(nextTxt))) {
-          maybeTitle.remove();
-        }
-      }
-    }
+    // zahoď interaktívne prvky a ikonky zo zdroja (checkboxy, navigácia, šípky, špendlík)
+    root.querySelectorAll('input,button,select,textarea,form').forEach(n=>n.remove());
+    root.querySelectorAll('img').forEach(n=>n.remove());
+    root.querySelectorAll('i').forEach(n=>n.remove());
 
-    // deaktivuj odkazy (neklikateľné)
+    // deaktivuj odkazy (neklikateľné) + odstráň inline eventy
     root.querySelectorAll('a').forEach(a=>{
       a.removeAttribute('href');
       a.removeAttribute('target');
       a.removeAttribute('onclick');
     });
     root.querySelectorAll('*').forEach(el=>{
-      // odstráň inline eventy
       for (const attr of Array.from(el.attributes||[])){
         if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
       }
+
+      // zachyť inline farby/tučné písmo zo zdroja a premapuj na naše triedy
+      const st = String(el.getAttribute('style') || '');
+      if (st){
+        const low = st.toLowerCase();
+        // tučné / bold
+        if (/font-weight\s*:\s*(bold|[7-9]00)/i.test(st)) el.classList.add('lit-strong');
+        // sivé odtiene
+        if (/color\s*:\s*(#(666|777|888|999)|gray|grey|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\.[0-9]+\s*\))/i.test(low)) el.classList.add('muted');
+      }
+
+      // zahoď inline štýly/farby, aby sa prefarbovanie riadilo CSS
+      el.removeAttribute('style');
+      el.removeAttribute('color');
+      el.removeAttribute('face');
+      el.removeAttribute('size');
     });
 
-    return root.innerHTML || '';
+    // odstráň veľký "Pondelok 2. február ... meniny" header (nechceme ho v obsahu)
+    const weekdayRe = /^(Pondelok|Utorok|Streda|Štvrtok|Piatok|Sobota|Nedeľa)\b/i;
+    const monthRe = /(január|február|marec|apríl|máj|jún|júl|august|september|október|november|december)/i;
+    const meninyRe = /meniny\s*:/i;
+
+    Array.from(root.querySelectorAll('h1,h2,h3,h4,div,p,span')).forEach(el=>{
+      const tx = (el.textContent || '').replace(/\s+/g,' ').trim();
+      if (!tx) return;
+      if ((weekdayRe.test(tx) && monthRe.test(tx)) || meninyRe.test(tx)){
+        // odstráň len ak to NIE je liturgický titul (napr. "4. týždňa...")
+        if (!litTitleRegexTest(tx)) el.remove();
+      }
+    });
+
+    // odstráň drobnú navigáciu/ikonky (často krátke bloky bez liturgických slov)
+    Array.from(root.querySelectorAll('div,nav,header')).forEach(el=>{
+      const tx = (el.textContent || '').replace(/\s+/g,' ').trim();
+      if (!tx) return;
+      const hasPhrase = phrases.some(p => tx.includes(p));
+      if (hasPhrase) return;
+      // typicky riadok s ikonami/šípkami má veľa potomkov a krátky text
+      const childCount = el.querySelectorAll('*').length;
+      if (tx.length <= 12 && childCount >= 6) el.remove();
+      const sym = tx.replace(/\s+/g,'');
+      if (/^[«‹›»<>]+$/.test(sym) || /^(<<+|>>+|<<<|>>>)+$/.test(sym) || sym.includes('📌')) el.remove();
+      if (/(<<|>>|<<<|>>>)/.test(sym) && sym.length <= 8) el.remove();
+    });
+
+    // ak vieme titul dňa, skús ho odstrániť z fragmentu (zobrazíme ho samostatne ako veľký modrý nadpis)
+    const ht = String(headTitle||'').trim();
+    if (ht){
+      const titleEl = Array.from(root.querySelectorAll('*')).find(el => {
+        const tx = (el.textContent || '').replace(/\s+/g,' ').trim();
+        return tx && tx === ht;
+      });
+      if (titleEl){
+        titleEl.remove();
+      }
+    }
+
+    let htmlOut = root.innerHTML || '';
+    // odstráň unicode "fajky"/checkboxy, ktoré sa na zdroji používajú pri smerniciách
+    htmlOut = htmlOut.replace(/[\u2611\u2705\u2714\u2713]/g,'');
+    return htmlOut;
   }catch(e){
     return '';
   }
@@ -3974,9 +4072,10 @@ function renderLitFromData(iso, data){
   }
   if (content){
     // preferuj 1:1 HTML zo zdroja, fallback na text
-    const frag = (chosen && chosen.html) ? extractLitFragmentFromHtml(chosen.html) : '';
+    const frag = (chosen && chosen.html) ? extractLitFragmentFromHtml(chosen.html, headTitle) : '';
     if (frag){
-      content.innerHTML = `<div class="lit-fragment">${frag}</div>`;
+      const titleHtml = headTitle ? `<div class="lit-frag-title">${escapeHtml(headTitle)}</div>` : ``;
+      content.innerHTML = `${titleHtml}<div class="lit-fragment">${frag}</div>`;
     } else {
       content.innerHTML = litTextToPageHTML(outText);
     }

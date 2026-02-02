@@ -909,6 +909,14 @@ body.present #presentControls{ display:flex; }
 }
 
 /* Liturgia – render 1:1 zo zdrojového HTML, len prefarbené */
+/* Veľký modrý titul dňa (nahrádza farebný blok zo zdrojovej stránky) */
+.lit-frag-title{
+  color:#00bfff;
+  font-weight:900;
+  font-size:26px;
+  line-height:1.15;
+  margin: 4px 0 10px 0;
+}
 .lit-fragment{
   color:#ffffff;
   font-size:14px;
@@ -916,6 +924,10 @@ body.present #presentControls{ display:flex; }
 }
 .lit-fragment b,
 .lit-fragment strong{
+  color:#00bfff;
+  font-weight:900;
+}
+.lit-fragment .lit-strong{
   color:#00bfff;
   font-weight:900;
 }
