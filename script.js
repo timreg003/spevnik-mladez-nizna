@@ -1,5 +1,5 @@
 /* ✅ ANTI PULL-TO-REFRESH (Android)
-   Zablokuje refresh pri ťahu dole, keď je stránka úplne hore.
+   Zablokuje refresh pri ťahu dole, keď je stránka úplne hore.j
    Nezabíja scroll v listoch (editor-list, list-box, song-content).
 */
 (function preventPullToRefresh(){
@@ -4893,7 +4893,8 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   // ===== pripraviť Alelujový verš =====
   // Preferuj pole 'alleluiaVerse' z GAS (je to krátky verš). Fallback: vytiahni zo splitu.
   const avRaw = (v && v.alleluiaVerse) ? String(v.alleluiaVerse) : '';
-  let avLines = avRaw ? avRaw.replace(//g,'').split('
+  let avLines = avRaw ? avRaw.replace(/
+/g,'').split('
 ') : trimSegment(split.alleluia);
   avLines = trimSegment(avLines);
   avLines = sanitizeAlleluiaVerseLines(avLines);
