@@ -3982,12 +3982,44 @@ function splitLitSectionsFromText(text){
   const isRead = (l)=> /^Čítanie\s+z\b/i.test(l.trim()) && !/^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l.trim());
   const isSecondLabel = (l)=> /^Druhé\s+čítanie\b/i.test(l.trim());
 
-  const idxPsalm = rawLines.findIndex(isPsalm);
-  const idxGos = rawLines.findIndex(isGospel);
-  const idxAll = rawLines.findIndex(isAlleluia);
+  const isSummaryLikeLine = (t)=>{
+    const s = String(t||'').trim();
+    if (!s) return false;
+    // typicky "smernice" blok má viac čítaní v jednom riadku alebo oddeľovač ·
+    const cnt = (s.match(/Čítanie\s+z\b/gi)||[]).length + (s.match(/Čítanie\s+zo\s+svätého\s+evanjelia\b/gi)||[]).length;
+    if (s.includes('·') || cnt >= 2) return true;
+    return false;
+  };
+
+  const findDetailedIndex = (pred, start=0)=>{
+    for (let i=start;i<rawLines.length;i++){
+      const l = rawLines[i];
+      if (!pred(l)) continue;
+      const t = String(l||'').trim();
+      if (isSummaryLikeLine(t)) continue;
+
+      // hľadaj v nasledujúcich riadkoch reálny "telo textu" (nie len odkazy/odkazy na verše)
+      for (let j=i+1;j<Math.min(rawLines.length, i+12);j++){
+        const tt = String(rawLines[j]||'').trim();
+        if (!tt) continue;
+        if (/^(alebo|alebo\s+kratšie)\b/i.test(tt)) continue;
+        if (pred(rawLines[j])) break; // ďalší titul hneď za tým – skôr smernica
+        if (looksLikeRefLine(tt)) continue;
+        // krátke čisto-referenčné riadky typu "Mal 3, 1-4" (bez textu) ignoruj
+        if (tt.length <= 40 && /\b\d+\s*,\s*\d+/.test(tt) && !/[.!?]/.test(tt)) continue;
+        return i;
+      }
+    }
+    return rawLines.findIndex((l,i)=> i>=start && pred(l));
+  };
+
+
+  const idxPsalm = findDetailedIndex(isPsalm, 0);
+  const idxGos = findDetailedIndex(isGospel, 0);
+  const idxAll = findDetailedIndex(isAlleluia, 0);
 
   // prvé čítanie: od prvého "Čítanie z ..." do žalmu
-  const idxRead1 = rawLines.findIndex(isRead);
+  const idxRead1 = findDetailedIndex(isRead, 0);
   const read1 = (idxRead1 >= 0 && idxPsalm > idxRead1) ? rawLines.slice(idxRead1, idxPsalm) : [];
 
   // žalm: od "Responzóriový žalm" do ďalšej sekcie
@@ -3997,9 +4029,9 @@ function splitLitSectionsFromText(text){
   // druhé čítanie začiatok (ak existuje) – explicitne, alebo ďalšie "Čítanie z" po žalme
   let idxRead2 = -1;
   if (idxPsalm >= 0){
-    idxRead2 = rawLines.findIndex((l,i)=> i>idxPsalm && isSecondLabel(l));
+    idxRead2 = findDetailedIndex((l)=>isSecondLabel(l), idxPsalm+1);
     if (idxRead2 < 0){
-      idxRead2 = rawLines.findIndex((l,i)=> i>idxPsalm && isRead(l));
+      idxRead2 = findDetailedIndex((l)=>isRead(l), idxPsalm+1);
     }
     if (idxRead2 >= 0 && idxAll >= 0 && idxRead2 > idxAll) idxRead2 = -1;
     if (idxRead2 >= 0 && idxGos >= 0 && idxRead2 > idxGos) idxRead2 = -1;
@@ -4033,6 +4065,26 @@ function trimSegment(lines){
   while(a.length && !String(a[0]||'').trim()) a.shift();
   while(a.length && !String(a[a.length-1]||'').trim()) a.pop();
   return a;
+}
+
+
+function sanitizeAlleluiaVerseLines(lines){
+  let L = Array.isArray(lines) ? lines.map(x=>String(x||'')).filter(x=>x!=null) : [];
+  // osekaj, ak by sa do verša omylom natiahli ďalšie sekcie (čítania/žalm/evanjelium)
+  const stopRe = /^\s*(Čítanie\s+z\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Responzóriový\s+žalm\b|Evanjelium\b|Počuli\s+sme\b|R\.?\s*:|Ž\s*\d+)/i;
+  let k = L.findIndex((l,i)=> i>0 && stopRe.test(String(l||'').trim()));
+  if (k>=0) L = L.slice(0,k);
+
+  // ak je to jeden dlhý riadok a obsahuje jasné hranice, odrež za prvou vetou/veršom
+  if (L.length === 1){
+    const one = String(L[0]||'');
+    const cutAt = one.search(/\b(Čítanie\s+z\b|Responzóriový\s+žalm\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Počuli\s+sme\b)\b/i);
+    if (cutAt > 0) L = [one.slice(0, cutAt).trim()];
+  }
+
+  // odfiltruj prázdne
+  L = L.map(x=>String(x||'').trim()).filter(Boolean);
+  return L;
 }
 
 function styleLitLineHtml(line){
@@ -4184,6 +4236,7 @@ function litToCardsHTML(text, dayTitle){
   // ===== 4) ALELUJA =====
   const al = trimSegment(parts.alleluia);
   let alLines = al.slice();
+  alLines = sanitizeAlleluiaVerseLines(alLines);
 
   // odstráň hlavičku "Alelujový verš"
   if (alLines.length && /^Alelujový\s+verš/i.test(alLines[0].trim())) alLines.shift();
@@ -4838,7 +4891,12 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   }
 
   // ===== pripraviť Alelujový verš =====
-  let avLines = trimSegment(split.alleluia);
+  // Preferuj pole 'alleluiaVerse' z GAS (je to krátky verš). Fallback: vytiahni zo splitu.
+  const avRaw = (v && v.alleluiaVerse) ? String(v.alleluiaVerse) : '';
+  let avLines = avRaw ? avRaw.replace(//g,'').split('
+') : trimSegment(split.alleluia);
+  avLines = trimSegment(avLines);
+  avLines = sanitizeAlleluiaVerseLines(avLines);
   if (avLines.length && /^Alelujový\s+verš/i.test(avLines[0].trim())) avLines.shift();
   // odstráň samostatné "Aleluja" riadky
   avLines = avLines.filter(l => !/^Aleluja[\s,!.]*$/i.test(String(l||'').trim()));

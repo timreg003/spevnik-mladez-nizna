@@ -1,6 +1,6 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
 // bump cache version whenever JS/CSS changes to avoid stale code on devices
-const CACHE_NAME = 'spevnik-v50';
+const CACHE_NAME = 'spevnik-v51';
 
 const CORE_ASSETS = [
   './',
