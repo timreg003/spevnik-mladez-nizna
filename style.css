@@ -1075,4 +1075,164 @@ body.present #presentControls{ display:flex; }
   line-height: 1.55;
   font-family: inherit;
   font-size: 15px;
+  text-align:center;
+}
+
+#song-content .aleluja-blue{
+  color:#00bfff;
+  font-weight:900;
+}
+
+
+
+/* ===== Liturgia v50 – 5 chlievikov + desktop mini kalendár ===== */
+.lit-content{ margin-top:12px; }
+.lit-cards{ display:flex; flex-direction:column; gap:10px; }
+
+.lit-box{
+  border-top: 1px solid rgba(255,255,255,.18);
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 12px 12px;
+  background: rgba(0,0,0,.08);
+}
+
+.lit-box-title{
+  color:#00bfff;
+  font-weight:900;
+  font-size:18px;
+  letter-spacing:.04em;
+  text-align:center;
+  margin: 0 0 8px 0;
+}
+
+.lit-inner-title{
+  color:#00bfff;
+  font-weight:800;
+  font-size:15px;
+  margin: 0 0 4px 0;
+}
+
+.lit-inner-comment{
+  color:#00bfff;
+  opacity:.85;
+  font-size:12.5px;
+  margin: 0 0 10px 0;
+}
+
+.lit-box-body{ text-align:left; }
+
+.lit-or{
+  color:#00bfff;
+  font-weight:900;
+  text-align:center;
+  margin: 10px 0;
+}
+
+.lit-closer{
+  color:#00bfff;
+  font-weight:900;
+  margin: 10px 0 0 0;
+}
+
+.lit-ps-ref{
+  color:#00bfff;
+  font-weight:900;
+  margin: 0 0 8px 0;
+}
+
+.lit-allel{
+  color:#00bfff;
+  font-weight:900;
+  text-align:center;
+  margin: 0 0 8px 0;
+}
+
+/* Desktop mini kalendár */
+.lit-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.lit-modal.open{ display:flex; }
+.lit-modal-backdrop{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,.6);
+}
+.lit-modal-panel{
+  position:relative;
+  width:min(360px, 92vw);
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#141414;
+  box-shadow: 0 10px 40px rgba(0,0,0,.55);
+  padding:12px;
+  z-index:1;
+}
+.lit-modal-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.lit-modal-title{
+  color:#eaeaea;
+  font-weight:800;
+  font-size:16px;
+  text-transform:capitalize;
+}
+.lit-modal-nav{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color:#fff;
+}
+.lit-modal-grid{ user-select:none; }
+.lit-dow{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:6px;
+  margin-bottom:6px;
+}
+.lit-dow-item{
+  text-align:center;
+  font-size:12px;
+  opacity:.75;
+  color:#cfcfcf;
+}
+.lit-days{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:6px;
+}
+.lit-day{
+  height:38px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color:#fff;
+  font-weight:700;
+}
+.lit-day.empty{
+  background: transparent;
+  border: none;
+}
+.lit-day.today{
+  border-color: rgba(0,191,255,.55);
+}
+.lit-day.sel{
+  background: rgba(0,191,255,.18);
+  border-color: rgba(0,191,255,.70);
+}
+.lit-modal-actions{
+  margin-top:10px;
+  display:flex;
+  justify-content:flex-end;
 }
