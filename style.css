@@ -516,7 +516,7 @@ body.present #presentControls{ display:flex; }
 .editor-toggle{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:center;
   padding:12px 12px;
   border-radius:10px;
   border:1px solid #333;
@@ -845,7 +845,7 @@ body.present #presentControls{ display:flex; }
 .lit-header{
   display:flex;
   align-items:baseline;
-  justify-content:flex-start;
+  justify-content:center;
   gap:10px;
   margin-bottom:10px;
 }
@@ -866,7 +866,7 @@ body.present #presentControls{ display:flex; }
 }
 #lit-date-btn{
   width:100%;
-  justify-content:flex-start;
+  justify-content:center;
   gap:10px;
 }
 #lit-date-input{
@@ -1062,11 +1062,11 @@ body.present #presentControls{ display:flex; }
   font-size: 16px;
   display:flex;
   align-items:baseline;
-  justify-content:flex-start;
+  justify-content:center;
   gap:10px;
 }
-#song-content .aleluja-insert .aleluja-h-left{ white-space:nowrap; min-width:60px; }
-#song-content .aleluja-insert .aleluja-h-right{ flex:1; text-align:center; font-weight:700; color:#dfefff; }
+#song-content .aleluja-insert .aleluja-h-left{ white-space:nowrap; min-width:auto; }
+#song-content .aleluja-insert .aleluja-h-right{ flex:0 0 auto; text-align:center; font-weight:900; color:#00bfff; }
 
 #song-content .aleluja-insert .aleluja-pre{
   margin:0;
@@ -1088,6 +1088,16 @@ body.present #presentControls{ display:flex; }
 /* ===== Liturgia v50 – 5 chlievikov + desktop mini kalendár ===== */
 .lit-content{ margin-top:12px; }
 .lit-cards{ display:flex; flex-direction:column; gap:10px; }
+
+.lit-forms{ display:flex; flex-direction:column; gap:14px; }
+.lit-form{ padding-top:2px; }
+.lit-form-name{
+  color:#00bfff;
+  font-weight:900;
+  text-align:center;
+  margin: 2px 0 10px 0;
+  font-size:16px;
+}
 
 .lit-box{
   border-top: 1px solid rgba(255,255,255,.18);
@@ -1177,7 +1187,7 @@ body.present #presentControls{ display:flex; }
 .lit-modal-top{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:center;
   gap:10px;
   margin-bottom:10px;
 }
