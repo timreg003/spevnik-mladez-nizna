@@ -3976,7 +3976,7 @@ function splitLitSectionsFromText(text){
   const rawLines = String(text||'').replace(/\r/g,'').split('\n');
 
   // nájdi hlavné hranice
-  const isPsalm = (l)=> /^Responzóriový\s+žalm/i.test(l.trim());
+  const isPsalm = (l)=> /^Responzóriový\s+žalm/i.test(l.trim()) || /^Ž\s*\d+/i.test(l.trim());
   const isAlleluia = (l)=> /^Alelujový\s+verš/i.test(l.trim()) || /^Aleluja\b/i.test(l.trim());
   const isGospel = (l)=> /^Evanjelium\b/i.test(l.trim()) || /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l.trim());
   const isRead = (l)=> /^Čítanie\s+z\b/i.test(l.trim()) && !/^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l.trim());
@@ -4243,14 +4243,19 @@ function litToCardsHTML(text, dayTitle){
 
   // odstráň samostatné opakovania aleluja
   alLines = alLines.filter(l => !/^Aleluja[\s,!.]*$/i.test(String(l||'').trim()));
-  // ak prvý riadok začína "Aleluja, aleluja, aleluja. ..." odstráň len prefix
+  // odstráň prefixy "Aleluja..." (niekedy aj viackrát za sebou)
   if (alLines.length){
-    alLines[0] = String(alLines[0]).replace(/^Aleluja[\s,!.]*/i,'').trim();
-    alLines[0] = String(alLines[0]).replace(/^Aleluja[\s,!.]*/i,'').trim();
+    let first = String(alLines[0]||'');
+    for (let i=0;i<5;i++){
+      const next = first.replace(/^Aleluja[\s,!.]*/i,'').trim();
+      if (next === first) break;
+      first = next;
+    }
+    alLines[0] = first.trim();
     if (!alLines[0]) alLines.shift();
   }
 
-  const alBody = `<div class="lit-allel">Aleluja</div>` + renderLitBody(alLines, {keepLineBreaks:false});
+  const alBody = renderLitBody(alLines, {keepLineBreaks:false});
 
   // ===== 5) EVANJELIUM =====
   const ev = trimSegment(parts.gospel);
@@ -4457,6 +4462,81 @@ function extractLitFragmentFromHtml(html, headTitle){
   }
 }
 
+
+function litHtmlToText(html, headTitle){
+  const src = String(html||'').trim();
+  if (!src) return '';
+  // Vyčistený fragment (bez ikon, checkboxov, šípok…)
+  const frag = extractLitFragmentFromHtml(src, headTitle);
+  if (!frag) return '';
+
+  try{
+    const doc = new DOMParser().parseFromString('<div id="__litroot__">' + frag + '</div>', 'text/html');
+    const root = doc.getElementById('__litroot__');
+    if (!root) return '';
+
+    const blockTags = new Set(['P','DIV','SECTION','ARTICLE','HEADER','MAIN','H1','H2','H3','H4','H5','H6','LI','UL','OL','TABLE','TR','TD','TH','BLOCKQUOTE','PRE']);
+    let out = '';
+    function ensureNL(n=1){
+      // add at least n newlines at end
+      let need = n;
+      while (need>0){
+        if (!out.endsWith('\n')) out += '\n';
+        else break;
+        need--;
+      }
+      // if n=2, ensure two
+      while (n===2 && !out.endsWith('\n\n')) out += '\n';
+    }
+
+    function walk(node){
+      if (!node) return;
+      if (node.nodeType === Node.TEXT_NODE){
+        out += node.nodeValue || '';
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = (node.tagName || '').toUpperCase();
+      if (tag === 'BR'){
+        out += '\n';
+        return;
+      }
+
+      const isBlock = blockTags.has(tag);
+      if (isBlock){
+        // začiatok bloku = nový riadok, ak už nie sme na začiatku
+        if (out && !out.endsWith('\n')) out += '\n';
+      }
+
+      // prechádzaj deti
+      for (const ch of Array.from(node.childNodes||[])){
+        walk(ch);
+      }
+
+      if (isBlock){
+        // koniec bloku = prázdny riadok (oddelenie odstavcov)
+        ensureNL(2);
+      }
+    }
+
+    for (const ch of Array.from(root.childNodes||[])){
+      walk(ch);
+    }
+
+    // normalize whitespace
+    out = out.replace(/\u00a0/g,' ');
+    out = out.replace(/[ \t]+\n/g,'\n');
+    out = out.replace(/\n{3,}/g,'\n\n');
+    // trim lines
+    out = out.split('\n').map(l=>l.replace(/[ \t]+$/,'')).join('\n').trim();
+    return out;
+  }catch(e){
+    return '';
+  }
+}
+
+
 function renderLitFromData(iso, data){
   const status = document.getElementById('lit-status');
   const content = document.getElementById('lit-content');
@@ -4488,17 +4568,28 @@ function renderLitFromData(iso, data){
   const idx = variants.length ? Math.min(getLitChoiceIndex(iso), variants.length-1) : 0;
   const chosen = variants.length ? variants[idx] : (data || {});
 
-  // obsah – pekné formátovanie do chlievikov
+
+  // Hlavička pod ikonou "Vybrať deň" má byť presne podľa titulku dňa (ako na lc.kbs.sk)
+  const rawTextCandidate = (chosen && chosen.text) ? String(chosen.text) : '';
+  const headTitle = extractLitTitleFromHtml(chosen && chosen.html ? chosen.html : '', rawTextCandidate);
+
+  // obsah – ber prednostne plný text z HTML (text z GAS býva niekedy iba smernica)
+  const isFullLitText = (t)=> /(Čítanie\s+z\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Responzóriový\s+žalm\b|Počuli\s+sme\b)/i.test(String(t||''));
   let outText = '';
-  if (chosen && chosen.text) outText = String(chosen.text);
+  if (rawTextCandidate && isFullLitText(rawTextCandidate)){
+    outText = rawTextCandidate;
+  } else if (chosen && chosen.html){
+    outText = litHtmlToText(chosen.html, headTitle);
+  } else if (rawTextCandidate){
+    outText = rawTextCandidate;
+  }
+
   if (!outText){
     const ps = chosen && chosen.psalmText ? String(chosen.psalmText) : '';
     const av = chosen && chosen.alleluiaVerse ? String(chosen.alleluiaVerse) : '';
     outText = [ps && ('Responzóriový žalm\n'+ps), av && ('Alelujový verš\n'+av)].filter(Boolean).join('\n\n');
   }
 
-  // Hlavička pod ikonou "Vybrať deň" má byť presne podľa titulku dňa (ako na lc.kbs.sk)
-  const headTitle = extractLitTitleFromHtml(chosen && chosen.html ? chosen.html : '', outText);
   setLitHeader(iso, headTitle);
 
   if (status){
@@ -4856,7 +4947,10 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   const idx = Math.min(getLitChoiceIndex(iso), variants.length-1);
   const v = variants[idx] || variants[0];
 
-  const fullText = (v && v.text) ? String(v.text) : '';
+  const rawText = (v && v.text) ? String(v.text) : '';
+  const vHeadTitle = extractLitTitleFromHtml(v && v.html ? v.html : '', rawText);
+  const rawLooksFull = /(Čítanie\s+z\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Responzóriový\s+žalm\b|Počuli\s+sme\b)/i.test(rawText);
+  const fullText = rawLooksFull ? rawText : (v && v.html ? litHtmlToText(v.html, vHeadTitle) : rawText);
   const split = splitLitSectionsFromText(fullText || '');
 
   // vyčisti prípadné staré LIT bloky, aby sa nereťazili pri rerenderi
@@ -4893,9 +4987,8 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   // ===== pripraviť Alelujový verš =====
   // Preferuj pole 'alleluiaVerse' z GAS (je to krátky verš). Fallback: vytiahni zo splitu.
   const avRaw = (v && v.alleluiaVerse) ? String(v.alleluiaVerse) : '';
-  let avLines = avRaw ? avRaw.replace(/
-/g,'').split('
-') : trimSegment(split.alleluia);
+  // Normalize CRLF -> LF and split into lines (avoid accidental literal CR in regex/source)
+  let avLines = avRaw ? avRaw.replace(/\r/g,'').split('\n') : trimSegment(split.alleluia);
   avLines = trimSegment(avLines);
   avLines = sanitizeAlleluiaVerseLines(avLines);
   if (avLines.length && /^Alelujový\s+verš/i.test(avLines[0].trim())) avLines.shift();
