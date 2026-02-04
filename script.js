@@ -702,12 +702,19 @@ function processXML(xmlText, opts = null) {
     if (rawId.toUpperCase().startsWith('M')) displayId = "Mariánska " + rawId.substring(1).replace(/^0+/, '');
     else if (/^\d+$/.test(rawId)) displayId = rawId.replace(/^0+/, '');
 
+    const plainForSearch = String(text||'')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     return {
       id: s.getElementsByTagName('ID')[0]?.textContent.trim(),
       title: s.getElementsByTagName('title')[0]?.textContent.trim(),
       originalId: rawId,
       displayId,
-      origText: text
+      origText: text,
+      // normalized search index (title + id + lyrics) so search works on text too
+      searchHaystack: normText((displayId||'') + ' ' + (s.getElementsByTagName('title')[0]?.textContent.trim()||'') + ' ' + plainForSearch)
     };
   });
 
@@ -760,16 +767,20 @@ function renderAllSongs() {
 function filterSongs() {
   const qRaw = document.getElementById('search').value;
   const q = normText(qRaw).trim();
-  filteredSongs = songs.filter(s => {
-    const title = normText(s.title);
-    const id = normText(s.displayId);
-    return title.includes(q) || id.includes(q);
-  });
+  if (!q) {
+    filteredSongs = [...songs];
+  } else {
+    filteredSongs = songs.filter(s => {
+      // searchHaystack obsahuje ID + názov + text piesne
+      const hay = s.searchHaystack || (normText((s.displayId||'') + ' ' + (s.title||'')));
+      return hay.includes(q);
+    });
+  }
   renderAllSongs();
   if (q.length > 0) {
+    // Pri písaní sa už NESMÚ otvárať/zatvárať sekcie „Piesne na dnes“ a „Playlisty“.
+    // Otvor iba zoznam „Všetky piesne“, aby user hneď videl výsledky.
     toggleSection('all', true);
-    toggleSection('dnes', false);
-    toggleSection('playlists', false);
   }
 }
 
@@ -830,8 +841,8 @@ function closeSong() {
   stopAutoscroll();
   document.getElementById('song-detail').style.display = 'none';
   document.getElementById('song-list').style.display = 'block';
-  const __s = document.getElementById('search');
-  if (__s) __s.value = '';
+  // Nezmazávaj vyhľadávanie pri návrate zo spevu.
+  // Používateľ chce, aby sa posledné vyhľadávanie zachovalo po „Späť na zoznam“.
   filterSongs();
 }
 
@@ -1263,8 +1274,22 @@ pendingBlanks = 0;
         out.push('</div>');
         continue;
       } else {
-        // Alelujový verš – iba verš (bez ďalších čítaní)
-        let lines = String(payload||'').replace(/\r/g,'').split('\n').map(l=>String(l||'').trim()).filter(Boolean);
+        // Aklamácia pred evanjeliom – iba verš (bez ďalších čítaní)
+        let label = 'Alelujový verš';
+        let rawText = String(payload||'');
+        // Novší formát: JSON {label,text}
+        try {
+          const t = rawText.trim();
+          if (t && t[0] === '{') {
+            const obj = JSON.parse(t);
+            if (obj && typeof obj === 'object') {
+              if (String(obj.label||'').trim()) label = String(obj.label||'').trim();
+              if (obj.text != null) rawText = String(obj.text||'');
+            }
+          }
+        } catch(e) {}
+
+        let lines = rawText.replace(/\r/g,'').split('\n').map(l=>String(l||'').trim()).filter(Boolean);
 
         // odstráň hlavičky a zvyšky
         lines = lines.filter(l => !/Alelujový verš/i.test(l));
@@ -1281,7 +1306,7 @@ pendingBlanks = 0;
         payload = lines.join('\n').trim();
 
         out.push('<div class="aleluja-insert">');
-        out.push(`<div class="aleluja-h">${escapeHtml('Alelujový verš')}</div>`);
+        out.push(`<div class="aleluja-h">${escapeHtml(label)}</div>`);
         if (payload) out.push(`<pre class="aleluja-center">${escapeHtml(payload)}</pre>`);
         out.push('</div>');
         continue;
@@ -3591,6 +3616,8 @@ startMetaPolling();
   });
 
   parseXML();
+  // Načítaj admin prepísania liturgie (ak existujú) – cacheuje sa do localStorage.
+  try { refreshLitOverridesFromDrive(); } catch(e) {}
 });
 
 
@@ -3607,6 +3634,84 @@ startMetaPolling();
 const LIT_CACHE_PREFIX = 'liturgia_cache_';      // liturgia_cache_YYYY-MM-DD
 const LIT_CHOICE_PREFIX = 'liturgia_choice_';
 const LIT_MASS_CHOICE_PREFIX = 'liturgia_mass_choice_'; // liturgia_mass_choice_YYYY-MM-DD    // liturgia_choice_YYYY-MM-DD
+
+// Admin override (999 Aleluja): prepísanie žalmu / refrénu / aklamácie pred evanjeliom.
+// Ukladá sa do Drive (folder "Playlisty") ako jeden JSON súbor, aby to videli všetci.
+const LIT_OVERRIDES_FILE = 'LiturgiaOverrides';
+const LIT_OVERRIDES_CACHE_KEY = 'liturgia_overrides_cache_v1';
+let __litOverrides = null; // {overrides:{key:{psalmRefrain,psalmText,verse}}}
+
+function _litOverrideKey(iso, vidx, midx){
+  return `${iso}|v${parseInt(vidx,10)||0}|m${parseInt(midx,10)||0}`;
+}
+
+function getLitOverrides(){
+  if (__litOverrides && typeof __litOverrides === 'object') return __litOverrides;
+  try{
+    const raw = localStorage.getItem(LIT_OVERRIDES_CACHE_KEY) || '';
+    if (raw){
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object' && obj.overrides && typeof obj.overrides === 'object'){
+        __litOverrides = obj;
+        return __litOverrides;
+      }
+    }
+  }catch(e){}
+  __litOverrides = { version: 1, overrides: {} };
+  return __litOverrides;
+}
+
+function getLitOverride(iso, vidx, midx){
+  const o = getLitOverrides();
+  const key = _litOverrideKey(iso, vidx, midx);
+  return (o && o.overrides) ? (o.overrides[key] || null) : null;
+}
+
+function setLitOverride(iso, vidx, midx, data){
+  const o = getLitOverrides();
+  const key = _litOverrideKey(iso, vidx, midx);
+  if (!data){
+    delete o.overrides[key];
+  } else {
+    o.overrides[key] = {
+      psalmRefrain: String(data.psalmRefrain||'').trim(),
+      psalmText: String(data.psalmText||'').trim(),
+      verse: String(data.verse||'').trim()
+    };
+  }
+  try { localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(o)); } catch(e){}
+}
+
+async function refreshLitOverridesFromDrive(){
+  try{
+    if (!SCRIPT_URL) return;
+    const res = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}`);
+    if (res && res.ok){
+      const obj = JSON.parse(String(res.text||'') || '{}');
+      if (obj && typeof obj === 'object' && obj.overrides && typeof obj.overrides === 'object'){
+        __litOverrides = obj;
+        try { localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); } catch(e){}
+      }
+    }
+  }catch(e){}
+}
+
+async function saveLitOverridesToDrive(){
+  if (!isAdmin) return;
+  try{
+    if (!SCRIPT_URL) return;
+    const obj = getLitOverrides();
+    obj.updatedAt = Date.now();
+    const url = `${SCRIPT_URL}?action=save&pwd=${encodeURIComponent(ADMIN_PWD)}&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}&content=${encodeURIComponent(JSON.stringify(obj))}`;
+    const res = await jsonpRequest(url);
+    if (res && res.ok){
+      __litOverrides = obj;
+      try { localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); } catch(e){}
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 
 function isoToday(){
   const d = new Date();
@@ -3875,6 +3980,7 @@ function _litLooksLikeSmernica(line){
   if (l.length <= 32 && /\d/.test(l) && /^[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽŽ]{1,8}\s*\d/.test(l)) return true;
   if (l.length <= 24 && /^Ž\s*\d/.test(l)) return true;
   return false;
+}
 
 function _litLooksLikeReadingCoords(line){
   const l = String(line||'').trim();
@@ -3888,8 +3994,6 @@ function _litLooksLikeReadingCoords(line){
   // kniha + kapitola/verše (skratka 2–8 písmen)
   if (/^[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{1,8}\s*\d+\s*,\s*\d+/.test(l)) return true;
   return false;
-}
-
 }
 
 function _litIsStartOfContent(line){
@@ -4161,7 +4265,9 @@ function _litSplitIntoMasses(text){
   }
 
   // Robustné delenie: nový blok začína až po tom, čo sme už v predchádzajúcom bloku videli evanjelium.
-  const gospelStartRe = /^(Čítanie\s+zo\s+svätého\s+Evanjelia\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Evanjelium\b)/i;
+  // NOTE: do not redeclare `gospelStartRe` in this scope (it breaks the whole app).
+  // Use a secondary regex name if we need a narrower match.
+  const gospelStartRe2 = /^(Čítanie\s+zo\s+svätého\s+Evanjelia\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Evanjelium\b)/i;
 
   const starts = [readStartIdx[0]];
   let currentStart = readStartIdx[0];
@@ -4171,7 +4277,7 @@ function _litSplitIntoMasses(text){
     let sawGospel = false;
     for (let j=currentStart; j<i; j++){
       const t = String(lines[j]||'').trim();
-      if (gospelStartRe.test(t)){ sawGospel = true; break; }
+      if (gospelStartRe2.test(t)){ sawGospel = true; break; }
     }
     if (sawGospel){
       starts.push(i);
@@ -4767,9 +4873,18 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
 
   const masses = _litSplitIntoMasses((v && v.text) ? String(v.text) : '');
   const midx = Math.min(getLitMassChoiceIndex(iso), masses.length-1);
+
+  const ov = (function(){
+    try { return getLitOverride(iso, vidx, midx) || {}; } catch(e){ return {}; }
+  })();
   const mass = masses[midx] || masses[0] || { title:'', text: (v && v.text) ? String(v.text) : '' };
 
   const parsed = _litSplitIntoSections(String(mass.text||''));
+
+  // Aklamácia pred evanjeliom (nie vždy "Alelujový verš")
+  const alleluiaLabel = (parsed && parsed.alleluia && parsed.alleluia.length)
+    ? String(parsed.alleluia[0] || '').trim()
+    : '';
 
   // Žalm + refrén (R.: ...) – refrén môže byť:
   // - v "Ž" smernici hore (parsed.psalmRefrain z hlavičky dňa),
@@ -4796,10 +4911,29 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
     }
   }
 
+  // ADMIN OVERRIDE (ak existuje pre tento dátum + formulár + omšu)
+  try {
+    const ov = getLitOverride(iso, vidx, midx);
+    if (ov) {
+      if (String(ov.psalmRefrain||'').trim()) refrainLine = String(ov.psalmRefrain||'').trim();
+      if (!refrainLine) {
+        // ak admin zámerne zmaže refrén, nech sa neukazuje
+        refrainLine = '';
+      } else if (!/^R\s*\.?\s*:\s*/i.test(refrainLine)) {
+        refrainLine = 'R.: ' + refrainLine;
+      }
+      if (String(ov.psalmText||'').trim()) psalmBodyOnly = String(ov.psalmText||'').trim();
+    }
+  } catch(e) {}
+
   const psPayload = (refrainLine ? (refrainLine + '\n') : '') + String(psalmBodyOnly||'').trim();
 
   const read2 = (parsed.reading2||[]).join('\n').trim();
-  const av = cleanAlleluiaVerse((parsed.alleluia||[]).join('\n'));
+  let av = cleanAlleluiaVerse((parsed.alleluia||[]).join('\n'));
+  try {
+    const ov = getLitOverride(iso, vidx, midx);
+    if (ov && String(ov.verse||'').trim()) av = String(ov.verse||'').trim();
+  } catch(e) {}
 
   const core = String(alelujaText||'').trim();
 
@@ -4815,7 +4949,9 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   parts.push(core);
 
   if (av){
-    parts.push(`[[LIT-VERSE|${encodeURIComponent(av)}]]`);
+    // Prepošli aj label (v pôste nemusí byť "Alelujový verš").
+    const payload = { label: (alleluiaLabel||'').trim(), text: String(av||'').trim() };
+    parts.push(`[[LIT-VERSE|${encodeURIComponent(JSON.stringify(payload))}]]`);
   }
 
   return parts.join('\n').replace(/\n{3,}/g,'\n\n').trim();
@@ -4893,6 +5029,30 @@ function setupAlelujaLitControlsIfNeeded(){
           ${massOptions}
         </select>
       </div>` : ``}
+
+    ${isAdmin ? `
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.12);">
+        <div class="tiny-label" style="margin-bottom:8px;">Admin úpravy (uloží sa všetkým)</div>
+        <div style="display:grid; gap:10px;">
+          <div>
+            <div class="tiny-label">Refrén žalmu</div>
+            <input id="aleluja-ov-refrain" type="text" value="${escapeHtml(String(ov.psalmRefrain||''))}" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.04); color:#fff;" placeholder="napr. Príď, Pane, do svojho svätého chrámu." />
+          </div>
+          <div>
+            <div class="tiny-label">Text žalmu</div>
+            <textarea id="aleluja-ov-psalm" rows="6" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.04); color:#fff;" placeholder="(celý text žalmu)">${escapeHtml(String(ov.psalmText||''))}</textarea>
+          </div>
+          <div>
+            <div class="tiny-label">Aklamácia pred evanjeliom</div>
+            <textarea id="aleluja-ov-verse" rows="3" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.04); color:#fff;" placeholder="(verš / aklamácia)">${escapeHtml(String(ov.verse||''))}</textarea>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="aleluja-ov-save" class="btn" type="button" style="flex:1; min-width:160px;">Uložiť</button>
+            <button id="aleluja-ov-reset" class="btn" type="button" style="flex:1; min-width:160px; opacity:.85;">Vrátiť automatické</button>
+          </div>
+        </div>
+      </div>
+    ` : ``}
   `;
 
   const varSelEl = document.getElementById('aleluja-lit-select');
@@ -4913,5 +5073,42 @@ function setupAlelujaLitControlsIfNeeded(){
       setLitMassChoiceIndex(iso, n);
       try { renderSong(); } catch(e) {}
     });
+  }
+
+  // Admin – ulož / zruš prepísanie
+  if (isAdmin){
+    const btnSave = document.getElementById('aleluja-ov-save');
+    const btnReset = document.getElementById('aleluja-ov-reset');
+    const inRef = document.getElementById('aleluja-ov-refrain');
+    const inPsalm = document.getElementById('aleluja-ov-psalm');
+    const inVerse = document.getElementById('aleluja-ov-verse');
+
+    const doSave = async (reset=false) => {
+      const key = litOverrideKey(iso, vidx, midx);
+      const obj = getLitOverridesObj();
+      obj.overrides = obj.overrides || {};
+      if (reset){
+        delete obj.overrides[key];
+      } else {
+        const v = {
+          psalmRefrain: (inRef?.value||'').trim(),
+          psalmText: (inPsalm?.value||'').trim(),
+          verse: (inVerse?.value||'').trim(),
+        };
+        // ak je všetko prázdne, ber to ako reset
+        if (!v.psalmRefrain && !v.psalmText && !v.verse) {
+          delete obj.overrides[key];
+        } else {
+          obj.overrides[key] = v;
+        }
+      }
+      obj.updatedAt = Date.now();
+      await saveLitOverridesToDrive(obj);
+      await refreshLitOverridesFromDrive();
+      try { renderSong(); } catch(e) {}
+    };
+
+    if (btnSave) btnSave.addEventListener('click', () => { doSave(false); });
+    if (btnReset) btnReset.addEventListener('click', () => { doSave(true); });
   }
 }
