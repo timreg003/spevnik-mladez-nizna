@@ -1052,3 +1052,7 @@ body.present #presentControls{ display:flex; }
   font-family: inherit;
   font-size: 15px;
 }
+
+
+/* Liturgia: zvýraznenie 'alebo' */
+.lit-or{ color: #4ea3ff; font-weight: 700; }

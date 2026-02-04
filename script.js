@@ -148,8 +148,8 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v56';
-const APP_CACHE_NAME = 'spevnik-v56';
+const APP_BUILD = 'v62';
+const APP_CACHE_NAME = 'spevnik-v62';
 
 
 const SPEVNIK_XML_CACHE_KEY = 'spevnik-export.xml';
@@ -2950,6 +2950,12 @@ async function openPlaylistAndRender(name){
   // zachovaj pozíciu a stav sekcií – nech to po načítaní playlistu "nezroluje"
   const y = (() => { try { return window.scrollY || 0; } catch(e){ return 0; } })();
 
+  const openState = {
+    dnes: (document.getElementById('dnes-section-wrapper')||{}).style?.display !== 'none',
+    playlists: (document.getElementById('playlists-section-wrapper')||{}).style?.display !== 'none',
+    all: (document.getElementById('all-section-wrapper')||{}).style?.display !== 'none'
+  };
+
   // show loading immediately
   const sect = document.getElementById('playlists-section');
   if (sect) sect.innerHTML = '<div class="loading">Načítavam...</div>';
@@ -2961,6 +2967,10 @@ async function openPlaylistAndRender(name){
   toggleSection('playlists', true);
 
   renderPlaylistsUI(true);
+  // obnov aj ostatné sekcie tak, ako boli (nech to nič "nezroluje" / nezatvorí)
+  try { toggleSection('dnes', openState.dnes); } catch(e){}
+  try { toggleSection('all', openState.all); } catch(e){}
+
 
   // obnov scroll (bez skoku na začiatok stránky)
   try { requestAnimationFrame(() => { try { window.scrollTo(0, y); } catch(e){} }); } catch(e){}
@@ -3382,17 +3392,32 @@ async function hardResetApp() {
     showToast("Si offline – aktualizácia nie je dostupná.", false);
     return;
   }
-  closeFabMenu();
+
+  // Toto je "Aktualizovať aplikáciu" z ozubeného kolieska:
+  // hneď zbaľ všetko a počas celej operácie nech dole svieti "Aktualizujem…"
+  try { closeFabMenu(); } catch(e) {}
+  try { forceInitialCollapsed(); } catch(e) {}
+
   setSyncStatus("Aktualizujem…", "sync-warn");
-  if (!confirm("Vymazať pamäť?")) return;
+  showToast("Aktualizujem...", true, 0);
+
+  if (!confirm("Vymazať pamäť?")){
+    setSyncStatus("Zrušené", "sync-warn");
+    showToast("Zrušené", true, 1200);
+    return;
+  }
 
   localStorage.clear();
   try {
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
   } catch (e) {}
+
   setSyncStatus("Aktualizované", "sync-ok");
-  location.reload(true);
+  showToast("Aktualizované", true, 1800);
+
+  // tvrdý reload
+  try { location.reload(true); } catch(e) { location.reload(); }
 }
 
 /* Formspree */
@@ -3850,17 +3875,36 @@ function _litLooksLikeSmernica(line){
   if (l.length <= 32 && /\d/.test(l) && /^[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽŽ]{1,8}\s*\d/.test(l)) return true;
   if (l.length <= 24 && /^Ž\s*\d/.test(l)) return true;
   return false;
+
+function _litLooksLikeReadingCoords(line){
+  const l = String(line||'').trim();
+  if (!l) return false;
+  // typicky: "Hebr 12, 4-7; Ž 103, 1-2. 3-4; Mk 6, 1-6"
+  // alebo krátke odkazy v hlavičke. Nechceme ich v názve dňa.
+  if (/;/.test(l) && /\d/.test(l)) return true;
+  if (/\b\d+\s*,\s*\d+/.test(l)) return true; // 12, 4-7
+  if (/^\s*\d+\s*,\s*\d+/.test(l)) return true;
+  if (/\bŽ\s*\d+\b/.test(l) && /\d/.test(l)) return true;
+  // kniha + kapitola/verše (skratka 2–8 písmen)
+  if (/^[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{1,8}\s*\d+\s*,\s*\d+/.test(l)) return true;
+  return false;
+}
+
 }
 
 function _litIsStartOfContent(line){
   const l = String(line||'').trim();
   return (
-    /^Čítanie\s+(z|zo)\b/i.test(l) ||
+    // prvé/druhé čítanie môže začať aj "Začiatok/Koniec ..." (nielen "Čítanie ...")
+    /^(Čítanie|Začiatok|Koniec)\b/i.test(l) ||
     /^Responzóriový\s+žalm\b/i.test(l) ||
     /^Žalm\b/i.test(l) ||
-    /^Alelujový\s+verš\b/i.test(l) ||
-    /^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(l) ||
-    /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l)
+    /^Ž\s*\d+\b/i.test(l) ||
+    /^Sekvencia\b/i.test(l) ||
+    /^(Alelujový\s+verš|Verš\s+pred\s+evanjeliom|Aklamácia\s+pred\s+evanjeliom)\b/i.test(l) ||
+    // evanjelium – rôzne varianty
+    /^(Čítanie|Začiatok|Koniec)\s+(zo\s+svätého\s+Evanjelia|zo\s+svätého\s+evanjelia|svätého\s+Evanjelia|svätého\s+evanjelia)\b/i.test(l) ||
+    /^Evanjelium\b/i.test(l)
   );
 }
 
@@ -3934,6 +3978,7 @@ function _litExtractHeaderBoxLines(lines){
 
     // hlavička končí pred smernicami / pred prvým obsahom
     if (_litLooksLikeSmernica(t)) break;
+    if (_litLooksLikeReadingCoords(t)) continue;
     if (/^R\s*\.?\s*:\s*\S/i.test(t)) break; // R.: z hlavičkovej Ž sekcie nechceme v titulku
     if (_litIsStartOfContent(t)) break;
 
@@ -4031,6 +4076,10 @@ function _litSplitIntoSections(text){
   const idxGospel = (() => {
     let i = _litFindIndex(lines, /^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i, 0);
     if (i<0) i = _litFindIndex(lines, /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i, 0);
+    if (i<0) i = _litFindIndex(lines, /^Začiatok\s+(zo\s+svätého\s+)?Evanjelia\b/i, 0);
+    if (i<0) i = _litFindIndex(lines, /^Začiatok\s+(zo\s+svätého\s+)?evanjelia\b/i, 0);
+    if (i<0) i = _litFindIndex(lines, /^Koniec\s+(zo\s+svätého\s+)?Evanjelia\b/i, 0);
+    if (i<0) i = _litFindIndex(lines, /^Koniec\s+(zo\s+svätého\s+)?evanjelia\b/i, 0);
     if (i<0) i = _litFindIndex(lines, /^Evanjelium\b/i, 0);
     return i;
   })();
@@ -4046,7 +4095,7 @@ function _litSplitIntoSections(text){
     const lim = (idxAlleluia>=0) ? idxAlleluia : (idxGospel>=0 ? idxGospel : lines.length);
     for (let i=idxPsalm+1;i<lim;i++){
       const l = String(lines[i]||'').trim();
-      if (/^Čítanie\s+(z|zo)\b/i.test(l) &&
+      if (/^(Čítanie|Začiatok|Koniec)\b/i.test(l) &&
           !/^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(l) &&
           !/^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l)){
         idxRead2 = i;
@@ -4087,17 +4136,26 @@ function _litSplitIntoMasses(text){
   const linesAll = _litStripGlobalNoiseLines(_litLines(text));
   const lines = linesAll.map(l=>String(l||''));
 
-  // Indexy začiatkov "Čítanie z/zo ..." (nie evanjelium) – každý formulár/omša nimi začína.
+  // Indexy začiatkov "prvého čítania" – KBS niekedy používa aj "Začiatok..." / "Koniec...".
+  // Každý formulár/omša začína prvým čítaním (nie evanjelium).
   const readStartIdx = [];
+  const gospelStartRe = /^(Čítanie\s+zo\s+svätého\s+Evanjelia\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Začiatok\s+zo\s+svätého\s+Evanjelia\b|Začiatok\s+zo\s+svätého\s+evanjelia\b|Začiatok\s+svätého\s+Evanjelia\b|Začiatok\s+svätého\s+evanjelia\b|Koniec\s+zo\s+svätého\s+Evanjelia\b|Koniec\s+zo\s+svätého\s+evanjelia\b|Evanjelium\b)/i;
+
   for (let i=0;i<lines.length;i++){
     const t = String(lines[i]||'').trim();
     if (!t) continue;
-    if (/^Čítanie\s+(z|zo)\b/i.test(t) &&
-        !/^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(t) &&
-        !/^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(t)){
+
+    // Nesmie to byť evanjelium, žalm, aklamácia, sekvencia.
+    if (gospelStartRe.test(t)) continue;
+    if (/^Responzóriový\s+žalm\b/i.test(t) || /^Žalm\b/i.test(t) || /^Ž\s*\d+\b/i.test(t)) continue;
+    if (/^(Alelujový\s+verš|Verš\s+pred\s+evanjeliom|Aklamácia\s+pred\s+evanjeliom)\b/i.test(t)) continue;
+    if (/^Sekvencia\b/i.test(t)) continue;
+
+    if (/^(Čítanie|Začiatok|Koniec)\b/i.test(t)){
       readStartIdx.push(i);
     }
   }
+
   if (!readStartIdx.length){
     return [{ title:'', text:String(text||'') }];
   }
@@ -4175,8 +4233,16 @@ function _litRenderBody(lines){
   const out = [];
   out.push('<div class="lit-body">');
   for (const p of paras){
-    const joined = p.map(x=>escapeHtml(x)).join('<br>');
-    out.push(`<p>${joined}</p>`);
+    const html = p.map(x=>{
+      const t = String(x||'');
+      const trim = t.trim();
+      // zvýrazni "alebo" / "alebo večer" (KBS voľby) – modro, ale nech ostane v tom istom odstavci
+      if (/^alebo\b/i.test(trim)){
+        return `<span class="lit-or">${escapeHtml(t)}</span>`;
+      }
+      return escapeHtml(t);
+    }).join('<br>');
+    out.push(`<p>${html}</p>`);
   }
   out.push('</div>');
   return out.join('');
@@ -4197,7 +4263,7 @@ function _litRenderReadingCard(label, lines){
   const clean = lines.map(x=>String(x||'')).filter(x=>x!=null);
 
   // 1) prvý "Čítanie z/zo ..." riadok (KBS nadpis) a biblický odkaz ako menší riadok
-  const h = _litPullFirstHeading(clean, /^Čítanie\s+(z|zo)\b/i);
+  const h = _litPullFirstHeading(clean, /^(Čítanie|Začiatok|Koniec)\b/i);
   let bodyLines = clean.slice();
   let headingLine = '';
   let refLine = '';
@@ -4210,7 +4276,10 @@ function _litRenderReadingCard(label, lines){
 
   // Poznámka: "malý komentár" (sivé na KBS) je v tejto UI presne biblický odkaz (refLine).
 
-  // 3) "Počuli sme ..." nech je modré a oddelené
+  
+  // 2b) Niekedy sa v závere čítania objaví aj R.: (refren žalmu) – nech to nie je duplicitne aj v čítaní.
+  bodyLines = bodyLines.filter(l => !/^R\s*\.?\s*:\s*\S/i.test(String(l||'').trim()));
+// 3) "Počuli sme ..." nech je modré a oddelené
   let closing = '';
   const closeIdx = bodyLines.findIndex(l => /^Počuli\s+sme\b/i.test(String(l||'').trim()));
   if (closeIdx >= 0){
@@ -4319,17 +4388,17 @@ function _litRenderGospelCard(lines){
   if (!lines || !lines.some(x=>String(x||'').trim())) return '';
   const clean = lines.map(x=>String(x||''));
 
-  // nadpis "Čítanie zo svätého Evanjelia..." do tela
+  // nadpis evanjelia do tela (KBS niekedy používa aj "Začiatok/Koniec ...")
   let headingLine = '';
-  const h = _litPullFirstHeading(clean, /^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i);
-  const h2 = _litPullFirstHeading(clean, /^Čítanie\s+zo\s+svätého\s+evanjelia\b/i);
+  const h = _litPullFirstHeading(clean, /^(Čítanie|Začiatok|Koniec)\s+(zo\s+svätého\s+Evanjelia|zo\s+svätého\s+evanjelia|svätého\s+Evanjelia|svätého\s+evanjelia)\b/i);
+  const h2 = _litPullFirstHeading(clean, /^Evanjelium\b/i);
   const idx = (h.idx>=0) ? h.idx : (h2.idx>=0 ? h2.idx : -1);
   if (idx >= 0){
     headingLine = String(clean[idx]||'').trim();
     clean.splice(idx,1);
   }
 
-  // malý komentár (napr. "Chlapec rástol..." alebo podobné) – nech je menší modrý
+// malý komentár (napr. "Chlapec rástol..." alebo podobné) – nech je menší modrý
   let commentLine = '';
   for (let i=0;i<clean.length;i++){
     const l = String(clean[i]||'').trim();
@@ -4774,7 +4843,7 @@ function setupAlelujaLitControlsIfNeeded(){
   box.style.display = 'block';
 
   if (!variants.length){
-    box.innerHTML = `<div class="tiny-label">Aleluja – žalm a verš (${escapeHtml(dmyFromISO(iso))})</div><div class="loading">Načítavam liturgiu...</div>`;
+    box.innerHTML = `<div class="tiny-label">${escapeHtml(dmyFromISO(iso))} ${escapeHtml(weekdaySkFromISO(iso) ? "(" + weekdaySkFromISO(iso).toLowerCase() + ")" : "")}</div><div class="loading">${navigator.onLine ? "Načítavam liturgiu..." : "Offline – liturgia nie je uložená."}</div>`;
     if (navigator.onLine){
       fetchLiturgia(iso).then(d=>{
         if (d && d.ok){
@@ -4809,8 +4878,7 @@ function setupAlelujaLitControlsIfNeeded(){
   }).join('');
 
   box.innerHTML = `
-    <div class="tiny-label">Aleluja – žalm a verš (${escapeHtml(dmyFromISO(iso))})</div>
-    ${summary ? `<div style="margin:6px 0 8px 0; opacity:.9;">${escapeHtml(summary)}</div>` : ``}
+    <div class="tiny-label">${escapeHtml(dmyFromISO(iso))} ${escapeHtml(weekdaySkFromISO(iso) ? "(" + weekdaySkFromISO(iso).toLowerCase() + ")" : "")}</div>
     ${variants.length>1 ? `
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
         <span class="tiny-label">Formulár:</span>
