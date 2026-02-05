@@ -3597,17 +3597,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ch) ch.className = 'fas fa-chevron-down section-chevron';
     });
   }catch(e){}
-    if (!t) continue;
-
-    // Tvrdý split pri titulkoch omší (keď KBS ponúka viac omší v deň)
-    if (/^(Omša|Vigília|Vigilia|Na\s+svitaní|Na\s+svitani|Cez\s+deň|Cez\s+den|Večer|Vecer|V\s+deň|V\s+den)\b/i.test(t)) {
-      // reálny začiatok bude najbližšie čítanie; pre istotu označ ako možný nový blok
-      readStartIdx.push(i+1);
-      continue;
-    }
-
-    // Nesmie to byť evanjelium, žalm, aklamácia, sekvencia.
-
   // vždy začni na domovskej obrazovke (zoznam)
   try{ closeSong(); }catch(e){}
 
