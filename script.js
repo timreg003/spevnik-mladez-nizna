@@ -554,13 +554,6 @@ function forceInitialCollapsed(){
   try{
     const search = document.getElementById('search');
     if (search) search.value = '';
-    // Keep 'Zoznam piesní' open while typing; avoid toggling section on mobile IME
-    try{
-      ['keydown','keyup','keypress','input','compositionstart','compositionend'].forEach(ev=>{
-        search.addEventListener(ev, (e)=>{ try{ e.stopPropagation(); }catch(_){ } }, {passive:true});
-      });
-      search.addEventListener('focus', ()=>{ try{ toggleSection('all', true); }catch(e){} });
-    }catch(e){}
   }catch(e){}
   // vždy začni na domovskej obrazovke (zoznam)
   const list = document.getElementById('song-list');
@@ -784,11 +777,8 @@ function filterSongs() {
     });
   }
   renderAllSongs();
-  if (q.length > 0) {
-    // Pri písaní sa už NESMÚ otvárať/zatvárať sekcie „Piesne na dnes“ a „Playlisty“.
-    // Otvor iba zoznam „Všetky piesne“, aby user hneď videl výsledky.
-    toggleSection('all', true);
-  }
+  // Sekciu „Všetky piesne“ drž otvorenú cez focus handler na inpute (nižšie),
+  // aby sa pri IME skladaní znakov nerozbaľovalo/zbaľovalo pri každom písmene.
 }
 
 /* ===== SONG DETAIL ===== */
@@ -1989,16 +1979,6 @@ function renderSong() {
 
   }
 
-  // Transpose chords (works also for 999)
-  if (transposeStep !== 0) {
-    text = text.replace(/\[(.*?)\]/g, (m, c) => `[${transposeChord(c, transposeStep)}]`);
-  }
-
-  if (is999 && !chordsVisible) {
-    text = String(text || '').replace(/\[.*?\]/g, '');
-  }
-
-
   const el = document.getElementById('song-content');
   el.innerHTML = songTextToHTML(text);
   el.style.fontSize = fontSize + 'px';
@@ -2960,7 +2940,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
 
     if (!isAdmin) {
       return `
-        <div class="pl-row" onclick="openPlaylist('${encodeURIComponent(name)}')">
+        <div class="pl-row" onclick="openPlaylistFromClick(event,'${encodeURIComponent(name)}')">
           <div class="pl-icon"><i class="fas fa-music"></i></div>
           <div class="song-title">${safe}</div>
         </div>`;
@@ -2973,7 +2953,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
            ondragstart="onDragStart(event,'plist')"
            ondragover="onDragOver(event)"
            ondrop="onDrop(event,'plist')">
-        <div style="display:flex; gap:10px; align-items:center; flex:1; cursor:pointer;" onclick="openPlaylist('${encodeURIComponent(name)}')">
+        <div style="display:flex; gap:10px; align-items:center; flex:1; cursor:pointer;" onclick="openPlaylistFromClick(event,'${encodeURIComponent(name)}')">
           <div style="min-width:78px; text-align:right; color:#00bfff;"><i class="fas fa-music"></i></div>
           <div style="flex:1; overflow-wrap:anywhere;">${safe}</div>
         </div>
@@ -2990,7 +2970,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
 
 async function openPlaylistAndRender(name){
   // zachovaj pozíciu a stav sekcií – nech to po načítaní playlistu "nezroluje"
-  const y = (() => { try { return window.scrollY || 0; } catch(e){ return 0; } })();
+  const y = (() => { try { return (document.scrollingElement||document.documentElement||document.body).scrollTop || 0; } catch(e){ return 0; } })();
 
   const openState = {
     dnes: (document.getElementById('dnes-section-wrapper')||{}).style?.display !== 'none',
@@ -3014,8 +2994,20 @@ async function openPlaylistAndRender(name){
   try { toggleSection('all', openState.all); } catch(e){}
 
 
-  // obnov scroll (bez skoku na začiatok stránky)
-  try { requestAnimationFrame(() => { try { window.scrollTo(0, y); } catch(e){} }); } catch(e){}
+  // obnov scroll (bez skoku na začiatok stránky) – mobil (scrollingElement)
+  try {
+    const se = (document.scrollingElement||document.documentElement||document.body);
+    requestAnimationFrame(() => {
+      try { se.scrollTop = y; } catch(e){}
+      requestAnimationFrame(() => { try { se.scrollTop = y; } catch(e){} });
+      setTimeout(() => { try { se.scrollTop = y; } catch(e){} }, 60);
+    });
+  } catch(e){}
+}
+
+function openPlaylistFromClick(ev, nameEnc){
+  try{ if (ev){ ev.preventDefault(); ev.stopPropagation(); } }catch(e){}
+  return openPlaylist(nameEnc);
 }
 
 function openPlaylist(nameEnc) {
@@ -3438,7 +3430,14 @@ async function hardResetApp() {
   // Toto je "Aktualizovať aplikáciu" z ozubeného kolieska:
   // hneď zbaľ všetko a počas celej operácie nech dole svieti "Aktualizujem…"
   try { closeFabMenu(); } catch(e) {}
+  // ✅ Nezroluj stránku pri aktualizácii – zachovaj scroll.
+  const __srY = (() => { try { return (document.scrollingElement||document.documentElement||document.body).scrollTop || 0; } catch(e){ return 0; } })();
   try { forceInitialCollapsed(); } catch(e) {}
+  try {
+    requestAnimationFrame(() => {
+      try { (document.scrollingElement||document.documentElement||document.body).scrollTop = __srY; } catch(e){}
+    });
+  } catch(e) {}
 
   setSyncStatus("Aktualizujem…", "sync-warn");
   showToast("Aktualizujem...", true, 0);
@@ -3586,6 +3585,17 @@ document.addEventListener('DOMContentLoaded', () => {
   try{
     const search = document.getElementById('search');
     if (search) search.value = '';
+
+    // ✅ Fix: pri písaní do vyhľadávania sa nesmie prepínať/zrolovať sekcia „Zoznam piesní“.
+    // Mobilné klávesnice (IME) vedia počas skladania znakov vyvolať eventy, ktoré bublajú na header.
+    if (search){
+      ['keydown','keyup','keypress','input','compositionstart','compositionend'].forEach(ev => {
+        search.addEventListener(ev, (e)=>{ try{ e.stopPropagation(); }catch(_){ } }, { passive:true });
+      });
+      // Zoznam piesní drž otvorený pri písaní
+      search.addEventListener('focus', () => { try{ toggleSection('all', true); }catch(e){} }, { passive:true });
+      search.addEventListener('input', () => { try{ if (String(search.value||'').trim()) toggleSection('all', true); }catch(e){} }, { passive:true });
+    }
     document.querySelectorAll('.section-content').forEach(el => { el.style.display = 'none'; });
     ['dnes','playlists','all','lit','history'].forEach(id => {
       const ch = document.getElementById(id+'-chevron');
@@ -3654,7 +3664,7 @@ const LIT_MASS_CHOICE_PREFIX = 'liturgia_mass_choice_'; // liturgia_mass_choice_
 
 // Admin override (999 Aleluja): prepísanie žalmu / refrénu / aklamácie pred evanjeliom.
 // Ukladá sa do Drive (folder "Playlisty") ako jeden JSON súbor, aby to videli všetci.
-const LIT_OVERRIDES_FILE = 'LiturgiaOverrides.json';
+const LIT_OVERRIDES_FILE = 'LiturgiaOverrides';
 const LIT_OVERRIDES_CACHE_KEY = 'liturgia_overrides_cache_v1';
 let __litOverrides = null; // {overrides:{key:{psalmRefrain,psalmText,verse}}}
 
@@ -4187,16 +4197,18 @@ function _litSplitIntoSections(text){
 
   lines = _litDropLeadNoise(lines);
 
-  // Nájdime reálny začiatok prvého čítania (nie hlavičkové biblické odkazy typu "Ž 85, ...")
+  // Reálny začiatok 1. čítania (nie hlavičkové biblické odkazy typu "Ž 85, 8-13").
   const idxRead1Start = (() => {
     for (let i=0;i<lines.length;i++){
-      const l = String(lines[i]||'').trim();
-      if (!l) continue;
-      if (/^(Čítanie|Začiatok|Koniec)\b/i.test(l) &&
-          !/^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(l) &&
-          !/^Čítanie\s+zo\s+svätého\s+evanjelia\b/i.test(l)) {
-        return i;
-      }
+      const t = String(lines[i]||'').trim();
+      if (!t) continue;
+      // preskoč žalm/aklamáciu/sekvenciu/evanjelium
+      if (/^Responzóriový\s+žalm\b/i.test(t) || /^Žalm\b/i.test(t) || /^Ž\s*\d+\b/i.test(t)) continue;
+      if (/^(Alelujový\s+verš|Verš\s+pred\s+evanjeliom|Aklamácia\s+pred\s+evanjeliom)\b/i.test(t)) continue;
+      if (/^Sekvencia\b/i.test(t)) continue;
+      if (/^(Čítanie\s+zo\s+svätého\s+Evanjelia\b|Čítanie\s+zo\s+svätého\s+evanjelia\b|Začiatok\s+(zo\s+svätého\s+)?Evanjelia\b|Začiatok\s+(zo\s+svätého\s+)?evanjelia\b|Koniec\s+(zo\s+svätého\s+)?Evanjelia\b|Koniec\s+(zo\s+svätého\s+)?evanjelia\b|Evanjelium\b)/i.test(t)) continue;
+
+      if (/^(Čítanie|Začiatok|Koniec)\b/i.test(t)) return i;
     }
     return 0;
   })();
@@ -4204,8 +4216,7 @@ function _litSplitIntoSections(text){
   const idxPsalm = (() => {
     let i = _litFindIndex(lines, /^Responzóriový\s+žalm\b/i, idxRead1Start);
     if (i < 0) i = _litFindIndex(lines, /^Žalm\b/i, idxRead1Start);
-    // "Ž 85, ..." sa často objaví v hlavičke, preto ^Ž\d+ hľadaj až po pár riadkoch od prvého čítania.
-    if (i < 0) i = _litFindIndex(lines, /^Ž\s*\d+\b/i, Math.min(lines.length-1, idxRead1Start + 3));
+    if (i < 0) i = _litFindIndex(lines, /^Ž\s*\d+\b/i, Math.min(lines.length-1, idxRead1Start+3));
     return i;
   })();
 
@@ -4280,6 +4291,13 @@ function _litSplitIntoMasses(text){
   for (let i=0;i<lines.length;i++){
     const t = String(lines[i]||'').trim();
     if (!t) continue;
+
+    // Tvrdý split pri titulkoch omší (keď KBS ponúka viac omší v deň)
+    if (/^(Omša|Vigília|Vigilia|Na\s+svitaní|Na\s+svitani|Cez\s+deň|Cez\s+den|Večer|Vecer|V\s+deň|V\s+den)\b/i.test(t)) {
+      // reálny začiatok bude najbližšie čítanie; pre istotu označ ako možný nový blok
+      readStartIdx.push(i+1);
+      continue;
+    }
 
     // Nesmie to byť evanjelium, žalm, aklamácia, sekvencia.
     if (gospelStartRe.test(t)) continue;
