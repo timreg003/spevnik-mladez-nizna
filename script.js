@@ -148,8 +148,84 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v68';
-const APP_CACHE_NAME = 'spevnik-v68';
+const APP_BUILD = 'v69';
+const APP_CACHE_NAME = 'spevnik-v69';
+
+// ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
+// We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
+// This makes edits visible on other devices without needing a hard reset.
+const LS_LITOV_HASH = 'spevnik_litov_hash_v1';
+let litOvPollingStarted = false;
+
+function _hashStrDjb2(str){
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h) + str.charCodeAt(i);
+  // force unsigned 32-bit
+  return (h >>> 0).toString(16);
+}
+
+function _stableStringify(obj){
+  // Stable stringify for change detection (sort keys recursively)
+  const seen = new WeakSet();
+  function norm(x){
+    if (x && typeof x === 'object'){
+      if (seen.has(x)) return null;
+      seen.add(x);
+      if (Array.isArray(x)) return x.map(norm);
+      const out = {};
+      Object.keys(x).sort().forEach(k => { out[k] = norm(x[k]); });
+      return out;
+    }
+    return x;
+  }
+  try { return JSON.stringify(norm(obj)); } catch(e){ return JSON.stringify(obj || null); }
+}
+
+function _getSeenLitOvHash(){
+  try { return String(localStorage.getItem(LS_LITOV_HASH) || ''); } catch(e) { return ''; }
+}
+function _setSeenLitOvHash(h){
+  try { localStorage.setItem(LS_LITOV_HASH, String(h || '')); } catch(e) {}
+}
+
+async function pollLitOverridesAndAutoApply(){
+  if (!navigator.onLine) return;
+  try{
+    const res = await jsonpRequest(`${SCRIPT_URL}?action=litOverrideGet`);
+    if (!res || !res.ok || !res.data) return;
+    const remote = res.data;
+    const hash = _hashStrDjb2(_stableStringify(remote));
+    const seen = _getSeenLitOvHash();
+    if (hash && seen && hash === seen) return;
+
+    // Apply & cache
+    __litOverrides = remote;
+    try{ localStorage.setItem('__litOverrides', JSON.stringify(__litOverrides)); }catch(e){}
+    _setSeenLitOvHash(hash);
+
+    // If user is currently viewing Aleluja 999 in Piesne na dnes, rerender immediately
+    try{
+      const is999 = currentSong && String(currentSong.originalId||'').replace(/^0+/, '') === '999';
+      const titleIsAleluja = currentSong && String(currentSong.title||'').trim().toLowerCase() === 'aleluja';
+      const isDnes = (currentListSource === 'dnes');
+      if (is999 && titleIsAleluja && isDnes){
+        // refresh admin panel values (if admin) and song body
+        try{ setupAlelujaLitControlsIfNeeded(); }catch(e){}
+        try{ renderSong(); }catch(e){}
+      }
+    }catch(e){}
+
+  }catch(e){ /* ignore */ }
+}
+
+function startLitOverridesPolling(){
+  if (litOvPollingStarted) return;
+  litOvPollingStarted = true;
+  pollLitOverridesAndAutoApply();
+  setInterval(pollLitOverridesAndAutoApply, 60 * 1000);
+  window.addEventListener('online', () => pollLitOverridesAndAutoApply());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pollLitOverridesAndAutoApply(); });
+}
 
 
 const SPEVNIK_XML_CACHE_KEY = 'spevnik-export.xml';
@@ -3635,6 +3711,9 @@ if ('serviceWorker' in navigator) {
 // META update badge polling (1x/min) – start immediately (not only in song detail)
 startMetaPolling();
 
+// Liturgia overrides polling (1x/min) – keeps Aleluja 999 edits in sync across devices without changing GAS
+startLitOverridesPolling();
+
 
   toggleSection('dnes', false);
   toggleSection('playlists', false);
@@ -3730,6 +3809,8 @@ async function refreshLitOverridesFromDrive(){
     if (res && res.ok && res.data){
       __litOverrides = res.data;
       try{ localStorage.setItem('__litOverrides', JSON.stringify(__litOverrides)); }catch(e){}
+      // keep hash in sync so polling doesn't falsely report changes
+      try{ _setSeenLitOvHash(_hashStrDjb2(_stableStringify(__litOverrides))); }catch(e){}
       return __litOverrides;
     }
   }catch(e){}
@@ -5155,7 +5236,8 @@ function setupAlelujaLitControlsIfNeeded(){
     }
 
     // pre-render aleluja piesne (ak je otvorená)
-    try{ renderSongDetails(currentSong.originalId, currentListSource); }catch(e){}
+    // immediate refresh in the open detail (no need to leave and reopen)
+    try{ renderSong(); }catch(e){}
   }
 
   async function doReset(){
@@ -5172,7 +5254,8 @@ function setupAlelujaLitControlsIfNeeded(){
     }
     // znovu vykresli UI s defaultmi
     try{ setupAlelujaLitControlsIfNeeded(); }catch(e){}
-    try{ renderSongDetails(currentSong.originalId, currentListSource); }catch(e){}
+    // immediate refresh in the open detail (no need to leave and reopen)
+    try{ renderSong(); }catch(e){}
   }
 
   if (btnSave) btnSave.onclick = (ev)=>{ try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} doSave(); };
