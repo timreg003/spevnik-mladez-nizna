@@ -148,7 +148,7 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v70';
+const APP_BUILD = 'v71';
 const APP_CACHE_NAME = 'spevnik-v69';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
@@ -861,21 +861,46 @@ function renderAllSongs() {
     songRowHTMLClickable(s.displayId, s.title, `openSongById('${s.id}','all')`)
   ).join('');
 }
+
+function renderAllSongsPreserveScroll(){
+  const sc = document.scrollingElement || document.documentElement || document.body;
+  const prev = sc ? sc.scrollTop : 0;
+  renderAllSongs();
+  // Po prerenderi zachovaj pozíciu scrollu (Safari/Android občas skočí).
+  requestAnimationFrame(() => {
+    try{
+      const el = document.getElementById('search');
+      if (el && document.activeElement === el && sc) sc.scrollTop = prev;
+    }catch(e){}
+  });
+}
+
 function filterSongs() {
   const el = document.getElementById('search');
-  const qRaw = el ? el.value : '';
+  const qRaw = el ? String(el.value || '') : '';
   const q = normText(qRaw).trim();
 
-  // pri písaní nenechaj sekciu "Zoznam piesní" nečakane zbalovať
-  try { searchKeepOpenUntil = Date.now() + 1500; } catch(e){}
-  try { toggleSection('all', true); } catch(e){}
+  // Počas vyhľadávania drž sekciu "Zoznam piesní" otvorenú, ale nikdy netoggle-uj (to spôsobovalo skákanie).
+  try{
+    const wrap = document.getElementById('all-section-wrapper');
+    const ch = document.getElementById('all-chevron');
+    const mustOpen = (q.length > 0) || (el && document.activeElement === el);
+    if (mustOpen && wrap && wrap.style.display === 'none'){
+      wrap.style.display = 'block';
+      if (ch){
+        ch.classList.remove('fa-chevron-down');
+        ch.classList.add('fa-chevron-up');
+      }
+    }
+  }catch(e){}
 
   if (!q) {
     filteredSongs = [...songs];
   } else {
     filteredSongs = songs.filter(s => s.searchHaystack.includes(q));
   }
-  renderAllSongs();
+
+  renderAllSongsPreserveScroll();
 }
 
 
