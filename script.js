@@ -148,7 +148,7 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v69';
+const APP_BUILD = 'v70';
 const APP_CACHE_NAME = 'spevnik-v69';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
@@ -2981,7 +2981,7 @@ async function loadPlaylistsFromDrive() {
     return;
   }
 
-  list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder" && p.name !== "HistoryLog");
+  list = (list || []).filter(p => p.name !== "PiesneNaDnes" && p.name !== "PlaylistOrder" && p.name !== "HistoryLog" && p.name !== "LiturgiaOverrides.json");
   const names = list.map(p => p.name);
 
   // Vyčisti lokálny cache o playlisty, ktoré už na Drive nie sú
@@ -3861,25 +3861,31 @@ function dmyFromISO(iso){
 // Z názvu "Piatok 30.1" / "Piatok 30.1." / "Piatok 30.1.2026" -> ISO YYYY-MM-DD
 function parseIsoFromDnesTitle(title){
   const t = String(title||'').trim();
-  // nájdi prvý výskyt d.m alebo d.m.yyyy
-  const m = t.match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?/);
+
+  // 1) ISO formát v názve (napr. "2026-02-07" alebo "... 2026-02-07 ...")
+  const isoM = t.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (isoM) return isoM[1];
+
+  // 2) d.m alebo d. m. alebo d.m.yyyy (dovoli medzery)
+  const m = t.match(/(\d{1,2})\s*\.\s*(\d{1,2})(?:\s*\.\s*(\d{4}))?/);
   if (!m) return null;
+
   const dd = parseInt(m[1],10);
   const mm = parseInt(m[2],10);
   let yyyy = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
+
   if (!(dd>=1 && dd<=31 && mm>=1 && mm<=12)) return null;
-  const d = new Date(yyyy, mm-1, dd);
+
   // ak bez roka a vyšlo to "ďaleko v minulosti", skús posun na ďalší rok (typicky prelomy roka)
   if (!m[3]){
     const now = new Date();
+    const d = new Date(yyyy, mm-1, dd);
     const diff = d.getTime() - now.getTime();
     const days = diff / (1000*60*60*24);
-    if (days < -200) {
-      yyyy = yyyy + 1;
-    }
+    if (days < -200) yyyy = yyyy + 1;
   }
-  const iso = `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-  return iso;
+
+  return `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
 }
 
 function getIsoDateFromDnesTitleSafe(){
@@ -5082,7 +5088,16 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
 
   const psPayload = (refrainLine ? (refrainLine + '\n') : '') + String(psalmBodyOnly||'').trim();
 
-  const read2 = (parsed.reading2||[]).join('\n').trim();
+  let read2Text = (parsed.reading2||[]).join('\n').trim();
+
+  // ADMIN OVERRIDE pre 2. čítanie (keď existuje)
+  try {
+    const ov2 = getLitOverride(iso, vidx, midx);
+    if (ov2) {
+      if (String(ov2.read2Text||'').trim()) read2Text = String(ov2.read2Text||'').trim();
+      if (ov2.read2Text === '') read2Text = ''; // ak admin zámerne zmaže
+    }
+  } catch(e) {}
   let av = cleanAlleluiaVerse((parsed.alleluia||[]).join('\n'));
   try {
     const ov = getLitOverride(iso, vidx, midx);
@@ -5094,8 +5109,8 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   const parts = [];
 
   // ak existuje Druhé čítanie -> vlož ho (nie žalm)
-  if (read2){
-    parts.push(`[[LIT-READ2|${encodeURIComponent(read2)}]]`);
+  if (read2Text){
+    parts.push(`[[LIT-READ2|${encodeURIComponent(read2Text)}]]`);
   } else if (psPayload.trim()){
     parts.push(`[[LIT-PSALM|${encodeURIComponent(psPayload.trim())}]]`);
   }
@@ -5126,9 +5141,8 @@ function setupAlelujaLitControlsIfNeeded(){
 
   box.style.display = 'block';
 
-  // ISO dátum z názvu priečinka (dnesTitle býva napr. "2026-02-07")
-  const mIso = String(dnesTitle||'').match(/\b(\d{4}-\d{2}-\d{2})\b/);
-  const iso = mIso ? mIso[1] : isoToday();
+  // ISO dátum z názvu priečinka (podľa dátumu priečinka v "Piesne na dnes")
+  const iso = getIsoDateFromDnesTitleSafe();
 
   // načítaj liturgiu (z cache) pre daný deň
   const cached = getCachedLit(iso);
@@ -5184,25 +5198,36 @@ function setupAlelujaLitControlsIfNeeded(){
   const defaultPsalmText = stripPsalmForBody(parsed.psalm);
   const defaultVerse = cleanVerse(parsed.alleluia);
 
+  const defaultRead2Text = (parsed.reading2||[]).map(x=>String(x||'').trimEnd()).join('\n').trim();
+  const hasRead2 = !!defaultRead2Text;
+
   const ov = getLitOverride(iso, vidx, midx) || {};
   const curRefrain = (ov.psalmRefrain!=null && String(ov.psalmRefrain).trim()!=='') ? String(ov.psalmRefrain) : defaultRefrain;
   const curPsalmText = (ov.psalmText!=null && String(ov.psalmText).trim()!=='') ? String(ov.psalmText) : defaultPsalmText;
   const curVerse = (ov.verse!=null && String(ov.verse).trim()!=='') ? String(ov.verse) : defaultVerse;
+  const curRead2Text = (ov.read2Text!=null && String(ov.read2Text).trim()!=='') ? String(ov.read2Text) : defaultRead2Text;
 
-  const key = _litOverrideKey(iso, vidx, midx);
+    const key = _litOverrideKey(iso, vidx, midx);
 
-  box.innerHTML = `
-    <div class="lit-admin-card">
-      <div class="lit-admin-title">✏️ Úprava žalmu / verša (len pre pieseň 999 – Aleluja)</div>
-      <div class="lit-admin-sub">Platí pre deň <b>${escapeHtml(iso)}</b> • omša: <b>${escapeHtml(String(m.title||'').trim() || 'vybraná')}</b></div>
-
+  const mainFields = hasRead2 ? `
+      <label class="lit-admin-label">Text druhého čítania</label>
+      <textarea id="lit-ov-read2" class="lit-admin-ta" rows="10" spellcheck="false">${escapeHtml(curRead2Text||'')}</textarea>
+  ` : `
       <label class="lit-admin-label">Refren žalmu</label>
       <textarea id="lit-ov-refrain" class="lit-admin-ta" rows="2" spellcheck="false">${escapeHtml(curRefrain||'')}</textarea>
 
       <label class="lit-admin-label">Text žalmu</label>
       <textarea id="lit-ov-psalm" class="lit-admin-ta" rows="8" spellcheck="false">${escapeHtml(curPsalmText||'')}</textarea>
+  `;
 
-      <label class="lit-admin-label">Alelujový verš</label>
+  box.innerHTML = `
+    <div class="lit-admin-card">
+      <div class="lit-admin-title">✏️ ${hasRead2 ? 'Úprava 2. čítania / verša' : 'Úprava žalmu / verša'} (len pre pieseň 999 – Aleluja)</div>
+      <div class="lit-admin-sub">Platí pre deň <b>${escapeHtml(iso)}</b> • omša: <b>${escapeHtml(String(m.title||'').trim() || 'vybraná')}</b></div>
+
+      ${mainFields}
+
+      <label class="lit-admin-label">${hasRead2 ? 'Aklamácia / verš pred evanjeliom' : 'Alelujový verš'}</label>
       <textarea id="lit-ov-verse" class="lit-admin-ta" rows="3" spellcheck="false">${escapeHtml(curVerse||'')}</textarea>
 
       <div class="lit-admin-actions">
@@ -5217,11 +5242,19 @@ function setupAlelujaLitControlsIfNeeded(){
   const btnReset = document.getElementById('lit-ov-reset');
 
   async function doSave(){
-    const psalmRefrain = String((document.getElementById('lit-ov-refrain')||{}).value || '').trim();
-    const psalmText = String((document.getElementById('lit-ov-psalm')||{}).value || '').trim();
     const verse = String((document.getElementById('lit-ov-verse')||{}).value || '').trim();
 
-    const payload = { psalmRefrain, psalmText, verse };
+    const payload = { verse };
+
+    if (hasRead2){
+      const read2Text = String((document.getElementById('lit-ov-read2')||{}).value || '').trim();
+      payload.read2Text = read2Text;
+    } else {
+      const psalmRefrain = String((document.getElementById('lit-ov-refrain')||{}).value || '').trim();
+      const psalmText = String((document.getElementById('lit-ov-psalm')||{}).value || '').trim();
+      payload.psalmRefrain = psalmRefrain;
+      payload.psalmText = psalmText;
+    }
 
     // lokálne
     setLitOverride(iso, vidx, midx, payload);
