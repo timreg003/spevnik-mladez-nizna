@@ -1026,7 +1026,7 @@ body.present #presentControls{ display:flex; }
 }
 .lit-center{ text-align:center; }
 .date-btn-wrap{ position:relative; z-index:5; }
-.aleluja-center{ text-align:left; }
+.aleluja-center{ text-align:center; }
 
 
 /* ===== Aleluja 999 – vložené bloky ===== */
@@ -1043,7 +1043,7 @@ body.present #presentControls{ display:flex; }
   font-weight:900;
   margin: 0 0 6px 0;
   font-size: 16px;
-  text-align: left;
+  text-align: center;
 }
 #song-content .aleluja-insert pre{
   margin:0;
