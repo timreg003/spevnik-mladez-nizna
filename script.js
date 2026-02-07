@@ -148,7 +148,7 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v71';
+const APP_BUILD = 'v72';
 const APP_CACHE_NAME = 'spevnik-v69';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
@@ -4244,7 +4244,9 @@ function _litExtractFeastTitle(lines){
       best = l; bestScore = sc;
     }
   }
-  return String(best||'').trim();
+  const __best = String(best||'').trim();
+  if (__best && _litIsStartOfContent(__best)) return '';
+  return __best;
 }
 
 
@@ -4272,7 +4274,7 @@ function _litExtractHeaderBoxLines(lines){
   // fallback – aspoň jeden riadok
   if (!out.length){
     const ft = _litExtractFeastTitle(lines);
-    if (ft) return [ft];
+    if (ft && !_litIsStartOfContent(ft) && !_litLooksLikeReadingCoords(ft)) return [ft];
   }
   return out;
 }
