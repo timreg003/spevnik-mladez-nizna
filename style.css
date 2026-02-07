@@ -1057,3 +1057,14 @@ body.present #presentControls{ display:flex; }
 
 /* Liturgia: zvýraznenie 'alebo' */
 .lit-or{ color: #4ea3ff; font-weight: 700; }
+
+
+/* --- Liturgia override editor (admin, pieseň 999) --- */
+.lit-admin-card{padding:12px;margin-top:12px;border:1px solid rgba(255,255,255,.15);border-radius:14px;background:rgba(0,0,0,.25)}
+.lit-admin-title{font-weight:700;margin-bottom:4px}
+.lit-admin-sub{opacity:.85;font-size:.9em;margin-bottom:10px}
+.lit-admin-label{display:block;margin-top:10px;margin-bottom:6px;font-weight:600}
+.lit-admin-ta{width:100%;box-sizing:border-box;border-radius:10px;padding:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35);color:inherit}
+.lit-admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.lit-admin-hint{opacity:.8;font-size:.85em;margin-top:8px}
+.lit-or{color:#3aa8ff;font-weight:700}
