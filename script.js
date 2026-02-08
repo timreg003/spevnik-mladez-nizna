@@ -4990,6 +4990,7 @@ function _litKbsLikeHtmlFromText(rawText){
 
   let html = '<div class="kbs-like">';
   let inPsalm = false;
+  let lastH4 = '';
 
   function esc(x){ return escapeHtml(String(x||'')); }
 
@@ -5010,7 +5011,14 @@ function _litKbsLikeHtmlFromText(rawText){
     }
     if (/^#{4}\s+/.test(line)){
       const h = line.replace(/^#{4}\s+/, '').trim();
+      const isGospel = /^Evanjelium\b/i.test(h);
+      const prevWasVerse = /(\bverš\b|aklamáci)/i.test(String(lastH4||''));
+      if (isGospel && prevWasVerse){
+        // medzi veršom/aklamáciou a evanjeliom nech sú dva prázdne riadky
+        html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
+      }
       inPsalm = /^Responzóriový\s+žalm\b/i.test(h);
+      lastH4 = h;
       html += '<div class="kbs-h4">'+esc(h)+'</div>';
       continue;
     }
@@ -5517,29 +5525,14 @@ function setupAlelujaLitControlsIfNeeded(){
 
   const variants = Array.isArray(cached.variants) && cached.variants.length ? cached.variants : [{ label:'', title:'', text: (cached.text||'') }];
 
-  // Varianty pre výber – ponúkni všetko, len bez "alebo" (separátor).
-  const options = [];
-  for (let i=0;i<variants.length;i++){
-    const vv = variants[i] || {};
-    let label = String(vv.label || vv.title || '').replace(/\s+/g,' ').trim();
-    if (!label) label = `Možnosť ${i+1}`;
-    const lc = label.toLowerCase();
-    if (lc === 'alebo' || lc.startsWith('alebo ')) continue;
-    options.push({ idx:i, label:label });
-  }
-  if (!options.length){
-    options.push({ idx:0, label:'Možnosť 1' });
-  }
+  // Použi hlavný variant dňa (féria), bez výberu fakultatívnych čítaní.
+  let vidx = 0;
+  try{
+    vidx = _litPickMainVariantForCalendar(variants);
+  }catch(e){ vidx = 0; }
+  if (vidx < 0 || vidx >= variants.length) vidx = 0;
 
-  // vyber uloženú voľbu (uložené lokálne) – ak neplatná, zvoľ predvolené (Féria ak existuje)
-  let vidx = getLitChoiceIndex(iso);
-  if (!options.some(o=>o.idx===vidx)){
-    const fer = options.find(o=>/f[ée]ria/i.test(o.label));
-    vidx = fer ? fer.idx : options[0].idx;
-    setLitChoiceIndex(iso, vidx);
-  }
-
-  const v = variants[vidx] || variants[options[0].idx] || variants[0] || { title:'', text:'' };
+  const v = variants[vidx] || variants[0] || { title:'', text:'' };
 
   // Omše v rámci vybranej varianty (napr. 25.12. – v noci / na úsvite / vo dne)
   const baseText = String((v && v.text) ? v.text : (cached.text||''));
@@ -5550,25 +5543,12 @@ function setupAlelujaLitControlsIfNeeded(){
     setLitMassChoiceIndex(iso, 0);
   }
 
-  // UI – výber (pre každého)
-  const showVariantSel = options.length > 1;
+  // UI – výber omše (pre každého; ukladá sa lokálne)
   const showMassSel = masses.length > 1;
 
-  let ui = '<div class="lit-choice-card">';
-  ui += '<div class="lit-choice-row">';
-  if (showVariantSel){
-    ui += '<span class="tiny-label">Možnosť:</span> ';
-    ui += '<select id="aleluja-variant-select">';
-    for (const o of options){
-      ui += `<option value="${o.idx}" ${o.idx===vidx?'selected':''}>${escapeHtml(o.label)}</option>`;
-    }
-    ui += '</select>';
-  } else {
-    ui += '<span class="tiny-label">Možnosť:</span> <span class="lit-choice-static">'+escapeHtml(options[0].label)+'</span>';
-  }
-  ui += '</div>';
-
+  let ui = '';
   if (showMassSel){
+    ui += '<div class="lit-choice-card">';
     ui += '<div class="lit-choice-row">';
     ui += '<span class="tiny-label">Omša:</span> ';
     ui += '<select id="aleluja-mass-select">';
@@ -5578,12 +5558,11 @@ function setupAlelujaLitControlsIfNeeded(){
     }
     ui += '</select>';
     ui += '</div>';
+    ui += '<div class="lit-choice-note">Výber sa ukladá len v tomto zariadení.</div>';
+    ui += '</div>';
   }
 
-  ui += '<div class="lit-choice-note">Výber sa ukladá len v tomto zariadení.</div>';
-  ui += '</div>';
-
-  // Admin editor (globálne override) – len ak si prihlásený
+// Admin editor (globálne override) – len ak si prihlásený
   let adminHtml = '';
   if (isAdmin){
     const mass = masses[midx] || masses[0] || { title:'', text: baseText };
@@ -5646,17 +5625,18 @@ function setupAlelujaLitControlsIfNeeded(){
 
         <div class="lit-admin-grid">
           ${hasRead2 ? `
-            <label>Druhé čítanie (ak je v ten deň)</label>
-            <textarea id="lit-ov-read2" rows="6" spellcheck="false">${escapeHtml(read2Text||'')}</textarea>
+            <label class="lit-admin-label">Text druhého čítania</label>
+            <textarea id="lit-ov-read2" class="lit-admin-ta" rows="10" spellcheck="false">${escapeHtml(read2Text||'')}</textarea>
           ` : `
-            <label>Žalm – refrén (bez "R.:")</label>
-            <input id="lit-ov-ps-refr" type="text" value="${escapeHtml(refrain||'')}" />
-            <label>Žalm – text (bez refrénu)</label>
-            <textarea id="lit-ov-ps-body" rows="6" spellcheck="false">${escapeHtml(psBody||'')}</textarea>
+            <label class="lit-admin-label">Refren žalmu</label>
+            <textarea id="lit-ov-refrain" class="lit-admin-ta" rows="2" spellcheck="false">${escapeHtml(refrain||'')}</textarea>
+
+            <label class="lit-admin-label">Text žalmu</label>
+            <textarea id="lit-ov-psalm" class="lit-admin-ta" rows="8" spellcheck="false">${escapeHtml(psBody||'')}</textarea>
           `}
 
-          <label>Verš / aklamácia pred evanjeliom</label>
-          <textarea id="lit-ov-verse" rows="4" spellcheck="false">${escapeHtml(verse||'')}</textarea>
+          <label class="lit-admin-label">Verš / aklamácia pred evanjeliom</label>
+          <textarea id="lit-ov-verse" class="lit-admin-ta" rows="4" spellcheck="false">${escapeHtml(verse||'')}</textarea>
         </div>
 
         <div class="lit-admin-actions">
@@ -5668,19 +5648,9 @@ function setupAlelujaLitControlsIfNeeded(){
   }
 
   box.innerHTML = ui + (adminHtml || '');
-
-  // bind selects (always)
-  const selV = document.getElementById('aleluja-variant-select');
-  if (selV){
-    selV.addEventListener('change', ()=>{
-      const idx = parseInt(selV.value,10);
-      setLitChoiceIndex(iso, isNaN(idx)?0:idx);
-      setLitMassChoiceIndex(iso, 0);
-      try { renderSong(); } catch(e) {}
-      try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
-    });
-  }
+  // bind mass select (local)
   const selM = document.getElementById('aleluja-mass-select');
+
   if (selM){
     selM.addEventListener('change', ()=>{
       const idx = parseInt(selM.value,10);
@@ -5703,9 +5673,9 @@ function setupAlelujaLitControlsIfNeeded(){
           if (tRead2){
             ov.read2Text = String(tRead2.value||'').trim();
           } else {
-            const inpR = document.getElementById('lit-ov-ps-refr');
-            const taB = document.getElementById('lit-ov-ps-body');
-            ov.psalmRefrain = inpR ? String(inpR.value||'').trim() : '';
+            const taR = document.getElementById('lit-ov-refrain');
+            const taB = document.getElementById('lit-ov-psalm');
+            ov.psalmRefrain = taR ? String(taR.value||'').trim() : '';
             ov.psalmText = taB ? String(taB.value||'').trim() : '';
           }
           const taV = document.getElementById('lit-ov-verse');

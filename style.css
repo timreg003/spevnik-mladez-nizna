@@ -1128,33 +1128,35 @@ body.present #presentControls{ display:flex; }
 .kbs-like{
   padding: 6px 2px 0 2px;
   line-height: 1.45;
+  /* KBS má bežne čierny text; v dark móde to mapujeme na bielu */
+  color: #ffffff;
 }
 .kbs-h4{
   margin-top: 14px;
   margin-bottom: 6px;
   font-weight: 700;
-  font-size: 16px;
+  /* KBS farebné nadpisy mapujeme na modrú */
+  color: #4da3ff;
 }
 .kbs-h5{
   margin-top: 4px;
   margin-bottom: 8px;
   font-weight: 600;
-  font-size: 14px;
-  opacity: 0.95;
+  color: #4da3ff;
 }
 .kbs-line{
   margin: 4px 0;
-  font-size: 14px;
 }
 .kbs-psalm-line{
   margin: 2px 0;
-  font-size: 14px;
 }
 .kbs-response{
   margin: 10px 0 8px 0;
   font-style: italic;
-  opacity: 0.9;
+  /* sivé nechaj sivé */
+  color: rgba(255,255,255,0.70);
 }
 .kbs-gap{
-  height: 8px;
+  height: 1em;
 }
+
