@@ -166,6 +166,19 @@ const APP_CACHE_NAME = 'spevnik-v86';
 const LS_LITOV_HASH = 'spevnik_litov_hash_v1';
 let litOvPollingStarted = false;
 
+let alelujaLitEditLock = false;
+
+function isAlelujaLitEditing(){
+  try{
+    if (alelujaLitEditLock) return true;
+    const ae = document.activeElement;
+    if (!ae) return false;
+    const id = String(ae.id||'');
+    return id === 'lit-ov-read2' || id === 'lit-ov-refrain' || id === 'lit-ov-psalm' || id === 'lit-ov-verse';
+  }catch(e){ return false; }
+}
+
+
 function _hashStrDjb2(str){
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h) + str.charCodeAt(i);
@@ -3926,7 +3939,7 @@ function deleteLitOverride(iso, vidx, midx){
 }
 
 
-async function refreshLitOverridesFromDrive(){
+async async function refreshLitOverridesFromDrive(){
   try{
     if (!SCRIPT_URL) return;
     const res = await jsonpRequest(`${SCRIPT_URL}?action=litOverrideGet`);
@@ -4094,6 +4107,23 @@ function _litDropOverviewKbs(txt){
   }
   return s.trim();
 }
+
+function _litSplitOverviewKbs(txt){
+  const s = String(txt || '').replace(/\r/g,'');
+  const re = /(^|\n)\s*(Čítanie\s+(z|zo)\b|Začiatok\b)/i;
+  const m = s.match(re);
+  if (m && m.index != null){
+    let start = m.index;
+    if (start < s.length && s[start] === '\n') start += 1;
+    const overviewText = s.slice(0, Math.max(0,start)).trim();
+    const bodyText = s.slice(start).trim();
+    const overviewLines = overviewText.split('\n').map(l=>String(l||'').trim()).filter(Boolean);
+    return { overviewText, overviewLines, bodyText };
+  }
+  const t = s.trim();
+  return { overviewText: t, overviewLines: t.split('\n').map(l=>String(l||'').trim()).filter(Boolean), bodyText: t };
+}
+
 
 // Pre pieseň 999 potrebujeme "plnú" liturgiu (nie len prehľad so súradnicami).
 // Krátky text typicky nemá samostatné hlavičky Žalm/Aklamácia/Evanjelium, preto z neho nevytiahneme žalmový text ani verš.
@@ -4956,11 +4986,21 @@ function renderLitFromData(iso, data){
   if (sel) sel.innerHTML = '';
 
   const firstTextRaw = (variants[0] && variants[0].text) ? String(variants[0].text) : (data && data.text ? String(data.text) : '');
-  const firstText = _litDropOverviewKbs(_litStripAdditionalCelebrationsText(firstTextRaw));
-  const baseParsed = _litSplitIntoSections(firstText);
+  const firstTextDisplay = _litStripAdditionalCelebrationsText(firstTextRaw);
+  const firstSplit = _litSplitOverviewKbs(firstTextDisplay);
+  const baseParsed = _litSplitIntoSections(firstTextDisplay);
   setLitHeader(iso, (baseParsed && baseParsed.headerBoxLines && baseParsed.headerBoxLines.length) ? baseParsed.headerBoxLines : baseParsed.feastTitle);
 
   const parts = [];
+  // "Hlavička" (prehľad KBS) – nech je viditeľná ako predtým.
+  if (firstSplit && Array.isArray(firstSplit.overviewLines) && firstSplit.overviewLines.length){
+    parts.push('<div class="lit-overview-box">');
+    firstSplit.overviewLines.forEach(l => {
+      parts.push('<div class="lit-overview-line">' + escapeHtml(String(l||'').trim()) + '</div>');
+    });
+    parts.push('</div>');
+  }
+
   parts.push('<div class="lit-cards">');
 
   function variantTitle(v){
@@ -4975,7 +5015,9 @@ function renderLitFromData(iso, data){
 
   const renderOne = (v, idx) => {
     const tRaw = (v && v.text) ? String(v.text) : '';
-    const t = _litDropOverviewKbs(_litStripAdditionalCelebrationsText(tRaw));
+    const tDisplay = _litStripAdditionalCelebrationsText(tRaw);
+    const split = _litSplitOverviewKbs(tDisplay);
+    const t = split.bodyText;
     const masses = _litSplitIntoMasses(t);
     const parsedDay = _litSplitIntoSections(t);
 
@@ -5239,8 +5281,8 @@ function cleanPsalmText(ps){
 function cleanAlleluiaVerse(av){
   let lines = String(av||'').replace(/\r/g,'').split('\n').map(s=>String(s||'').trim()).filter(l=>l.length);
 
-  // odstráň "Alelujový verš" hlavičky
-  lines = lines.filter(l => !/Alelujový verš/i.test(l));
+  // odstráň hlavičky (Alelujový verš / aklamácia)
+  lines = lines.filter(l => !/(Alelujový\s+verš|Verš\s+pred\s+evanjeliom|Aklamácia\s+pred\s+evanjeliom)/i.test(l));
 
   // zahoď všetko po začiatku Evanjelia
   const stopIdx = lines.findIndex(l => /(Evanjelium|Čítanie)/i.test(l));
@@ -5269,8 +5311,11 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
       fetchLiturgia(iso).then(d=>{
         if (d && d.ok){
           setCachedLit(iso, d);
-          try { renderSong(); } catch(e) {}
-          try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
+          // Nevyhadzuj používateľa z textarea počas úprav v editore.
+          if (!isAlelujaLitEditing()){
+            try { renderSong(); } catch(e) {}
+            try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
+          }
         }
       }).catch(()=>{});
     }
@@ -5299,8 +5344,10 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
           if (Array.isArray(d.variants)) d.variants = d.variants.map(x=>({...x, text:_litStripAdditionalCelebrationsText(x && x.text)}));
         }catch(e){}
         setCachedLit(iso, d);
-        try { renderSong(); } catch(e) {}
-        try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
+        if (!isAlelujaLitEditing()){
+          try { renderSong(); } catch(e) {}
+          try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
+        }
       }
     }).catch(()=>{});
     // zatiaľ vráť pôvodný text; po doťahu sa UI samo obnoví
@@ -5326,10 +5373,20 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
     return 'Aleluja';
   }
 
-  // Žalm: preferuj priamo extrahovaný text z GAS (v.psalmText), fallback na parsovanie z fullText
-  const psalmSrcRaw =
-    _litStripAdditionalCelebrationsText((v && v.psalmText) ? String(v.psalmText) : '') ||
-    ((parsed && parsed.psalm) ? (parsed.psalm||[]).join('\n') : '');
+  // Ak má deň 2 čítania, v piesni 999 chceme namiesto žalmu zobraziť DRUHÉ ČÍTANIE.
+  const hasRead2 = (parsed && parsed.reading2 && parsed.reading2.some(x => String(x||'').trim()));
+
+  // --- Žalm (len keď NIE je 2. čítanie) ---
+  const psalmFromVar = _litStripAdditionalCelebrationsText((v && v.psalmText) ? String(v.psalmText) : '');
+  const psalmFromParsed = ((parsed && parsed.psalm) ? (parsed.psalm||[]).join('\n') : '');
+
+  // Heuristika: ak psalmText z GAS vyzerá len ako refrén / krátky výťah, použi radšej parsovaný plný text.
+  const psalmVarOk =
+    psalmFromVar &&
+    psalmFromVar.replace(/\s+/g,' ').trim().length >= 80 &&
+    psalmFromVar.split('\n').map(x=>String(x||'').trim()).filter(Boolean).length >= 3;
+
+  const psalmSrcRaw = (psalmVarOk ? psalmFromVar : (psalmFromParsed || psalmFromVar));
   const psalmClean = cleanPsalmText(psalmSrcRaw);
 
   let refrainLine = String(parsed.psalmRefrain||'').trim();
@@ -5352,27 +5409,43 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
     }
   }
 
+  // Druhé čítanie (len keď existuje)
+  let read2Text = (parsed && parsed.reading2) ? (parsed.reading2||[]).map(x=>String(x||'').trimEnd()).join('\n').trim() : '';
+
   // ADMIN OVERRIDE (ak existuje pre tento dátum + formulár + omšu)
   try {
     const ov = getLitOverride(iso, vidx, midx);
     if (ov) {
-      if (String(ov.psalmRefrain||'').trim()) refrainLine = String(ov.psalmRefrain||'').trim();
-      if (!refrainLine) {
-        // ak admin zámerne zmaže refrén, nech sa neukazuje
-        refrainLine = '';
-      } else if (!/^R\s*\.?\s*:\s*/i.test(refrainLine)) {
-        refrainLine = 'R.: ' + refrainLine;
+      if (hasRead2){
+        if (ov.read2Text != null){
+          // ak admin zmaže text, nech sa nezobrazí (aj keď liturgia má default)
+          read2Text = String(ov.read2Text||'').trim();
+        }
+      } else {
+        if (String(ov.psalmRefrain||'').trim()) refrainLine = String(ov.psalmRefrain||'').trim();
+        if (!refrainLine) {
+          // ak admin zámerne zmaže refrén, nech sa neukazuje
+          refrainLine = '';
+        } else if (!/^R\s*\.?\s*:\s*/i.test(refrainLine)) {
+          refrainLine = 'R.: ' + refrainLine;
+        }
+        if (ov.psalmText != null){
+          // umožni aj zámerné vymazanie textu žalmu
+          const t = String(ov.psalmText||'').trim();
+          psalmBodyOnly = t;
+        }
       }
-      if (String(ov.psalmText||'').trim()) psalmBodyOnly = String(ov.psalmText||'').trim();
     }
   } catch(e) {}
 
   const psPayload = (refrainLine ? (refrainLine + '\n') : '') + String(psalmBodyOnly||'').trim();
+// Alelujový verš / aklamácia: preferuj extrahované z GAS (v.alleluiaVerse), fallback na parsed.alleluia
+  const avFromVar = _litStripAdditionalCelebrationsText((v && v.alleluiaVerse) ? String(v.alleluiaVerse) : '');
+  const avFromParsed = ((parsed && parsed.alleluia) ? (parsed.alleluia||[]).join('\n') : '');
 
-  // Alelujový verš / aklamácia: preferuj extrahované z GAS (v.alleluiaVerse), fallback na parsed.alleluia
-  const avSrcRaw =
-    _litStripAdditionalCelebrationsText((v && v.alleluiaVerse) ? String(v.alleluiaVerse) : '') ||
-    ((parsed && parsed.alleluia) ? (parsed.alleluia||[]).join('\n') : '');
+  // Heuristika: niekedy aleluiaVerse z GAS obsahuje len "Aleluja..." bez textu (najmä v pôste) – uprednostni parsované.
+  const avVarOk = avFromVar && avFromVar.replace(/\s+/g,' ').trim().length >= 40;
+  const avSrcRaw = (avVarOk ? avFromVar : (avFromParsed || avFromVar));
 
   let av = cleanAlleluiaVerse(avSrcRaw);
 
@@ -5398,9 +5471,15 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   const core = String(alelujaText||'').trim();
   const parts = [];
 
-  // Pre pieseň 999 vždy chceme ŽALM navrchu (refrén + celý text), nie 2. čítanie.
-  if (psPayload.trim()){
-    parts.push(`[[LIT-PSALM|${encodeURIComponent(psPayload.trim())}]]`);
+  // Navrch vlož buď DRUHÉ ČÍTANIE (ak existuje), alebo ŽALM (ak nie je 2. čítanie).
+  if (hasRead2){
+    if (read2Text && read2Text.trim()){
+      parts.push(`[[LIT-READ2|${encodeURIComponent(read2Text.trim())}]]`);
+    }
+  } else {
+    if (psPayload.trim()){
+      parts.push(`[[LIT-PSALM|${encodeURIComponent(psPayload.trim())}]]`);
+    }
   }
 
   parts.push(core);
@@ -5545,6 +5624,18 @@ function setupAlelujaLitControlsIfNeeded(){
 
   const btnSave = document.getElementById('lit-ov-save');
   const btnReset = document.getElementById('lit-ov-reset');
+
+  // Nevyhadzuj focus z textarea (napr. keď sa liturgia ešte doťahuje a UI sa prekreslí).
+  // Počas písania do polí uzamkneme prekresľovanie (renderSong / setup...).
+  try{
+    const tas = box.querySelectorAll('textarea.lit-admin-ta');
+    tas.forEach(ta=>{
+      ta.addEventListener('focus', ()=>{ alelujaLitEditLock = true; });
+      ta.addEventListener('input', ()=>{ alelujaLitEditLock = true; });
+      ta.addEventListener('blur', ()=>{ setTimeout(()=>{ alelujaLitEditLock = false; }, 150); });
+    });
+  }catch(e){}
+
 
   async function doSave(){
     const verse = String((document.getElementById('lit-ov-verse')||{}).value || '').trim();

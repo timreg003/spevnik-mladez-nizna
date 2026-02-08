@@ -869,6 +869,19 @@ body.present #presentControls{ display:flex; }
   position:relative;
   margin: 8px 0 10px 0;
 }
+
+.lit-overview-box{
+  margin: 8px 0 12px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.lit-overview-line{
+  font-size:14px;
+  color:#d8d8d8;
+  line-height:1.25;
+}
 #lit-date-btn{
   width:100%;
   justify-content:flex-start;
