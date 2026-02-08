@@ -157,8 +157,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v81';
-const APP_CACHE_NAME = 'spevnik-v81';
+const APP_BUILD = 'v82';
+const APP_CACHE_NAME = 'spevnik-v82';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
 // We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
@@ -2053,21 +2053,21 @@ function renderSong() {
 
 
   try {
-  if (!is999){
-    // Akordová šablóna zo slohy 1 (overlay) + doplnenie 2. polovice prvého refrenu (iba v rámci toho refrenu)
-    text = applyChordTemplateOverlay(text);
+    if (!is999){
+      // Akordová šablóna zo slohy 1 (overlay) + doplnenie 2. polovice prvého refrenu (iba v rámci toho refrenu)
+      text = applyChordTemplateOverlay(text);
 
-    // Zredukuj extrémne medzery (najmä po značkách 1., R:, B:, Refren, Bridge, Predohra..., Transpozícia...)
-  // - odstráni prázdne riadky hneď po značke
-  // - zredukuje viac prázdnych riadkov za sebou
-  text = String(text || '').replace(/^(\d+\.|R\d*:|B\d*:|Refren:?|Bridge:?|Predohra.*|Medzihra.*|Dohra.*|Transpozícia:.*)\s*\n\s*\n+/gmi, '$1\n');
-  text = text.replace(/\n\s*\n\s*\n+/g, '\n\n');
+      // Zredukuj extrémne medzery (najmä po značkách 1., R:, B:, Refren, Bridge, Predohra..., Transpozícia...)
+      // - odstráni prázdne riadky hneď po značke
+      // - zredukuje viac prázdnych riadkov za sebou
+      text = String(text || '').replace(/^(\d+\.|R\d*:|B\d*:|Refren:?|Bridge:?|Predohra.*|Medzihra.*|Dohra.*|Transpozícia:.*)\s*\n\s*\n+/gmi, '$1\n');
+      text = text.replace(/\n\s*\n\s*\n+/g, '\n\n');
 
-  // Pri poradí (editor "forma") nech sú bloky úplne bez medzier
-  if (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal) {
-    text = text.replace(/\n\s*\n+/g, '\n');
-  }
-
+      // Pri poradí (editor "forma") nech sú bloky úplne bez medzier
+      if (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal) {
+        text = text.replace(/\n\s*\n+/g, '\n');
+      }
+    }
   // Transpose chords first
   if (transposeStep !== 0) {
     text = text.replace(CHORD_TOKEN_RE_G, (m, c) => `[${transposeChord(c, transposeStep)}]`);
@@ -2126,9 +2126,6 @@ function renderSong() {
 
   // +1 / -2 (samostatný riadok) -> Transpozícia: +1
   text = text.replace(/^\s*([+-]\d+)\s*\n/, 'Transpozícia: $1\n');
-
-  }
-
   const el = document.getElementById('song-content');
   el.innerHTML = songTextToHTML(text);
   el.style.fontSize = fontSize + 'px';
@@ -4044,6 +4041,17 @@ async function fetchLiturgia(iso){
   return await jsonpRequest(url);
 }
 
+// V pôste KBS často pridáva "Ďalšie slávenia: Fakultatívne čítania...".
+// Pre bežné zobrazenie chceme mať vždy len hlavnú omšu dňa (bez fakultatívnych),
+// aby sa žalmy/čítania nemiešali.
+function _litStripAdditionalCelebrationsText(txt){
+  const s = String(txt || '');
+  // stop na "Ďalšie slávenia:" (KBS)
+  const m = s.match(/^\s*Ďalšie\s+slávenia\s*:/mi);
+  if (m && m.index != null) return s.slice(0, m.index).trim();
+  return s;
+}
+
 // --- Načítanie liturgie do UI (sekcia Liturgický kalendár) ---
 async function loadLiturgiaForUI(iso, opts){
   const options = opts || {};
@@ -4082,6 +4090,12 @@ async function loadLiturgiaForUI(iso, opts){
         try{
           const fresh = await fetchLiturgia(iso);
           if (fresh && fresh.ok){
+          // normalize: odstráň "Ďalšie slávenia" (fakultatívne čítania) aby sa nemiešali žalmy
+          try{
+            if (fresh.text) fresh.text = _litStripAdditionalCelebrationsText(fresh.text);
+            if (Array.isArray(fresh.variants)) fresh.variants = fresh.variants.map(v=>({...v, text:_litStripAdditionalCelebrationsText(v && v.text)}));
+          }catch(e){}
+
             const freshText = String((fresh.text || (fresh.variants && fresh.variants[0] && fresh.variants[0].text)) || '');
             if (freshText && (!cachedText || freshText.length > cachedText.length + 50 || cachedLooksShort)){
               setCachedLit(iso, fresh);
@@ -4105,6 +4119,12 @@ async function loadLiturgiaForUI(iso, opts){
   try{
     const data = await fetchLiturgia(iso);
     if (data && data.ok){
+          // normalize: odstráň "Ďalšie slávenia" (fakultatívne čítania) aby sa nemiešali žalmy
+          try{
+            if (data.text) data.text = _litStripAdditionalCelebrationsText(data.text);
+            if (Array.isArray(data.variants)) data.variants = data.variants.map(v=>({...v, text:_litStripAdditionalCelebrationsText(v && v.text)}));
+          }catch(e){}
+
       setCachedLit(iso, data);
       renderLitFromData(iso, data);
       return data;
@@ -5200,8 +5220,8 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   const vidx = Math.min(getLitChoiceIndex(iso), variants.length-1);
   const v = variants[vidx] || variants[0];
 
-  const masses = _litSplitIntoMasses((v && v.text) ? String(v.text) : '');
-  const midx = Math.min(getLitMassChoiceIndex(iso), masses.length-1);
+  const masses = _litSplitIntoMasses(_litStripAdditionalCelebrationsText((v && v.text) ? String(v.text) : ''));
+  const midx = 0; // vždy hlavná omša dňa (bez fakultatívnych)
 
   const ov = (function(){
     try { return getLitOverride(iso, vidx, midx) || {}; } catch(e){ return {}; }
@@ -5317,6 +5337,13 @@ function setupAlelujaLitControlsIfNeeded(){
     return;
   }
 
+  // editor-only: keď nie si prihlásený, nič nezobrazuj (žiadne hinty, žiadne fakultatívne)
+  if (!isAdmin){
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
+
   box.style.display = 'block';
 
   // ISO dátum z názvu priečinka (podľa dátumu priečinka v "Piesne na dnes")
@@ -5330,29 +5357,17 @@ function setupAlelujaLitControlsIfNeeded(){
   }
 
   const vidx = getLitChoiceIndex(iso) || 0;
-  const midx = getLitMassChoiceIndex(iso) || 0;
+  const midx = 0;
+  try{ setLitMassChoiceIndex(iso, 0); }catch(e){}
 
   // vyber konkrétnu omšu (mass) a rozsekej na sekcie
   const variants = Array.isArray(cached.variants) && cached.variants.length ? cached.variants : [{ label:'', title:'', text: (cached.text||'') }];
   const v = variants[Math.min(vidx, variants.length-1)] || variants[0];
-  const masses = _litSplitIntoMasses(String(v.text || cached.text || ''));
+  const masses = _litSplitIntoMasses(_litStripAdditionalCelebrationsText(String(v.text || cached.text || '')));
   const m = masses[Math.min(midx, masses.length-1)] || masses[0] || { text:'' };
   const parsed = _litSplitIntoSections(String(m.text||''));
-
-  // výber omše (z dňa vs fakultatívne), viditeľné pre každého
-  const massesCount = masses.length || 0;
-  const canChooseMass = massesCount > 1;
-  const massSelectHTML = canChooseMass ? (
-    `<label class="lit-admin-label">Vybrať čítania</label>` +
-    `<select id="aleluja-lit-select" class="lit-admin-select">` +
-      masses.map((mm, i) => {
-        const t = String((mm && mm.title) || '').trim();
-        let lbl = t || (i === 0 ? 'Z dňa' : ('Fakultatívne ' + (i+1)));
-        if (!t && i === 1) lbl = 'Fakultatívne';
-        return `<option value="${i}" ${i===midx?'selected':''}>${escapeHtml(lbl)}</option>`;
-      }).join('') +
-    `</select>`
-  ) : '';
+  // bez výberu omše (fakultatívne sa v piesni 999 nezobrazujú)
+  const massSelectHTML = '';
 
   // defaulty z liturgie
   function extractRefrain(psalmLines){
@@ -5435,16 +5450,6 @@ function setupAlelujaLitControlsIfNeeded(){
     </div>
   `;
 
-  const selMass = document.getElementById('aleluja-lit-select');
-  if (selMass){
-    selMass.addEventListener('change', ()=>{
-      const v = parseInt(selMass.value||'0',10) || 0;
-      setLitMassChoiceIndex(iso, v);
-      // refresh panel + song body
-      try{ setupAlelujaLitControlsIfNeeded(); }catch(e){}
-      try{ renderSong(); }catch(e){}
-    });
-  }
 
   const btnSave = document.getElementById('lit-ov-save');
   const btnReset = document.getElementById('lit-ov-reset');
