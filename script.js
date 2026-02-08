@@ -158,8 +158,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v90';
-const APP_CACHE_NAME = 'spevnik-v90';
+const APP_BUILD = 'v91';
+const APP_CACHE_NAME = 'spevnik-v91';
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
 const POLL_INTERVAL_MS = 30 * 1000;
@@ -323,6 +323,17 @@ function jsonpRequest(url){
     };
     document.head.appendChild(s);
   });
+
+  // Periodic retry (some Android builds drop the wake lock)
+  try{
+    setInterval(() => {
+      try{ if (document.visibilityState === 'visible') activate(); }catch(e){}
+    }, 15000);
+  }catch(e){}
+
+  // Re-activate on window focus
+  try{ window.addEventListener('focus', () => { try{ activate(); }catch(e){} }, true); }catch(e){}
+
 }
 
 const ADMIN_PWD = "qwer";
@@ -5070,6 +5081,7 @@ function _litKbsLikeHtmlFromText(rawText){
   let inPsalm = false;
   let lastH4 = '';
   let afterVerse = false;
+  let expectBriefAfterIntro = false;
 
   function esc(x){ return escapeHtml(String(x||'')); }
 
@@ -5082,6 +5094,15 @@ function _litKbsLikeHtmlFromText(rawText){
       continue;
     }
 
+
+// brief sentence (grey + italic + smaller) comes right AFTER the reading/gospel intro line "Čítanie z/zo ..."
+if (expectBriefAfterIntro){
+  const t = String(line||'').trim().replace(/^\*+|\*+$/g,'').replace(/^_+|_+$/g,'').trim();
+  html += '<div class="kbs-brief">'+esc(t)+'</div>';
+  expectBriefAfterIntro = false;
+  continue;
+}
+
     // headings
     if (/^#{5}\s+/.test(line)){
       const h5 = line.replace(/^#{5}\s+/, '').trim();
@@ -5091,13 +5112,14 @@ function _litKbsLikeHtmlFromText(rawText){
         html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
       }
       inPsalm = false;
+      expectBriefAfterIntro = false;
       html += '<div class="kbs-h5">'+esc(h5)+'</div>';
       continue;
     }
     if (/^#{4}\s+/.test(line)){
       const h = line.replace(/^#{4}\s+/, '').trim();
 
-      const isGospel = /^Evanjelium\b/i.test(h);
+      const isGospel = /^Evanjelium\b/i.test(h) || /Čítanie\s+zo\s+svätého\s+Evanjelia/i.test(h);
       const prevWasVerseH4 = /(\bverš\b|aklamáci|aleluja)/i.test(String(lastH4||''));
       if (isGospel && (prevWasVerseH4 || afterVerse)){
         // medzi veršom/aklamáciou a evanjeliom nech sú dva prázdne riadky
@@ -5107,45 +5129,25 @@ function _litKbsLikeHtmlFromText(rawText){
       inPsalm = /^Responzóriový\s+žalm\b/i.test(h);
       afterVerse = /(\bverš\b|aklamáci|aleluja)/i.test(h);
       lastH4 = h;
+      expectBriefAfterIntro = false;
 
       html += '<div class="kbs-h4">'+esc(h)+'</div>';
       continue;
     }
-
-
-        // krátka veta pod nadpisom (sivé, menšie, kurzíva)
-    // typicky je to 1 riadok po súradniciach (Iz 58,6-9 / Mt 5,13-16) a pred "Čítanie z ..."
-    {
-      const tRaw = String(line||'').trim();
-      const t = tRaw.replace(/^\*+|\*+$/g,'').replace(/^_+|_+$/g,'').trim();
-      if (!inPsalm && t && !/^#/.test(tRaw) && !/^Čítanie\b/i.test(t) && !/^Počuli\s+sme\b/i.test(t) && !/^R\s*\.?\s*:/i.test(t)){
-        // nájdi ďalší ne-prázdny riadok
-        let j = i+1;
-        let next = '';
-        while (j < lines.length){
-          const nx = String(lines[j]||'').trim();
-          if (nx){ next = nx; break; }
-          j++;
-        }
-        // Ak nasleduje "Čítanie ..." a sme v sekcii (####), je to tá krátka veta.
-        if (next && /^Čítanie\b/i.test(next.trim()) && lastH4 && !/žalm/i.test(lastH4)){
-          html += '<div class="kbs-brief">'+esc(t)+'</div>';
-          continue;
-        }
-      }
-    }
-
     // Ak "Evanjelium" príde ako bežný riadok (nie nadpis), vlož medzeru po aleluja/verši
     if (afterVerse && (/^Evanjelium\b/i.test(line.trim()) || /Čítanie\s+zo\s+svätého\s+Evanjelia/i.test(line.trim()))){
       html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
       afterVerse = false;
     }
 
-    // Ak "Čítanie zo svätého Evanjelia" príde ako bežný riadok (nie nadpis), vlož medzeru po aleluja/verši
-    if (afterVerse && /Čítanie\s+zo\s+svätého\s+Evanjelia/i.test(line.trim())){
-      html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
-      afterVerse = false;
-    }
+
+// Reading/Gospel intro line: next non-empty line is the brief sentence
+const tLine = line.trim();
+if (!inPsalm && (/^Čítanie\s+z\s+/i.test(tLine) || /^Čítanie\s+zo\s+/i.test(tLine))){
+  html += '<div class="kbs-line">'+esc(tLine)+'</div>';
+  expectBriefAfterIntro = true;
+  continue;
+}
     // responses
     if (/^Počuli\s+sme\b/i.test(line)){
       html += '<div class="kbs-response">'+esc(line)+'</div>';
@@ -5490,6 +5492,16 @@ function initKeepScreenAwake(){
       }
     }catch(e){}
   });
+
+  // Some Android builds drop the wake lock; retry periodically while visible
+  try {
+    setInterval(() => { try { if (document.visibilityState === 'visible') activate(); } catch(e) {} }, 15000);
+  } catch(e) {}
+
+  // Also retry when the window regains focus
+  try {
+    window.addEventListener('focus', () => { try { activate(); } catch(e) {} });
+  } catch(e) {}
 }
 
 /* ----- Aleluja 999 vloženie blokov ----- */

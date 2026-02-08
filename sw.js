@@ -1,5 +1,5 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
-const CACHE_NAME = 'spevnik-v90';
+const CACHE_NAME = 'spevnik-v91';
 
 const CORE_ASSETS = [
   './',
@@ -42,6 +42,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
+
+// Do not cache range/partial responses (e.g. media streaming). Cache API rejects 206.
+try {
+  if (req.headers && req.headers.has('range')) {
+    event.respondWith(fetch(req));
+    return;
+  }
+} catch (e) {}
+
   // App-shell navigations: always fall back to cached index.html
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
@@ -68,9 +77,9 @@ self.addEventListener('fetch', (event) => {
     caches.match(req, { ignoreSearch: true }).then(cached => cached || fetch(req).then(resp => {
       try {
         const url = new URL(req.url);
-        if (req.method === 'GET' && url.origin === self.location.origin) {
+        if (req.method === 'GET' && url.origin === self.location.origin && resp && resp.ok && resp.status !== 206) {
           const copy = resp.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          caches.open(CACHE_NAME).then(cache => { try { cache.put(req, copy); } catch(e) {} });
         }
       } catch(e) {}
       return resp;
