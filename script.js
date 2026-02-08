@@ -157,8 +157,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v83';
-const APP_CACHE_NAME = 'spevnik-v83';
+const APP_BUILD = 'v84';
+const APP_CACHE_NAME = 'spevnik-v84';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
 // We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
@@ -4076,6 +4076,23 @@ function _litStripAdditionalCelebrationsText(txt){
   return s;
 }
 
+
+// Pre pieseň 999 potrebujeme "plnú" liturgiu (nie len prehľad so súradnicami).
+// Krátky text typicky nemá samostatné hlavičky Žalm/Aklamácia/Evanjelium, preto z neho nevytiahneme žalmový text ani verš.
+function _litIsFullEnoughFor999Chants(txt){
+  const t = String(txt||'');
+  if (!t) return false;
+  // bežná plná liturgia býva výrazne dlhšia než prehľad
+  if (t.length < 4200) return false;
+  // musí obsahovať aspoň jednu z jasných hlavičiek žalmu a evanjelia
+  if (!/Responzóriový\s+žalm\b/i.test(t) && !/^\s*Žalm\b/im.test(t)) return false;
+  if (!/Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(t) && !/^\s*Evanjelium\b/im.test(t)) return false;
+  // a aspoň jeden koncový vzorec, aby sme vedeli, že je tam telo
+  if (!/Počuli\s+sme\b/i.test(t)) return false;
+  return true;
+}
+
+
 // --- Načítanie liturgie do UI (sekcia Liturgický kalendár) ---
 async function loadLiturgiaForUI(iso, opts){
   const options = opts || {};
@@ -4536,7 +4553,7 @@ function _litSplitIntoSections(text){
         if (t.length <= 55 && /\d/.test(t) && /^[0-3]?\s*[A-Za-zÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]{1,12}\s*\d+\s*,\s*\d+/.test(t)) continue;
         if (t.length >= 18) long++;
       }
-      return long >= 2;
+      return long >= 1;
     }
 
     for (const i of uniq){
@@ -5249,6 +5266,25 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   // Dôležité: pre pieseň 999 chceme parsovať CELÝ text hlavnej omše,
   // nie prehľadové "smernice" (tie by dali iba refrén bez textu).
   const fullText = _litStripAdditionalCelebrationsText((v && v.text) ? String(v.text) : '');
+
+  // Ak máme v cache len "krátku" liturgiu (prehľad so súradnicami), nedá sa z nej vytiahnuť text žalmu ani verš.
+  // V takom prípade (ak sme online) si vynútime doťah zo siete a po uložení do cache sa otvorená pieseň 999 sama prekreslí.
+  if (!_litIsFullEnoughFor999Chants((v && v.text) ? String(v.text) : '') && navigator.onLine){
+    fetchLiturgia(iso).then(d=>{
+      if (d && d.ok){
+        try{
+          if (d.text) d.text = _litStripAdditionalCelebrationsText(d.text);
+          if (Array.isArray(d.variants)) d.variants = d.variants.map(x=>({...x, text:_litStripAdditionalCelebrationsText(x && x.text)}));
+        }catch(e){}
+        setCachedLit(iso, d);
+        try { renderSong(); } catch(e) {}
+        try { setupAlelujaLitControlsIfNeeded(); } catch(e) {}
+      }
+    }).catch(()=>{});
+    // zatiaľ vráť pôvodný text; po doťahu sa UI samo obnoví
+    return alelujaText;
+  }
+
   const parsed = _litSplitIntoSections(fullText);
 
   // Aklamácia pred evanjeliom (nie vždy "Alelujový verš")
