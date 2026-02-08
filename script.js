@@ -3939,7 +3939,7 @@ function deleteLitOverride(iso, vidx, midx){
 }
 
 
-async async function refreshLitOverridesFromDrive(){
+async function refreshLitOverridesFromDrive(){
   try{
     if (!SCRIPT_URL) return;
     const res = await jsonpRequest(`${SCRIPT_URL}?action=litOverrideGet`);
