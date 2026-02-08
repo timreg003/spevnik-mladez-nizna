@@ -115,7 +115,7 @@ function startMetaPolling(){
   metaPollingStarted = true;
   // okamžite po štarte + každú minútu
   checkMetaAndToggleBadge();
-  setInterval(checkMetaAndToggleBadge, 60 * 1000);
+  setInterval(checkMetaAndToggleBadge, POLL_INTERVAL_MS);
   window.addEventListener('online', () => checkMetaAndToggleBadge());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMetaAndToggleBadge(); });
 }
@@ -149,6 +149,7 @@ async function runUpdateNow(fromAuto=false){
   // najstabilnejšie: tvrdý reload UI
   try{ renderAllSongs(); }catch(e){}
   try{ renderDnesUI(); }catch(e){}
+  try{ refreshOpenDnesSongOrderIfNeeded(); }catch(e){}
   try{ renderPlaylistsUI(true); }catch(e){}
   try{ loadHistoryCacheFirst(true); }catch(e){}
 
@@ -157,8 +158,11 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v87';
-const APP_CACHE_NAME = 'spevnik-v87';
+const APP_BUILD = 'v88';
+const APP_CACHE_NAME = 'spevnik-v88';
+
+// Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
+const POLL_INTERVAL_MS = 30 * 1000;
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
 // We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
@@ -246,7 +250,7 @@ function startLitOverridesPolling(){
   if (litOvPollingStarted) return;
   litOvPollingStarted = true;
   pollLitOverridesAndAutoApply();
-  setInterval(pollLitOverridesAndAutoApply, 60 * 1000);
+  setInterval(pollLitOverridesAndAutoApply, POLL_INTERVAL_MS);
   window.addEventListener('online', () => pollLitOverridesAndAutoApply());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pollLitOverridesAndAutoApply(); });
 }
@@ -2417,9 +2421,30 @@ async function loadDnesFromDrive() {
     const t = (data && data.text != null) ? String(data.text) : "";
     localStorage.setItem('piesne_dnes', t.trim());
   } catch(e) {}
+  // ak je otvorená pieseň z 'Piesne na dnes', preber aj nový 'order'
+  refreshOpenDnesSongOrderIfNeeded();
   dnesFetchInFlight = false;
   loadDnesCacheFirst(true);
   if (isAdmin) openDnesEditor(true);
+
+
+function refreshOpenDnesSongOrderIfNeeded(){
+  // Keď admin zmení poradie (forma) piesne v "Piesne na dnes", iné zariadenia si to dotiahnu automaticky.
+  // Ak má používateľ danú pieseň už otvorenú, musí sa to prejaviť hneď (bez zatvorenia a otvorenia).
+  try{
+    if (currentListSource !== 'dnes') return;
+    if (!currentSong) return;
+    const id = String(currentSong.id || '');
+    const payload = parseDnesPayload(localStorage.getItem('piesne_dnes') || '');
+    const it = (payload.items||[]).find(x => String(x.songId) === id);
+    const newOrder = it ? String(it.order||'') : '';
+    if (newOrder !== String(currentDnesOrder||'')){
+      currentDnesOrder = newOrder;
+      try{ renderSong(); }catch(e){}
+    }
+  }catch(e){}
+}
+
 }
 
 /* dnes editor (zachované) */
@@ -5006,8 +5031,14 @@ function _litKbsLikeHtmlFromText(rawText){
 
     // headings
     if (/^#{5}\s+/.test(line)){
+      const h5 = line.replace(/^#{5}\s+/, '').trim();
+      const isGospelH5 = /^Evanjelium\b/i.test(h5) || /Čítanie\s+zo\s+svätého\s+Evanjelia/i.test(h5);
+      if (isGospelH5 && afterVerse){
+        // medzi veršom/aklamáciou a evanjeliom nech sú dva prázdne riadky (aj keď Evanjelium je #####)
+        html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
+      }
       inPsalm = false;
-      html += '<div class="kbs-h5">'+esc(line.replace(/^#{5}\s+/,''))+'</div>';
+      html += '<div class="kbs-h5">'+esc(h5)+'</div>';
       continue;
     }
     if (/^#{4}\s+/.test(line)){
@@ -5029,11 +5060,12 @@ function _litKbsLikeHtmlFromText(rawText){
     }
 
 
-    // krátka veta pod nadpisom (sivé, menšie, kurzíva)
-    // typicky je to 1 riadok medzi nadpisom (####) a "Čítanie z ..."
+        // krátka veta pod nadpisom (sivé, menšie, kurzíva)
+    // typicky je to 1 riadok po súradniciach (Iz 58,6-9 / Mt 5,13-16) a pred "Čítanie z ..."
     {
-      const t = String(line||'').trim();
-      if (!inPsalm && t && !/^#/.test(t) && !/^Čítanie\b/i.test(t) && !/^Počuli\s+sme\b/i.test(t)){
+      const tRaw = String(line||'').trim();
+      const t = tRaw.replace(/^\*+|\*+$/g,'').replace(/^_+|_+$/g,'').trim();
+      if (!inPsalm && t && !/^#/.test(tRaw) && !/^Čítanie\b/i.test(t) && !/^Počuli\s+sme\b/i.test(t) && !/^R\s*\.?\s*:/i.test(t)){
         // nájdi ďalší ne-prázdny riadok
         let j = i+1;
         let next = '';
@@ -5042,11 +5074,18 @@ function _litKbsLikeHtmlFromText(rawText){
           if (nx){ next = nx; break; }
           j++;
         }
-        if (next && /^Čítanie\b/i.test(next) && (lastH4 || /^#{4}\s+/.test(String(lines[i-1]||'')))){
+        // Ak nasleduje "Čítanie ..." a sme v sekcii (####), je to tá krátka veta.
+        if (next && /^Čítanie\b/i.test(next.trim()) && lastH4 && !/žalm/i.test(lastH4)){
           html += '<div class="kbs-brief">'+esc(t)+'</div>';
           continue;
         }
       }
+    }
+
+    // Ak "Evanjelium" príde ako bežný riadok (nie nadpis), vlož medzeru po aleluja/verši
+    if (afterVerse && (/^Evanjelium\b/i.test(line.trim()) || /Čítanie\s+zo\s+svätého\s+Evanjelia/i.test(line.trim()))){
+      html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
+      afterVerse = false;
     }
 
     // Ak "Čítanie zo svätého Evanjelia" príde ako bežný riadok (nie nadpis), vlož medzeru po aleluja/verši
@@ -5373,7 +5412,7 @@ function injectPsalmAndAlleluiaBlocks(alelujaText, iso){
   }
 
   const variants = cached.variants;
-  const vidx = Math.min(getLitChoiceIndex(iso), variants.length-1);
+  const vidx = _litBestVariantIndexNoOr(variants);
   const v = variants[vidx] || variants[0];
 
   // Z liturgie odstráň voliteľné "Ďalšie slávenia" (najmä v pôste),
