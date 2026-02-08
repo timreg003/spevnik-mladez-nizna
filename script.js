@@ -158,8 +158,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v91';
-const APP_CACHE_NAME = 'spevnik-v91';
+const APP_BUILD = 'v92';
+const APP_CACHE_NAME = 'spevnik-v92';
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
 const POLL_INTERVAL_MS = 30 * 1000;
@@ -217,16 +217,23 @@ function _setSeenLitOvHash(h){
 async function pollLitOverridesAndAutoApply(){
   if (!navigator.onLine) return;
   try{
-    const res = await jsonpRequest(`${SCRIPT_URL}?action=litOverrideGet`);
-    if (!res || !res.ok || !res.data) return;
-    const remote = res.data;
+    const remote = await _fetchLitOverridesFromDrive();
+    if (!remote) return;
+
     const hash = _hashStrDjb2(_stableStringify(remote));
     const seen = _getSeenLitOvHash();
-    if (hash && seen && hash === seen) return;
+    if (hash && seen && hash === seen) {
+      // Still ensure in-memory overrides exist (e.g., after reload with missing cache)
+      if (!__litOverrides) {
+        __litOverrides = remote;
+        try{ localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(__litOverrides)); }catch(e){}
+      }
+      return;
+    }
 
     // Apply & cache
     __litOverrides = remote;
-    try{ localStorage.setItem('__litOverrides', JSON.stringify(__litOverrides)); }catch(e){}
+    try{ localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(__litOverrides)); }catch(e){}
     _setSeenLitOvHash(hash);
 
     // If user is currently viewing Aleluja 999 in Piesne na dnes, rerender immediately
@@ -235,14 +242,11 @@ async function pollLitOverridesAndAutoApply(){
       const titleIsAleluja = currentSong && String(currentSong.title||'').trim().toLowerCase() === 'aleluja';
       const isDnes = (currentListSource === 'dnes');
       if (is999 && titleIsAleluja && isDnes){
-        // počas písania do editora neprepisuj textarea ani nestrácaj focus
         if (isAlelujaLitEditing()) return;
-        // refresh admin panel values (if admin) and song body
         try{ setupAlelujaLitControlsIfNeeded(); }catch(e){}
         try{ renderSong(); }catch(e){}
       }
     }catch(e){}
-
   }catch(e){ /* ignore */ }
 }
 
@@ -3940,11 +3944,16 @@ function _litOverrideKey(iso, vidx, midx){
 function getLitOverrides(){
   if (__litOverrides && typeof __litOverrides === 'object') return __litOverrides;
   try{
-    const raw = localStorage.getItem(LIT_OVERRIDES_CACHE_KEY) || '';
+    // primary cache key
+    let raw = localStorage.getItem(LIT_OVERRIDES_CACHE_KEY) || '';
+    // legacy key from older builds
+    if (!raw) raw = localStorage.getItem('__litOverrides') || '';
     if (raw){
       const obj = JSON.parse(raw);
       if (obj && typeof obj === 'object' && obj.overrides && typeof obj.overrides === 'object'){
         __litOverrides = obj;
+        // migrate to primary key
+        try{ localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); }catch(e){}
         return __litOverrides;
       }
     }
@@ -3980,15 +3989,35 @@ function deleteLitOverride(iso, vidx, midx){
 }
 
 
+function _litParseOverridesText(rawText){
+  try{
+    const obj = JSON.parse(String(rawText||''));
+    if (obj && typeof obj === 'object' && obj.overrides && typeof obj.overrides === 'object') return obj;
+  }catch(e){}
+  return { version: 1, overrides: {} };
+}
+
+async function _fetchLitOverridesFromDrive(){
+  try{
+    if (!SCRIPT_URL) return null;
+    const res = await jsonpRequest(`${SCRIPT_URL}?action=get&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}`);
+    if (!res || !res.ok) return null;
+    const text = (res.text != null) ? String(res.text) : '';
+    if (!text || !text.trim()) return { version: 1, overrides: {} };
+    if (String(res.error||'') === 'deleted') return { version: 1, overrides: {} };
+    return _litParseOverridesText(text);
+  }catch(e){
+    return null;
+  }
+}
+
 async function refreshLitOverridesFromDrive(){
   try{
-    if (!SCRIPT_URL) return;
-    const res = await jsonpRequest(`${SCRIPT_URL}?action=litOverrideGet`);
-    if (res && res.ok && res.data){
-      __litOverrides = res.data;
-      try{ localStorage.setItem('__litOverrides', JSON.stringify(__litOverrides)); }catch(e){}
-      // keep hash in sync so polling doesn't falsely report changes
-      try{ _setSeenLitOvHash(_hashStrDjb2(_stableStringify(__litOverrides))); }catch(e){}
+    const obj = await _fetchLitOverridesFromDrive();
+    if (obj){
+      __litOverrides = obj;
+      try{ localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); }catch(e){}
+      try{ _setSeenLitOvHash(_hashStrDjb2(_stableStringify(obj))); }catch(e){}
       return __litOverrides;
     }
   }catch(e){}
@@ -4007,6 +4036,7 @@ async function saveLitOverridesToDrive(){
     if (res && res.ok){
       __litOverrides = obj;
       try { localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); } catch(e){}
+      try{ _setSeenLitOvHash(_hashStrDjb2(_stableStringify(obj))); }catch(e){}
       return true;
     }
   }catch(e){}
@@ -5923,7 +5953,14 @@ function setupAlelujaLitControlsIfNeeded(){
           ov.verse = taV ? String(taV.value||'').trim() : '';
 
           setLitOverride(iso, vidx, midx, ov);
-          await saveLitOverridesToDrive();
+          const ok = await saveLitOverridesToDrive();
+          if (ok){
+            // načítaj späť z Drive, aby sme mali istotu a aj hash sedel
+            try { await refreshLitOverridesFromDrive(); } catch(e) {}
+            try { showToast('Uložené (pre všetkých)', true, 1800); } catch(e) {}
+          } else {
+            try { showToast('Uloženie zlyhalo (skontroluj ADMIN_PWD / SCRIPT_URL)', false, 2600); } catch(e) {}
+          }
           // znovu vyrenderuj pieseň
           try { renderSong(); } catch(e) {}
         }catch(e){}
