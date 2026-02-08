@@ -1085,3 +1085,76 @@ body.present #presentControls{ display:flex; }
 /* history rename */
 .history-edit{ background:#222; color:#fff; border:none; border-radius:10px; padding:6px 10px; cursor:pointer; margin-right:6px; }
 
+
+
+
+/* --- Aleluja 999: lokálny výber variantu/omše --- */
+.lit-choice-card{
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.lit-choice-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.lit-choice-row select{
+  flex: 1;
+  max-width: 100%;
+}
+.lit-choice-static{
+  opacity: 0.9;
+}
+.lit-choice-note{
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.lit-choice-hint{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* --- Liturgický kalendár: "KBS-like" telo pod súradnicami --- */
+.kbs-like{
+  padding: 6px 2px 0 2px;
+  line-height: 1.45;
+}
+.kbs-h4{
+  margin-top: 14px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 16px;
+}
+.kbs-h5{
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 0.95;
+}
+.kbs-line{
+  margin: 4px 0;
+  font-size: 14px;
+}
+.kbs-psalm-line{
+  margin: 2px 0;
+  font-size: 14px;
+}
+.kbs-response{
+  margin: 10px 0 8px 0;
+  font-style: italic;
+  opacity: 0.9;
+}
+.kbs-gap{
+  height: 8px;
+}
