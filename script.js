@@ -148,8 +148,8 @@ async function runUpdateNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v75';
-const APP_CACHE_NAME = 'spevnik-v69';
+const APP_BUILD = 'v76';
+const APP_CACHE_NAME = 'spevnik-v76';
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
 // We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
@@ -535,6 +535,49 @@ function buildDiagnosticsText(){
   lines.push(`UA: ${ua}`);
   return lines.join('\n');
 }
+
+async function appendDiagnosticsExtras(){
+  const ta = document.getElementById('diag-text');
+  if (!ta) return;
+
+  const extra = [];
+  try{
+    if (window.caches && caches.keys){
+      const keys = await caches.keys();
+      extra.push(`CacheKeys: ${keys.length ? keys.join(', ') : '-'}`);
+    }
+  }catch(e){
+    extra.push(`CacheKeys: error`);
+  }
+
+  try{
+    if (navigator.serviceWorker){
+      const ctl = navigator.serviceWorker.controller;
+      extra.push(`SW controller: ${ctl && ctl.scriptURL ? ctl.scriptURL : '-'}`);
+      if (navigator.serviceWorker.getRegistrations){
+        const regs = await navigator.serviceWorker.getRegistrations();
+        const urls = regs.map(r => (r.active && r.active.scriptURL) || (r.waiting && r.waiting.scriptURL) || (r.installing && r.installing.scriptURL)).filter(Boolean);
+        extra.push(`SW registrations: ${urls.length ? urls.join(' | ') : '-'}`);
+      }
+    }
+  }catch(e){
+    extra.push(`SW: error`);
+  }
+
+  try{
+    const den = localStorage.getItem('lit_last_den') || '-';
+    const src = localStorage.getItem('lit_last_src') || '-';
+    const at = parseInt(localStorage.getItem('lit_last_at')||'0',10) || 0;
+    const len = localStorage.getItem('lit_last_len') || '-';
+    extra.push(`Liturgia: den=${den}`);
+    extra.push(`Liturgia: src=${src} at=${fmtDateTime(at)} len=${len}`);
+  }catch(e){}
+
+  if (extra.length){
+    ta.value = ta.value + `\n` + extra.join('\n');
+  }
+}
+
 function openDiagnostics(){
   closeFabMenu();
   const modal = document.getElementById('diag-modal');
@@ -542,6 +585,8 @@ function openDiagnostics(){
   const txt = buildDiagnosticsText();
   const ta = document.getElementById('diag-text');
   if (ta) ta.value = txt;
+  // doplň extra info (SW/cache/liturgia)
+  try{ appendDiagnosticsExtras(); }catch(e){}
   const summary = document.getElementById('diag-summary');
   if (summary){
     const online = navigator.onLine;
@@ -3993,6 +4038,13 @@ async function loadLiturgiaForUI(iso, opts){
   // rýchle zobrazenie z cache + tichý refresh z internetu (ak sme online)
   if (cached && cached.ok && !force){
     renderLitFromData(iso, cached);
+    try{
+      const cachedText = String((cached && (cached.text || (cached.variants && cached.variants[0] && cached.variants[0].text))) || '');
+      localStorage.setItem('lit_last_den', iso);
+      localStorage.setItem('lit_last_src', 'cache');
+      localStorage.setItem('lit_last_len', String(cachedText.length || 0));
+      localStorage.setItem('lit_last_at', String(Date.now()));
+    }catch(e){}
 
     if (navigator.onLine){
       // ak v cache chýbajú telá čítaní (niekedy sa uložila "skrátená" verzia), prepíš to novým fetchom
@@ -4008,6 +4060,13 @@ async function loadLiturgiaForUI(iso, opts){
             if (freshText && (!cachedText || freshText.length > cachedText.length + 50 || cachedLooksShort)){
               setCachedLit(iso, fresh);
               renderLitFromData(iso, fresh);
+              try{
+                const t2 = String((fresh && (fresh.text || (fresh.variants && fresh.variants[0] && fresh.variants[0].text))) || '');
+                localStorage.setItem('lit_last_den', iso);
+                localStorage.setItem('lit_last_src', 'network-refresh');
+                localStorage.setItem('lit_last_len', String(t2.length || 0));
+                localStorage.setItem('lit_last_at', String(Date.now()));
+              }catch(e){}
             }
           }
         }catch(e){}
@@ -4029,6 +4088,13 @@ async function loadLiturgiaForUI(iso, opts){
     if (data && data.ok){
       setCachedLit(iso, data);
       renderLitFromData(iso, data);
+      try{
+        const t = String((data && (data.text || (data.variants && data.variants[0] && data.variants[0].text))) || '');
+        localStorage.setItem('lit_last_den', iso);
+        localStorage.setItem('lit_last_src', 'network');
+        localStorage.setItem('lit_last_len', String(t.length || 0));
+        localStorage.setItem('lit_last_at', String(Date.now()));
+      }catch(e){}
       return data;
     }
     throw new Error((data && data.error) ? String(data.error) : 'bad_response');
@@ -4464,7 +4530,9 @@ function _litSplitIntoSections(text){
 
       // Skontroluj, či ide o "plný" blok: v najbližších riadkoch musí byť aspoň jeden riadok tela (nie len súradnice / ďalší nadpis)
       let bodySeen = false;
-      const lookLim = Math.min(lines.length, start + 18);
+      let bodyChars = 0;
+      let bodyLines = 0;
+      const lookLim = Math.min(lines.length, start + 30);
       for (let k = start + 1; k < lookLim; k++) {
         const t = String(lines[k] || '').trim();
         if (!t) continue;
@@ -4472,8 +4540,14 @@ function _litSplitIntoSections(text){
         if (_litLooksLikeSmernica(t)) continue;
         if (_litLooksLikeReadingCoords(t)) continue;
         if (/^R\s*\.?\s*:/i.test(t)) continue;
-        // "telo" = dlhší text (alebo podnadpis) – nie iba 1 slovo
-        if (t.length >= 28) { bodySeen = true; break; }
+
+        // telo čítania je často zalomené na krátke riadky – preto hodnotíme kumulatívne
+        if (t.length >= 6) {
+          bodyChars += t.length;
+          bodyLines += 1;
+          if (/[.!?]/.test(t)) bodyChars += 20;
+          if (bodyChars >= 70 || bodyLines >= 3) { bodySeen = true; break; }
+        }
       }
 
       if (!bodySeen) {
@@ -4486,14 +4560,21 @@ function _litSplitIntoSections(text){
       r1EndAbs = -1;
       const lim = Math.min(lines.length, start + MAX_SCAN);
       let hadBody = false;
+      let hadBodyChars = 0;
+      let hadBodyLines = 0;
       for (let j = start + 1; j < lim; j++) {
         const tj0 = String(lines[j] || '');
         const tj = tj0.trim();
         if (!tj) continue;
 
-        // body sa považuje za "videné" na prvom dlhšom ne-nadpise
-        if (!hadBody && !_litIsSectionHeading(tj) && !_litLooksLikeSmernica(tj) && !_litLooksLikeReadingCoords(tj) && tj.length >= 28) {
-          hadBody = true;
+        // telo čítania je často zalomené na krátke riadky – preto hodnotíme kumulatívne
+        if (!hadBody && !_litIsSectionHeading(tj) && !_litLooksLikeSmernica(tj) && !_litLooksLikeReadingCoords(tj)) {
+          if (tj.length >= 6) {
+            hadBodyChars += tj.length;
+            hadBodyLines += 1;
+            if (/[.!?]/.test(tj)) hadBodyChars += 20;
+            if (hadBodyChars >= 70 || hadBodyLines >= 3) hadBody = true;
+          }
         }
 
         if (hadBody && /Počuli\s+sme/i.test(tj)) { r1EndAbs = j + 1; break; }
