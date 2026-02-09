@@ -158,8 +158,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v93';
-const APP_CACHE_NAME = 'spevnik-v93';
+const APP_BUILD = 'v94';
+const APP_CACHE_NAME = 'spevnik-v94';
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
 const POLL_INTERVAL_MS = 30 * 1000;
@@ -340,10 +340,72 @@ function jsonpRequest(url){
 
 }
 
-const ADMIN_PWD = "qwer";
+const OWNER_PWD = "wert";
+// Owner password (full access). Admins log in with their own password via GAS.
+const ADMIN_PWD = OWNER_PWD;
 const FORMSPREE_URL = "https://formspree.io/f/mvzzkwlw";
 
 let songs = [], filteredSongs = [];
+
+// ===== SONG EDITOR (local-first) =====
+const LS_SONG_EDITS = 'spevnik_song_edits_v1'; // local overrides + local-only songs
+let songEdits = {}; // { [songId]: { id, title, originalId, origText, updatedAt, localOnly } }
+
+function loadSongEdits(){
+  try { songEdits = JSON.parse(localStorage.getItem(LS_SONG_EDITS) || '{}') || {}; } catch(e) { songEdits = {}; }
+  if (typeof songEdits !== 'object' || Array.isArray(songEdits)) songEdits = {};
+}
+function saveSongEditsLocal(){
+  try { localStorage.setItem(LS_SONG_EDITS, JSON.stringify(songEdits || {})); } catch(e) {}
+  // best-effort auto-save to a picked backup file (if enabled)
+  try { autoSaveBackupFile(); } catch(e) {}
+}
+
+function computeDisplayId(rawId){
+  const rid = String(rawId||'').trim();
+  if (rid.toUpperCase().startsWith('M')) return "Mariánska " + rid.substring(1).replace(/^0+/, '');
+  if (/^\d+$/.test(rid)) return rid.replace(/^0+/, '');
+  return rid;
+}
+function computeSearchHaystack(displayId, title, text){
+  const plainForSearch = String(text||'')
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return normSearch((displayId||'') + ' ' + (title||'') + ' ' + plainForSearch);
+}
+
+function applySongEditsToSongs(){
+  // Merge local edits into freshly loaded remote songs
+  try{
+    loadSongEdits();
+    const byId = new Map((songs||[]).map(s => [String(s.id), s]));
+    for (const [id, ed] of Object.entries(songEdits || {})){
+      if (!ed || typeof ed !== 'object') continue;
+      const sid = String(id);
+      const target = byId.get(sid);
+      if (target){
+        if (ed.title != null) target.title = String(ed.title);
+        if (ed.originalId != null) target.originalId = String(ed.originalId);
+        if (ed.origText != null) target.origText = String(ed.origText);
+        target.displayId = computeDisplayId(target.originalId);
+        target.searchHaystack = computeSearchHaystack(target.displayId, target.title, target.origText);
+      } else if (ed.localOnly){
+        // local-only song not present in remote export
+        const obj = {
+          id: sid,
+          title: String(ed.title||''),
+          originalId: String(ed.originalId||''),
+          displayId: computeDisplayId(ed.originalId),
+          origText: String(ed.origText||''),
+        };
+        obj.searchHaystack = computeSearchHaystack(obj.displayId, obj.title, obj.origText);
+        songs.push(obj);
+      }
+    }
+  }catch(e){}
+}
+
 let currentSong = null;
 let currentModeList = [];
 let currentListSource = 'all';
@@ -355,6 +417,79 @@ const scale = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
 
 let autoscrollInterval = null, currentLevel = 1;
 let isAdmin = false;
+let adminSession = null; // { pwd, isOwner, name, perms: {A,B,C,D,E} }
+const SS_ADMIN = 'spevnik_admin_session_v1';
+
+function loadAdminSession(){
+  try{
+    const raw = sessionStorage.getItem(SS_ADMIN);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (s && typeof s === 'object' && s.pwd) return s;
+  }catch(e){}
+  return null;
+}
+function saveAdminSession(s){
+  try{
+    if (!s) sessionStorage.removeItem(SS_ADMIN);
+    else sessionStorage.setItem(SS_ADMIN, JSON.stringify(s));
+  }catch(e){}
+}
+
+function isOwner(){
+  return !!(adminSession && adminSession.isOwner);
+}
+function hasPerm(code){
+  if (!adminSession) return false;
+  if (adminSession.isOwner) return true;
+  return !!(adminSession.perms && adminSession.perms[code]);
+}
+function getAuthPwd(){
+  return adminSession ? String(adminSession.pwd||'') : '';
+}
+
+async function authWithPwd(pwd){
+  // JSONP so it works cross-domain
+  const url = `${SCRIPT_URL}?action=auth&pwd=${encodeURIComponent(pwd)}`;
+  const data = await jsonpRequest(url);
+  if (data && data.ok && data.session){
+    return data.session;
+  }
+  return null;
+}
+
+function applyPermsToUI(){
+  const logged = !!adminSession;
+  isAdmin = logged;
+  const t = document.getElementById('admin-toggle-text');
+  if (t) t.innerText = logged ? "ODHLÁSIŤ" : "PRIHLÁSIŤ";
+
+  // show panels based on perms
+  const dnesPanel = document.getElementById('dnes-editor-panel');
+  if (dnesPanel) dnesPanel.style.display = (logged && hasPerm('A')) ? 'block' : 'none';
+
+  const plPanel = document.getElementById('admin-panel');
+  if (plPanel) plPanel.style.display = (logged && hasPerm('B')) ? 'block' : 'none';
+
+  // collapse on show
+  if (dnesPanel && dnesPanel.style.display === 'block') dnesPanel.classList.add('collapsed');
+  if (plPanel && plPanel.style.display === 'block') plPanel.classList.add('collapsed');
+
+  // refresh lists to show/hide edit icons
+  try{ renderPlaylistsUI(true); }catch(e){}
+  try{ loadHistoryCacheFirst(true); }catch(e){}
+  try{ updateSongAdminActions(); }catch(e){}
+}
+
+function setAdminSession(s){
+  adminSession = s;
+  saveAdminSession(s);
+  applyPermsToUI();
+}
+
+window.addEventListener('beforeunload', () => {
+  // sessionStorage is cleared when tab closes; keeping it is OK.
+});
 
 
 let playlistsKeepOpenUntil = 0;
@@ -754,39 +889,44 @@ function goHomeUI() {
 
 /* ===== LOGIN ===== */
 function toggleAdminAuth() {
-  if (!isAdmin) {
+  if (!adminSession) {
     const pwd = prompt("Heslo:");
-    if (pwd !== ADMIN_PWD) return;
+    if (!pwd) return;
 
-    isAdmin = true;
-    document.getElementById('admin-toggle-text').innerText = "ODHLÁSIŤ";
-    document.getElementById('dnes-editor-panel').style.display = 'block';
-    document.getElementById('dnes-editor-panel').classList.add('collapsed');
-    document.getElementById('admin-panel').style.display = 'block';
-    document.getElementById('admin-panel').classList.add('collapsed');
+    showToast("Prihlasujem...", true, 0);
 
-    openDnesEditor(true);
-    openPlaylistEditorNew(true);
-    renderPlaylistsUI(true);
-    loadHistoryCacheFirst(true);
+    authWithPwd(String(pwd).trim()).then(sess => {
+      if (!sess){
+        showToast("Zlé heslo.", false, 2000);
+        return;
+      }
+      // store pwd so we can call GAS save endpoints
+      sess.pwd = String(pwd).trim();
+      setAdminSession(sess);
+
+      // open editors if the user has access
+      try{ if (hasPerm('A')) openDnesEditor(true); }catch(e){}
+      try{ if (hasPerm('B')) openPlaylistEditorNew(true); }catch(e){}
+      showToast("Prihlásené", true, 1200);
+    }).catch(() => {
+      showToast("Prihlásenie zlyhalo.", false, 2200);
+    });
   } else {
     logoutAdmin();
   }
 }
 function logoutAdmin() {
   if (!confirmDiscardEdits()) return;
-  isAdmin = false;
-  document.getElementById('admin-toggle-text').innerText = "PRIHLÁSIŤ";
-  document.getElementById('dnes-editor-panel').style.display = 'none';
-  document.getElementById('admin-panel').style.display = 'none';
+  setAdminSession(null);
   selectedSongIds = [];
-  
+
   // Clear DNES editor input (keep saved title/display)
   const __dn = document.getElementById('dnes-name');
   if (__dn) __dn.value = '';
   const __ds = document.getElementById('dnes-search');
   if (__ds) __ds.value = '';
-renderPlaylistsUI(true);
+
+  renderPlaylistsUI(true);
 }
 
 /* ===== XML LOAD ===== */
@@ -876,6 +1016,9 @@ function processXML(xmlText, opts = null) {
       searchHaystack: normSearch((displayId||'') + ' ' + (s.getElementsByTagName('title')[0]?.textContent.trim()||'') + ' ' + plainForSearch)
     };
   });
+
+  // apply local edits / local-only songs (editor)
+  applySongEditsToSongs();
 
   songs.sort((a, b) => {
     const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
@@ -1031,6 +1174,7 @@ function openSongById(id, source) {
   const __is999 = String(s.originalId||"").replace(/^0+/,'') === '999';
   setChordTemplateEnabled(!__is999);
   updateChordTemplateUI();
+  try{ initSongEditor(); }catch(e){}
 
 
   // V detaile piesne z 'Piesne na dnes' vždy defaultne zobraz verziu DNES
@@ -1757,6 +1901,7 @@ function setChordTemplateEnabled(on){
 function toggleChordTemplate(){
   setChordTemplateEnabled(!chordTemplateEnabled());
   updateChordTemplateUI();
+  try{ initSongEditor(); }catch(e){}
   renderSong();
 }
 
@@ -2097,6 +2242,7 @@ function applyChordTemplateOverlay(text){
 
 function renderSong() {
   if (!currentSong) return;
+  try { updateSongAdminActions(); } catch(e) {}
   let text = (currentListSource === 'dnes' && currentDnesOrder && !dnesShowOriginal)
     ? buildOrderedSongText(currentSong, currentDnesOrder)
     : currentSong.origText;
@@ -2196,6 +2342,7 @@ function renderSong() {
   // sync presentation overlay
   updatePresentationUI();
   updateChordTemplateUI();
+  try{ initSongEditor(); }catch(e){}
   } catch (err){
     // Safe fallback: show raw text so the app never becomes unusable
     const el = document.getElementById('song-content');
@@ -2469,7 +2616,7 @@ async function loadDnesFromDrive() {
   refreshOpenDnesSongOrderIfNeeded();
   dnesFetchInFlight = false;
   loadDnesCacheFirst(true);
-  if (isAdmin) openDnesEditor(true);
+  if (hasPerm('A')) openDnesEditor(true);
 
 
 function refreshOpenDnesSongOrderIfNeeded(){
@@ -2909,7 +3056,7 @@ async function saveDnesEditor() {
   loadDnesCacheFirst(true);
 
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=PiesneNaDnes&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
     dnesDirty = false;
     showToast("Uložené ✅", true);
     setButtonStateById('dnes-save-btn', false);
@@ -2998,8 +3145,8 @@ function renderHistoryUI(showEmptyAllowed){
   box.innerHTML = filtered.map((h) => {
     const ts = Number(h.ts||0);
     const open = !!historyOpen[ts];
-    const delBtn = isAdmin ? `<button class="history-del" onclick="event.stopPropagation(); deleteHistoryEntry(${ts})">X</button>` : '';
-    const editBtn = isAdmin ? `<button class="history-edit" onclick="event.stopPropagation(); renameHistoryEntry(${ts})">✎</button>` : '';
+    const delBtn = isOwner() ? `<button class="history-del" onclick="event.stopPropagation(); deleteHistoryEntry(${ts})">X</button>` : '';
+    const editBtn = isOwner() ? `<button class="history-edit" onclick="event.stopPropagation(); renameHistoryEntry(${ts})">✎</button>` : '';
     const title = historyEntryTitle(h);
     const items = (h.items || []);
 
@@ -3062,7 +3209,7 @@ function buildHistoryEntryFromCurrentDnes(){
 }
 
 async function saveDnesToHistory(){
-  if (!isAdmin) return;
+  if (!hasPerm('A')) return;
   showToast('Ukladám do histórie…', true);
 
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
@@ -3077,7 +3224,7 @@ async function saveDnesToHistory(){
   renderHistoryUI(true);
 
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
     showToast('Uložené do histórie ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa uložiť do histórie ❌', false);
@@ -3088,19 +3235,19 @@ async function saveDnesToHistory(){
 
 
 function deleteHistoryEntry(ts){
-  if (!isAdmin) return;
+  if (!hasPerm('A')) return;
   if (!confirm('Vymazať tento záznam z histórie?')) return;
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const next = arr.filter(x => Number(x.ts) !== Number(ts));
   localStorage.setItem(LS_HISTORY, JSON.stringify(next));
   renderHistoryUI(true);
-  try { fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
+  try { fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
   loadHistoryFromDrive();
 }
 
 
 function renameHistoryEntry(ts){
-  if (!isAdmin) return;
+  if (!hasPerm('A')) return;
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const idx = arr.findIndex(x => Number(x.ts) === Number(ts));
   if (idx < 0) return;
@@ -3114,7 +3261,7 @@ function renameHistoryEntry(ts){
   renderHistoryUI(true);
   // sync to Drive (best effort)
   try {
-    fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
+    fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
   } catch(e) {}
 }
 
@@ -3251,7 +3398,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
       </div>`;
   }).join('');
 
-  if (isAdmin) enableTouchReorder(sect, 'plist');
+  if (hasPerm('B')) enableTouchReorder(sect, 'plist');
 }
 
 
@@ -3324,7 +3471,7 @@ function renderPlaylistSongsView(name){
     <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #333; background:#121212;">
       <button class="pl-back" onclick="closePlaylistView()"><i class=\"fas fa-arrow-left\"></i> Späť</button>
       <div style="font-weight:800; color:#fff; text-align:center; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 8px;">${escapeHtml(name)}</div>
-      ${isAdmin ? `<button class=\"pl-edit\" onclick=\"editPlaylist('${encodeURIComponent(name)}')\"><i class=\"fas fa-pen\"></i></button>` : `<span style=\"width:44px;\"></span>`}
+      ${hasPerm('B') ? `<button class=\"pl-edit\" onclick=\"editPlaylist('${encodeURIComponent(name)}')\"><i class=\"fas fa-pen\"></i></button>` : `<span style=\"width:44px;\"></span>`}
     </div>`;
 
   if (!currentModeList.length) {
@@ -3445,7 +3592,7 @@ function clearSelection(){
 }
 
 async function savePlaylist(){
-  if (!isAdmin) return;
+  if (!hasPerm('B')) return;
 
   const nameEl = document.getElementById('playlist-name');
   const rawName = (nameEl?.value || '').trim();
@@ -3509,12 +3656,12 @@ const newName = rawName;
   newPlaylist();
 // persist to Drive
   try {
-    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${ADMIN_PWD}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(newName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
-      try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${ADMIN_PWD}&content=`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=`, { mode:'no-cors' }); } catch(e) {}
     }
     playlistDirty = false;
     showToast('Uložené ✅', true);
@@ -3530,7 +3677,7 @@ const newName = rawName;
 }
 
 async function editPlaylist(nameEnc){
-  if (!isAdmin) return;
+  if (!hasPerm('A')) return;
   const name = decodeURIComponent(nameEnc);
   editingPlaylistName = name;
   const nameEl = document.getElementById('playlist-name');
@@ -3555,7 +3702,7 @@ async function editPlaylist(nameEnc){
 }
 
 async function deletePlaylist(nameEnc){
-  if (!isAdmin) return;
+  if (!hasPerm('B')) return;
   const name = decodeURIComponent(nameEnc);
   if (!confirm(`Vymazať playlist "${name}"?`)) return;
 
@@ -3572,8 +3719,8 @@ async function deletePlaylist(nameEnc){
   renderPlaylistsUI(true);
 
   try {
-    try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${ADMIN_PWD}`, { mode:'no-cors' }); } catch(e) {}
-    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    try { await fetch(`${SCRIPT_URL}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
+    await fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     showToast('Vymazané ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa vymazať ❌', false);
@@ -3612,7 +3759,7 @@ function applyReorder(ctx, from, to) {
     renderPlaylistsUI(true);
     // best-effort persist order
     if (isAdmin) {
-      try { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${ADMIN_PWD}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
+      try { fetch(`${SCRIPT_URL}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
     }
   }
   else if (ctx === 'plsel') {
@@ -3733,7 +3880,7 @@ async function hardResetApp() {
   try{
     const base = location.href.split('#')[0].split('?')[0];
     const hash = location.hash || '';
-    location.replace(base + '?v=93&ts=' + Date.now() + hash);
+    location.replace(base + '?v=94&ts=' + Date.now() + hash);
   }catch(e){
     try{ location.reload(); }catch(e2){}
   }
@@ -3858,6 +4005,9 @@ window.addEventListener('pageshow', () => {
   try { setTimeout(()=>{ try{ forceInitialCollapsed(); } catch(e){} }, 0); } catch(e) {}
 });
 document.addEventListener('DOMContentLoaded', () => {
+  // restore session (clears automatically when tab is closed)
+  try { const s = loadAdminSession(); if (s) { adminSession = s; applyPermsToUI(); } } catch(e) {}
+
   forceInitialCollapsed();
 
   // --- fix: pri písaní do vyhľadávania sa nesmie zbalovať sekcia "Zoznam piesní"
@@ -3893,6 +4043,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateFontSizeLabel();
   initSongPinchToZoom();
   updateChordTemplateUI();
+  try{ initSongEditor(); }catch(e){}
   // 📱 Keep display awake while app is open (best-effort; activates after first user tap)
   try{ initKeepScreenAwake(); }catch(e){}
 // Try to request persistent storage (helps iOS/Android keep offline cache longer)
@@ -4075,12 +4226,12 @@ async function refreshLitOverridesFromDrive(){
 
 
 async function saveLitOverridesToDrive(){
-  if (!isAdmin) return;
+  if (!hasPerm('C')) return;
   try{
     if (!SCRIPT_URL) return;
     const obj = getLitOverrides();
     obj.updatedAt = Date.now();
-    const url = `${SCRIPT_URL}?action=save&pwd=${encodeURIComponent(ADMIN_PWD)}&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}&content=${encodeURIComponent(JSON.stringify(obj))}`;
+    const url = `${SCRIPT_URL}?action=save&pwd=${encodeURIComponent(getAuthPwd())}&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}&content=${encodeURIComponent(JSON.stringify(obj))}`;
     const res = await jsonpRequest(url);
     if (res && res.ok){
       __litOverrides = obj;
@@ -6013,7 +6164,7 @@ function setupAlelujaLitControlsIfNeeded(){
             try { await refreshLitOverridesFromDrive(); } catch(e) {}
             try { showToast('Uložené (pre všetkých)', true, 1800); } catch(e) {}
           } else {
-            try { showToast('Uloženie zlyhalo (skontroluj ADMIN_PWD / SCRIPT_URL)', false, 2600); } catch(e) {}
+            try { showToast('Uloženie zlyhalo (skontroluj heslo / pripojenie)', false, 2600); } catch(e) {}
           }
           // znovu vyrenderuj pieseň
           try { renderSong(); } catch(e) {}
@@ -6033,4 +6184,574 @@ function setupAlelujaLitControlsIfNeeded(){
   }
 }
 
+
+
+
+/* ===== SONG EDITOR UI ===== */
+let seEditingId = null;
+let seIsNew = false;
+
+// chord builder state
+let chordRoot = '';
+let chordQual = '';
+let chordBass = '';
+
+function updateSongAdminActions(){
+  const wrap = document.getElementById('song-admin-actions');
+  if (!wrap) return;
+  const inDetail = (document.getElementById('song-detail')?.style.display === 'block');
+  wrap.style.display = ((hasPerm('D') || hasPerm('E')) && inDetail) ? 'block' : 'none';
+}
+
+function _ensureRandomId(){
+  try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('local-' + Date.now() + '-' + Math.random().toString(16).slice(2)); } catch(e) {
+    return 'local-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+}
+
+function openSongEditorForCurrent(){
+  if (!(hasPerm('D') || hasPerm('E')) || !currentSong) return;
+  openSongEditorWithSong(currentSong.id);
+}
+function openSongEditorNew(){
+  if (!(hasPerm('D') || hasPerm('E'))) return;
+  seIsNew = true;
+  seEditingId = _ensureRandomId();
+
+  const num = document.getElementById('se-number');
+  const title = document.getElementById('se-title');
+  const ta = document.getElementById('se-text');
+
+  if (num) num.value = '';
+  if (title) title.value = '';
+  if (ta) ta.value = '';
+
+  resetChordBuilder();
+  showSongEditorModal(true);
+}
+
+function openSongEditorWithSong(songId){
+  if (!(hasPerm('D') || hasPerm('E'))) return;
+  loadSongEdits();
+  seIsNew = false;
+  seEditingId = String(songId||'');
+
+  const base = songs.find(x => String(x.id) === seEditingId);
+  const ed = songEdits[seEditingId];
+
+  const num = document.getElementById('se-number');
+  const title = document.getElementById('se-title');
+  const ta = document.getElementById('se-text');
+
+  if (num) num.value = (ed && ed.originalId != null) ? String(ed.originalId) : (base ? String(base.originalId||'') : '');
+  if (title) title.value = (ed && ed.title != null) ? String(ed.title) : (base ? String(base.title||'') : '');
+  if (ta) ta.value = (ed && ed.origText != null) ? String(ed.origText) : (base ? String(base.origText||'') : '');
+
+  resetChordBuilder();
+  showSongEditorModal(true);
+}
+
+function showSongEditorModal(on){
+  const m = document.getElementById('song-editor-modal');
+  if (!m) return;
+  m.style.display = on ? 'flex' : 'none';
+  document.body.classList.toggle('modal-open', !!on);
+
+  // E = text+chords editor, D = text-only (chords locked)
+  try{
+    const kbd = m.querySelector('.chord-kbd');
+    if (kbd) kbd.style.display = (hasPerm('E')) ? 'block' : 'none';
+  }catch(e){}
+
+  const t = document.getElementById('song-editor-title');
+  if (t){
+    t.textContent = seIsNew ? 'Nová pieseň' : 'Editor piesne';
+  }
+  refreshBackupFileState();
+  // focus textarea
+  if (on){
+    setTimeout(()=>{ try{ document.getElementById('se-text')?.focus(); }catch(e){} }, 50);
+  }
+}
+
+function closeSongEditor(forceDiscard){
+  if (!forceDiscard){
+    // allow closing without prompts (we save explicitly)
+  }
+  showSongEditorModal(false);
+}
+
+async function saveSongEditor(){
+  if (!(hasPerm('D') || hasPerm('E'))) return;
+
+  const num = document.getElementById('se-number');
+  const title = document.getElementById('se-title');
+  const ta = document.getElementById('se-text');
+
+  const originalId = String(num ? num.value : '').trim();
+  const ttl = String(title ? title.value : '').trim();
+  const txt = String(ta ? ta.value : '');
+
+  if (!ttl){
+    showToast('Doplň názov piesne.', false, 2200);
+    return;
+  }
+  if (!originalId){
+    showToast('Doplň číslo.', false, 2200);
+    return;
+  }
+
+  // D-mode: chords must not change
+  const mode = hasPerm('E') ? 'E' : 'D';
+  if (mode === 'D'){
+    try{
+      const base = (songs||[]).find(s => String(s.id) === String(seEditingId));
+      const baseText = base ? String(base.origText||'') : '';
+      const chordsA = (baseText.match(/\[[^\]]*\]/g) || []).join('|');
+      const chordsB = (txt.match(/\[[^\]]*\]/g) || []).join('|');
+      if (chordsA !== chordsB){
+        showToast('V režime D sa akordy nesmú meniť.', false, 2600);
+        return;
+      }
+    }catch(e){}
+  }
+
+  // Save local backup snapshot (disk autosave)
+  try{
+    loadSongEdits();
+    songEdits[seEditingId] = { id: seEditingId, title: ttl, originalId, origText: txt, updatedAt: Date.now(), localOnly: false };
+    saveSongEditsLocal();
+  }catch(e){}
+
+  if (!navigator.onLine){
+    showToast('Si offline – úprava sa uložila lokálne. Keď bude internet, ulož ešte raz.', false, 3200);
+    closeSongEditor(true);
+    return;
+  }
+
+  setSyncStatus("Aktualizujem…", "sync-warn");
+  showToast('Ukladám...', true, 0);
+
+  const payload = { id: String(seEditingId||''), author: originalId, title: ttl, songtext: txt, mode: mode, isNew: !!seIsNew };
+
+  try{
+    const body = new URLSearchParams();
+    body.set('action','songSave');
+    body.set('pwd', getAuthPwd());
+    body.set('payload', JSON.stringify(payload));
+
+    // no-cors: we can't read response, but request will reach GAS
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body });
+
+    // Refresh from server so EVERYONE sees it and we keep exact export structure
+    await runUpdateNow(true);
+    showToast('Uložené', true, 1500);
+  }catch(e){
+    showToast('Uloženie zlyhalo.', false, 2400);
+  }
+
+  closeSongEditor(true);
+}
+
+async function deleteSongEditor(){
+  if (!isOwner()) return;
+  if (!seEditingId) return;
+  if (!confirm('Naozaj vymazať túto pieseň? (pôjde do koša)')) return;
+
+  // local backup snapshot
+  try{ loadSongEdits(); delete songEdits[seEditingId]; saveSongEditsLocal(); }catch(e){}
+
+  if (!navigator.onLine){
+    showToast('Si offline – vymazanie nie je možné.', false, 2400);
+    return;
+  }
+
+  setSyncStatus("Aktualizujem…", "sync-warn");
+  showToast('Mažem...', true, 0);
+
+  try{
+    const body = new URLSearchParams();
+    body.set('action','songTrash');
+    body.set('pwd', getAuthPwd());
+    body.set('id', String(seEditingId));
+
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body });
+    await runUpdateNow(true);
+    showToast('Presunuté do koša', true, 1500);
+    closeSongEditor(true);
+  }catch(e){
+    showToast('Zlyhalo.', false, 2000);
+  }
+}
+
+function triggerImportSongs(){
+  const inp = document.getElementById('se-import-file');
+  if (inp) inp.click();
+}
+
+async function importSongsFile(file){
+  if (!file) return;
+  const name = String(file.name||'');
+  const text = await file.text();
+
+  if (name.toLowerCase().endsWith('.json')){
+    try{
+      const data = JSON.parse(text);
+      if (data && typeof data === 'object'){
+        if (data.songEdits && typeof data.songEdits === 'object'){
+          loadSongEdits();
+          // merge (backup wins)
+          songEdits = Object.assign({}, songEdits, data.songEdits);
+          saveSongEditsLocal();
+        }
+        // restore a few supporting localStorage keys (optional)
+        if (data.localStorage && typeof data.localStorage === 'object'){
+          for (const [k,v] of Object.entries(data.localStorage)){
+            try { localStorage.setItem(k, String(v)); } catch(e) {}
+          }
+        }
+        showToast('Import hotový', true, 1600);
+        // reapply on current data
+        try { applySongEditsToSongs(); } catch(e) {}
+        try { filteredSongs = [...songs]; renderAllSongs(); } catch(e) {}
+        try { loadDnesCacheFirst(true); renderPlaylistsUI(true); } catch(e) {}
+      }
+    }catch(e){
+      showToast('Nepodarilo sa importovať JSON.', false, 2200);
+    }
+    return;
+  }
+
+  // XML import: treat as new base export and store into offline cache, then re-run parsing
+  if (name.toLowerCase().endsWith('.xml') || /<song[\s>]/i.test(text)){
+    try{
+      localStorage.setItem('offline_spevnik', text);
+      cacheXmlToCacheStorage(text);
+      processXML(text, { source:'import' });
+      showToast('XML načítané. Lokálne úpravy ostali zachované.', true, 2200);
+    }catch(e){
+      showToast('Nepodarilo sa načítať XML.', false, 2200);
+    }
+    return;
+  }
+
+  showToast('Neznámy formát súboru.', false, 2200);
+}
+
+function _collectLocalStorageSubset(){
+  const out = {};
+  const keys = [
+    'offline_spevnik',
+    'piesne_dnes',
+    LS_HISTORY,
+    LS_PLAYLIST_INDEX,
+    LS_PLAYLIST_ORDER
+  ];
+  for (const k of keys){
+    try{
+      const v = localStorage.getItem(k);
+      if (v != null) out[k] = v;
+    }catch(e){}
+  }
+  // include all playlists
+  try{
+    for (let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (k.startsWith('playlist_')) out[k] = localStorage.getItem(k);
+    }
+  }catch(e){}
+  return out;
+}
+
+function getSongsBackupPayload(){
+  loadSongEdits();
+  return {
+    appBuild: APP_BUILD,
+    exportedAt: new Date().toISOString(),
+    songEdits: songEdits || {},
+    localStorage: _collectLocalStorageSubset()
+  };
+}
+
+function downloadSongsBackup(){
+  try{
+    const payload = JSON.stringify(getSongsBackupPayload(), null, 2);
+    downloadBlob(payload, `spevnik-zaloha-${APP_BUILD}.json`, 'application/json');
+  }catch(e){}
+}
+
+function _escapeXml(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&apos;');
+}
+
+function buildExportXml(){
+  // Use current in-memory song list (already includes edits).
+  // Root tag name tries to mimic the current export, but parsing on both sides works as long as <song> nodes exist.
+  let rootName = 'songs';
+  try{
+    const cached = localStorage.getItem('offline_spevnik') || '';
+    const doc = new DOMParser().parseFromString(cached, 'application/xml');
+    if (doc && doc.documentElement && doc.documentElement.tagName) rootName = doc.documentElement.tagName;
+  }catch(e){}
+
+  const parts = [];
+  parts.push('<?xml version="1.0" encoding="UTF-8"?>');
+  parts.push('<' + rootName + '>');
+  for (const s of (songs||[])){
+    if (!s) continue;
+    parts.push('  <song>');
+    parts.push('    <ID>' + _escapeXml(s.id) + '</ID>');
+    parts.push('    <title>' + _escapeXml(s.title) + '</title>');
+    parts.push('    <author>' + _escapeXml(s.originalId) + '</author>');
+    parts.push('    <songtext>' + _escapeXml(s.origText || '') + '</songtext>');
+    parts.push('  </song>');
+  }
+  parts.push('</' + rootName + '>');
+  return parts.join('\n');
+}
+
+function downloadSongsXml(){
+  try{
+    const xml = buildExportXml();
+    downloadBlob(xml, `Spevnik-export-${APP_BUILD}.xml`, 'application/xml');
+  }catch(e){}
+}
+
+function downloadBlob(text, filename, mime){
+  const blob = new Blob([text], { type: mime || 'application/octet-stream' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 0);
+}
+
+// ===== chord keyboard =====
+function initSongEditor(){
+  // make sure edits are loaded
+  try{ loadSongEdits(); }catch(e){}
+
+  const roots = ['C','C#','D','D#','E','F','F#','G','G#','A','B','H'];
+  const quals = ['', 'm', '7', 'm7', 'maj7', 'sus4', 'sus2', 'add9', '6', '9', 'dim', 'aug'];
+  const bass = ['', '/C','/C#','/D','/D#','/E','/F','/F#','/G','/G#','/A','/B','/H'];
+
+  function mkBtn(label, onClick){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chord-btn';
+    b.textContent = label || '—';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  const rWrap = document.getElementById('chord-roots');
+  const qWrap = document.getElementById('chord-quals');
+  const bWrap = document.getElementById('chord-bass');
+
+  if (rWrap && !rWrap.dataset.inited){
+    rWrap.dataset.inited = '1';
+    roots.forEach(r=>{
+      rWrap.appendChild(mkBtn(r, ()=>{ chordRoot = r; highlightChordButtons(); updateChordPreview(); }));
+    });
+  }
+  if (qWrap && !qWrap.dataset.inited){
+    qWrap.dataset.inited = '1';
+    quals.forEach(q=>{
+      const lab = q==='' ? 'dur' : q;
+      qWrap.appendChild(mkBtn(lab, ()=>{ chordQual = q; highlightChordButtons(); updateChordPreview(); }));
+    });
+  }
+  if (bWrap && !bWrap.dataset.inited){
+    bWrap.dataset.inited = '1';
+    bass.forEach(bb=>{
+      const lab = bb==='' ? '—' : bb;
+      bWrap.appendChild(mkBtn(lab, ()=>{ chordBass = bb; highlightChordButtons(); updateChordPreview(); }));
+    });
+  }
+
+  refreshBackupFileState();
+  // update actions visibility as detail opens
+  try { updateSongAdminActions(); } catch(e) {}
+}
+
+function buildChord(){
+  if (!chordRoot) return '';
+  return chordRoot + (chordQual||'') + (chordBass||'');
+}
+function updateChordPreview(){
+  const el = document.getElementById('chord-preview');
+  if (!el) return;
+  const c = buildChord();
+  el.textContent = c ? '[' + c + ']' : '—';
+}
+function resetChordBuilder(){
+  chordRoot = '';
+  chordQual = '';
+  chordBass = '';
+  highlightChordButtons();
+  updateChordPreview();
+}
+function highlightChordButtons(){
+  const all = document.querySelectorAll('#song-editor-modal .chord-btn');
+  all.forEach(b=>b.classList.remove('active'));
+
+  // roots
+  document.querySelectorAll('#chord-roots .chord-btn').forEach(b=>{
+    if (b.textContent === chordRoot) b.classList.add('active');
+  });
+  // quals
+  document.querySelectorAll('#chord-quals .chord-btn').forEach(b=>{
+    const lab = b.textContent;
+    const val = (lab === 'dur') ? '' : lab;
+    if (val === chordQual) b.classList.add('active');
+  });
+  // bass
+  document.querySelectorAll('#chord-bass .chord-btn').forEach(b=>{
+    const lab = b.textContent;
+    const val = (lab === '—') ? '' : lab;
+    if (val === chordBass) b.classList.add('active');
+  });
+}
+
+function insertBuiltChord(){
+  const c = buildChord();
+  if (!c){
+    showToast('Najprv vyber akord.', false, 1600);
+    return;
+  }
+  insertTextAtCaret('[' + c + ']', true);
+}
+
+function insertTextAtCaret(txt, focus){
+  const ta = document.getElementById('se-text');
+  if (!ta) return;
+  try{
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const before = ta.value.slice(0, start);
+    const after = ta.value.slice(end);
+    ta.value = before + txt + after;
+    const pos = start + txt.length;
+    ta.selectionStart = ta.selectionEnd = pos;
+    if (focus) ta.focus();
+  }catch(e){
+    ta.value += txt;
+  }
+}
+
+// ===== File backup (File System Access API) =====
+const IDB_NAME = 'spevnik_editor_db';
+const IDB_STORE = 'kv';
+const IDB_KEY_BACKUP_HANDLE = 'backupFileHandle';
+
+function idbOpen(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE,'readonly');
+    const st = tx.objectStore(IDB_STORE);
+    const req = st.get(key);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbSet(key, val){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE,'readwrite');
+    const st = tx.objectStore(IDB_STORE);
+    const req = st.put(val, key);
+    req.onsuccess = ()=>resolve(true);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbDel(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE,'readwrite');
+    const st = tx.objectStore(IDB_STORE);
+    const req = st.delete(key);
+    req.onsuccess = ()=>resolve(true);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+
+async function pickBackupFile(){
+  if (!('showSaveFilePicker' in window)){
+    showToast('Tento prehliadač nepodporuje priamy zápis na disk. Použi „Stiahnuť zálohu“.', false, 2600);
+    return;
+  }
+  try{
+    const handle = await window.showSaveFilePicker({
+      suggestedName: `spevnik-zaloha-${APP_BUILD}.json`,
+      types: [{ description:'JSON', accept:{ 'application/json':['.json'] } }]
+    });
+    await idbSet(IDB_KEY_BACKUP_HANDLE, handle);
+    await autoSaveBackupFile(true);
+    showToast('Auto‑save zapnuté', true, 1600);
+    refreshBackupFileState();
+  }catch(e){}
+}
+
+async function removeBackupFile(){
+  try{
+    await idbDel(IDB_KEY_BACKUP_HANDLE);
+    showToast('Auto‑save vypnuté', true, 1400);
+    refreshBackupFileState();
+  }catch(e){}
+}
+
+async function refreshBackupFileState(){
+  const el = document.getElementById('backup-file-state');
+  if (!el) return;
+  try{
+    const h = await idbGet(IDB_KEY_BACKUP_HANDLE);
+    if (h){
+      el.textContent = 'Auto‑save: zapnuté (zápis do súboru po každom uložení)';
+    } else {
+      el.textContent = 'Auto‑save: vypnuté';
+    }
+  }catch(e){
+    el.textContent = 'Auto‑save: vypnuté';
+  }
+}
+
+async function autoSaveBackupFile(forceToast){
+  try{
+    const h = await idbGet(IDB_KEY_BACKUP_HANDLE);
+    if (!h) return;
+
+    // request permission
+    if (h.queryPermission){
+      const perm = await h.queryPermission({ mode:'readwrite' });
+      if (perm !== 'granted'){
+        const req = await h.requestPermission({ mode:'readwrite' });
+        if (req !== 'granted') return;
+      }
+    }
+
+    const payload = JSON.stringify(getSongsBackupPayload(), null, 2);
+    const writable = await h.createWritable();
+    await writable.write(payload);
+    await writable.close();
+    if (forceToast) showToast('Záloha uložená na disk', true, 1500);
+  }catch(e){}
+}
 

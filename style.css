@@ -1166,3 +1166,82 @@ body.present #presentControls{ display:flex; }
   height: 1em;
 }
 
+
+
+/* ===== SONG EDITOR (v94) ===== */
+.modal-wide { max-width: 920px; }
+
+.form-row{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.form-col{ flex:1; min-width:180px; }
+.text-input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.15);
+  color: inherit;
+  font-size: 15px;
+}
+
+#song-admin-actions .btn-neutral{
+  width: 100%;
+  margin-top: 6px;
+}
+
+.chord-kbd{
+  margin-top: 12px;
+  padding: 10px 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.10);
+}
+.chord-row{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  margin-bottom: 8px;
+}
+.chord-label{
+  width:54px;
+  flex:0 0 auto;
+  font-size: 12px;
+  opacity: 0.85;
+  padding-top: 6px;
+}
+.chord-btns{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.chord-btn{
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.chord-btn.active{
+  background: rgba(0,191,255,0.25);
+  border-color: rgba(0,191,255,0.55);
+}
+
+.chord-preview{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top: 10px;
+  flex-wrap:wrap;
+}
+.chord-preview-val{
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.12);
+}
+
