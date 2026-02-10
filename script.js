@@ -158,8 +158,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v94';
-const APP_CACHE_NAME = 'spevnik-v94';
+const APP_BUILD = 'v95';
+const APP_CACHE_NAME = 'spevnik-v95';
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
 const POLL_INTERVAL_MS = 30 * 1000;
@@ -470,6 +470,15 @@ function applyPermsToUI(){
 
   const plPanel = document.getElementById('admin-panel');
   if (plPanel) plPanel.style.display = (logged && hasPerm('B')) ? 'block' : 'none';
+
+  // owner-only: admin management panel
+  const adPanel = document.getElementById('admins-editor-panel');
+  if (adPanel) adPanel.style.display = (logged && isOwner()) ? 'block' : 'none';
+  if (adPanel && adPanel.style.display === 'block') adPanel.classList.add('collapsed');
+
+  // new song button only in list (D/E)
+  const newWrap = document.getElementById('song-new-btn-wrap');
+  if (newWrap) newWrap.style.display = (logged && (hasPerm('D') || hasPerm('E'))) ? 'block' : 'none';
 
   // collapse on show
   if (dnesPanel && dnesPanel.style.display === 'block') dnesPanel.classList.add('collapsed');
@@ -3880,7 +3889,7 @@ async function hardResetApp() {
   try{
     const base = location.href.split('#')[0].split('?')[0];
     const hash = location.hash || '';
-    location.replace(base + '?v=94&ts=' + Date.now() + hash);
+    location.replace(base + '?v=95&ts=' + Date.now() + hash);
   }catch(e){
     try{ location.reload(); }catch(e2){}
   }
@@ -6344,8 +6353,14 @@ async function saveSongEditor(){
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body });
 
     // Refresh from server so EVERYONE sees it and we keep exact export structure
+    const beforeMeta = getSeenMeta();
     await runUpdateNow(true);
-    showToast('Uložené', true, 1500);
+    const afterMeta = getSeenMeta();
+    if (beforeMeta && afterMeta && Number(afterMeta.export||0) === Number(beforeMeta.export||0)){
+      showToast('Pozor: zmena sa možno neuložila na server (export sa nezmenil).', false, 3200);
+    } else {
+      showToast('Uložené', true, 1500);
+    }
   }catch(e){
     showToast('Uloženie zlyhalo.', false, 2400);
   }
@@ -6755,3 +6770,148 @@ async function autoSaveBackupFile(forceToast){
   }catch(e){}
 }
 
+
+
+// ===== OWNER: ADMIN MANAGEMENT UI (v95) =====
+let _adminsCache = [];
+let _selectedAdminId = null;
+
+async function adminRefresh(){
+  if (!isOwner()) return;
+  try{
+    const data = await jsonpRequest(`${SCRIPT_URL}?action=adminList&pwd=${encodeURIComponent(getAuthPwd())}`);
+    if (!data || !data.ok) { showToast('Nepodarilo sa načítať adminov.', false, 2200); return; }
+    _adminsCache = Array.isArray(data.list) ? data.list : [];
+    renderAdminsList();
+  }catch(e){
+    showToast('Nepodarilo sa načítať adminov.', false, 2200);
+  }
+}
+
+function renderAdminsList(){
+  const box = document.getElementById('admins-list');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!_adminsCache.length){
+    box.innerHTML = '<div class="small-muted">Žiadni ďalší admini.</div>';
+    return;
+  }
+  _adminsCache.forEach(a=>{
+    const row = document.createElement('div');
+    row.className = 'editor-item';
+    row.style.display='flex';
+    row.style.justifyContent='space-between';
+    row.style.alignItems='center';
+    row.style.gap='10px';
+
+    const left = document.createElement('div');
+    left.style.flex='1';
+    const nm = escapeHtml(String(a.name||''));
+    const perms = a.perms||{};
+    const tag = ['A','B','C','D','E'].filter(k=>perms[k]).join('');
+    left.innerHTML = `<div><b>${nm || '(bez mena)'}</b> <span class="small-muted">(${tag || '—'})</span></div>`;
+
+    const btns = document.createElement('div');
+    btns.style.display='flex';
+    btns.style.gap='8px';
+
+    const sel = document.createElement('button');
+    sel.className='btn-neutral';
+    sel.textContent = (_selectedAdminId === a.id) ? 'Vybrané' : 'Vybrať';
+    sel.onclick = ()=>adminSelect(a.id);
+
+    btns.appendChild(sel);
+    row.appendChild(left);
+    row.appendChild(btns);
+    box.appendChild(row);
+  });
+}
+
+function adminSelect(id){
+  _selectedAdminId = String(id||'');
+  const a = _adminsCache.find(x=>String(x.id)===_selectedAdminId);
+  if (!a) return;
+  const name = document.getElementById('admin-name');
+  const pwd = document.getElementById('admin-pwd');
+  if (name) name.value = String(a.name||'');
+  if (pwd) pwd.value = ''; // for safety
+  const perms = a.perms||{};
+  ['A','B','C','D','E'].forEach(k=>{
+    const cb = document.getElementById('perm-'+k);
+    if (cb) cb.checked = !!perms[k];
+  });
+  renderAdminsList();
+}
+
+function adminClearForm(){
+  _selectedAdminId = null;
+  const name = document.getElementById('admin-name');
+  const pwd = document.getElementById('admin-pwd');
+  if (name) name.value = '';
+  if (pwd) pwd.value = '';
+  ['A','B','C','D','E'].forEach(k=>{
+    const cb = document.getElementById('perm-'+k);
+    if (cb) cb.checked = false;
+  });
+  renderAdminsList();
+}
+
+async function adminSave(){
+  if (!isOwner()) return;
+  const pwdEl = document.getElementById('admin-pwd');
+  const nameEl = document.getElementById('admin-name');
+  const pwd = String(pwdEl ? pwdEl.value : '').trim();
+  const name = String(nameEl ? nameEl.value : '').trim();
+  if (!pwd){ showToast('Doplň heslo admina.', false, 2200); return; }
+
+  const perms = {};
+  ['A','B','C','D','E'].forEach(k=>{
+    const cb = document.getElementById('perm-'+k);
+    perms[k] = !!(cb && cb.checked);
+  });
+
+  // If changing password for selected admin, delete the old one after creating new
+  try{
+    const obj = { pwd, name, perms };
+    const res = await jsonpRequest(`${SCRIPT_URL}?action=adminUpsert&pwd=${encodeURIComponent(getAuthPwd())}&payload=${encodeURIComponent(JSON.stringify(obj))}`);
+    if (!res || !res.ok){ showToast('Uloženie admina zlyhalo.', false, 2200); return; }
+
+    // If we were editing an existing admin and password changed -> delete old record
+    const newId = String(res.id||'');
+    if (_selectedAdminId && newId && _selectedAdminId !== newId){
+      try{
+        await jsonpRequest(`${SCRIPT_URL}?action=adminDelete&pwd=${encodeURIComponent(getAuthPwd())}&id=${encodeURIComponent(_selectedAdminId)}`);
+      }catch(e){}
+    }
+    _selectedAdminId = newId || null;
+    showToast('Uložené ✅', true, 1200);
+    await adminRefresh();
+  }catch(e){
+    showToast('Uloženie admina zlyhalo.', false, 2200);
+  }
+}
+
+async function adminDeleteSelected(){
+  if (!isOwner()) return;
+  if (!_selectedAdminId){ showToast('Najprv vyber admina.', false, 1800); return; }
+  if (!confirm('Naozaj odstrániť admina?')) return;
+  try{
+    const res = await jsonpRequest(`${SCRIPT_URL}?action=adminDelete&pwd=${encodeURIComponent(getAuthPwd())}&id=${encodeURIComponent(_selectedAdminId)}`);
+    if (!res || !res.ok){ showToast('Odstránenie zlyhalo.', false, 2200); return; }
+    _selectedAdminId = null;
+    showToast('Odstránené ✅', true, 1200);
+    await adminRefresh();
+  }catch(e){
+    showToast('Odstránenie zlyhalo.', false, 2200);
+  }
+}
+
+// Hook: refresh admins when panel is shown
+const _oldToggleEditor = window.toggleEditor;
+window.toggleEditor = function(id){
+  try{ _oldToggleEditor(id); }catch(e){}
+  if (id === 'admins-editor-panel' && isOwner()){
+    // refresh list when opening
+    setTimeout(()=>{ try{ adminRefresh(); }catch(e){} }, 50);
+  }
+};

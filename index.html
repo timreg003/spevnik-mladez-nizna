@@ -1,478 +1,433 @@
 <!DOCTYPE html>
+
 <html lang="sk">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-  <title>Mládežnícky spevník NIŽNÁ</title>
-
-  <link rel="manifest" href="manifest.json?v=94">
-  <meta name="theme-color" content="#00bfff">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Spevník">
-  <link rel="apple-touch-icon" href="icon.png?v=94">
-  <link rel="icon" type="image/png" href="icon.png?v=94">
-
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="style.css?v=94"/>
-</head>
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Mládežnícky spevník NIŽNÁ</title>
+<link href="manifest.json?v=94" rel="manifest"/>
+<meta content="#00bfff" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="Spevník" name="apple-mobile-web-app-title"/>
+<link href="icon.png?v=94" rel="apple-touch-icon"/>
+<link href="icon.png?v=94" rel="icon" type="image/png"/>
+<link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="style.css?v=94" rel="stylesheet">
+</link></link></link></head>
 <body>
-
-<div id="toast" class="toast" style="display:none;"></div>
-
+<div class="toast" id="toast" style="display:none;"></div>
 <div class="container">
-
-  <button id="scroll-to-top" onclick="stopAutoscroll(); window.scrollTo({top: 0, behavior: 'smooth'})">
-    <i class="fas fa-arrow-up"></i>
-  </button>
-
-  <!-- HEADER -->
-  <div class="topbar">
-    <button id="admin-toggle-btn" onclick="toggleAdminAuth()">
-      <i class="fas fa-user"></i>
-      <span id="admin-toggle-text">PRIHLÁSIŤ</span>
-    </button>
-
-    <h1 class="main-title">Mládežnícky spevník NIŽNÁ</h1>
-
-    <i class="fas fa-home home-ico" onclick="goHomeUI()"></i>
-  </div>
-
-  <!-- LIST VIEW -->
-  <div id="song-list">
-    <input type="text" id="search" placeholder="Hľadať pieseň alebo číslo..." autocomplete="off" oninput="filterSongs()"/>
-
-    <!-- DNES -->
-    <div class="section-header" onclick="toggleSection('dnes')">
-      <h2 class="playlist-header-title" id="dnes-title">PIESNE NA DNES</h2>
-      <i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
-    </div>
-    <div id="dnes-section-wrapper" class="section-content" style="display:none;">
-      <div id="dnes-section" class="list-box"><div class="loading">Načítavam...</div>
+<button id="scroll-to-top" onclick="stopAutoscroll(); window.scrollTo({top: 0, behavior: 'smooth'})">
+<i class="fas fa-arrow-up"></i>
+</button>
+<!-- HEADER -->
+<div class="topbar">
+<button id="admin-toggle-btn" onclick="toggleAdminAuth()">
+<i class="fas fa-user"></i>
+<span id="admin-toggle-text">PRIHLÁSIŤ</span>
+</button>
+<h1 class="main-title">Mládežnícky spevník NIŽNÁ</h1>
+<i class="fas fa-home home-ico" onclick="goHomeUI()"></i>
+</div>
+<!-- LIST VIEW -->
+<div id="song-list">
+<div id="song-new-btn-wrap" style="display:none; margin:8px 0;"><button class="btn-neutral" id="song-new-btn-list" onclick="openSongEditorNew()"><i class="fas fa-plus"></i> Nová pieseň</button></div><input autocomplete="off" id="search" oninput="filterSongs()" placeholder="Hľadať pieseň alebo číslo..." type="text"/>
+<!-- DNES -->
+<div class="section-header" onclick="toggleSection('dnes')">
+<h2 class="playlist-header-title" id="dnes-title">PIESNE NA DNES</h2>
+<i class="fas fa-chevron-down section-chevron" id="dnes-chevron"></i>
+</div>
+<div class="section-content" id="dnes-section-wrapper" style="display:none;">
+<div class="list-box" id="dnes-section"><div class="loading">Načítavam...</div>
+</div>
+<div class="editor-panel" id="dnes-editor-panel" style="display:none;">
+<div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
+<div class="editor-toggle-title">Editor – Piesne na dnes</div>
+<i class="fas fa-chevron-down editor-toggle-ico"></i>
+</div>
+<div class="editor-body">
+<h3 class="editor-title">Editor – Piesne na dnes</h3>
+<input id="dnes-name" maxlength="40" placeholder="Názov zoznamu (napr. Piatok 16.1.)" type="text"/>
+<div class="editor-subtitle">Piesne v zozname (ťahaj pre poradie)</div>
+<div class="editor-list" id="dnes-selected-editor"></div>
+<input autocomplete="off" id="dnes-search" oninput="filterDnesSearch()" placeholder="Vyhľadať pieseň..." type="text"/>
+<div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
+<div class="editor-list" id="dnes-available-list"></div>
+<div class="btn-row-2">
+<button class="btn-save" id="dnes-save-btn" onclick="saveDnesEditor()">ULOŽIŤ</button>
+<button class="btn-neutral" onclick="saveDnesToHistory()">ULOŽIŤ DO HISTÓRIE</button>
+<button class="btn-delete" onclick="clearDnesSelection()">VYMAZAŤ</button>
+</div>
+</div>
+</div>
+<div class="editor-panel" id="admins-editor-panel" style="display:none;">
+<div class="editor-toggle" onclick="toggleEditor('admins-editor-panel')">
+<div class="editor-toggle-title">Správa adminov</div>
+<i class="fas fa-chevron-down editor-toggle-ico"></i>
+</div>
+<div class="editor-body">
+<h3 class="editor-title">Správa adminov</h3>
+<div class="editor-subtitle">Zoznam adminov</div>
+<div class="editor-list" id="admins-list"></div>
+<div class="editor-subtitle" style="margin-top:10px;">Pridať / upraviť admina</div>
+<input id="admin-pwd" placeholder="Heslo admina (oni sa prihlasujú týmto)" type="password"/>
+<input id="admin-name" maxlength="40" placeholder="Meno (iba pre ownera)" type="text"/>
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:8px 0;">
+<label><input id="perm-A" type="checkbox"/> A</label>
+<label><input id="perm-B" type="checkbox"/> B</label>
+<label><input id="perm-C" type="checkbox"/> C</label>
+<label><input id="perm-D" type="checkbox"/> D</label>
+<label><input id="perm-E" type="checkbox"/> E</label>
+</div>
+<div class="btn-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn-primary" onclick="adminSave()">Uložiť admina</button>
+<button class="btn-neutral" onclick="adminClearForm()">Vyčistiť</button>
+<button class="btn-danger" onclick="adminDeleteSelected()">Odstrániť vybraného</button>
+</div>
+<small style="display:block; margin-top:6px; opacity:0.8;">Tip: Pre zmenu hesla vyber admina a zadaj nové heslo, potom Uložiť. (Staré heslo sa zneplatní.)</small>
+</div>
 </div>
 
-      <div id="dnes-editor-panel" class="editor-panel" style="display:none;">
-        <div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
-          <div class="editor-toggle-title">Editor – Piesne na dnes</div>
-          <i class="fas fa-chevron-down editor-toggle-ico"></i>
-        </div>
-        <div class="editor-body">
-          <h3 class="editor-title">Editor – Piesne na dnes</h3>
-        <input type="text" id="dnes-name" placeholder="Názov zoznamu (napr. Piatok 16.1.)" maxlength="40"/>
-
-        <div class="editor-subtitle">Piesne v zozname (ťahaj pre poradie)</div>
-        <div id="dnes-selected-editor" class="editor-list"></div>
-
-        <input type="text" id="dnes-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterDnesSearch()"/>
-        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
-        <div id="dnes-available-list" class="editor-list"></div>
+</div>
+<!-- PLAYLISTY -->
+<div class="section-header" onclick="toggleSection('playlists')">
+<h2 class="playlist-header-title">PLAYLISTY</h2>
+<i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
+</div>
+<div class="section-content" id="playlists-section-wrapper" style="display:none;">
+<div class="list-box" id="playlists-section"><div class="loading">Načítavam...</div></div>
+<div class="editor-panel" id="admin-panel" style="display:none;">
+<div class="editor-toggle" onclick="toggleEditor('admin-panel')">
+<div class="editor-toggle-title">Editor playlistov</div>
+<i class="fas fa-chevron-down editor-toggle-ico"></i>
+</div>
+<div class="editor-body">
+<h3 class="editor-title">Editor playlistu</h3>
+<input id="playlist-name" placeholder="Názov playlistu" type="text"/>
+<div class="editor-subtitle">Piesne v playliste (ťahaj pre poradie)</div>
+<div class="editor-list" id="selected-list-editor"></div>
+<input autocomplete="off" id="playlist-search" oninput="filterPlaylistSearch()" placeholder="Vyhľadať pieseň..." type="text"/>
+<div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
+<div class="editor-list" id="playlist-available-list"></div>
 <div class="btn-row-2">
-          <button id="dnes-save-btn" id="dnes-save-btn" class="btn-save" onclick="saveDnesEditor()">ULOŽIŤ</button>
-          <button class="btn-neutral" onclick="saveDnesToHistory()">ULOŽIŤ DO HISTÓRIE</button>
-          <button class="btn-delete" onclick="clearDnesSelection()">VYMAZAŤ</button>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PLAYLISTY -->
-    <div class="section-header" onclick="toggleSection('playlists')">
-      <h2 class="playlist-header-title">PLAYLISTY</h2>
-      <i class="fas fa-chevron-down section-chevron" id="playlists-chevron"></i>
-    </div>
-    <div id="playlists-section-wrapper" class="section-content" style="display:none;">
-      <div id="playlists-section" class="list-box"><div class="loading">Načítavam...</div></div>
-
-      <div id="admin-panel" class="editor-panel" style="display:none;">
-        <div class="editor-toggle" onclick="toggleEditor('admin-panel')">
-          <div class="editor-toggle-title">Editor playlistov</div>
-          <i class="fas fa-chevron-down editor-toggle-ico"></i>
-        </div>
-        <div class="editor-body">
-          <h3 class="editor-title">Editor playlistu</h3>
-        <input type="text" id="playlist-name" placeholder="Názov playlistu"/>
-
-        <div class="editor-subtitle">Piesne v playliste (ťahaj pre poradie)</div>
-        <div id="selected-list-editor" class="editor-list"></div>
-
-        <input type="text" id="playlist-search" placeholder="Vyhľadať pieseň..." autocomplete="off" oninput="filterPlaylistSearch()"/>
-        <div class="editor-subtitle">Všetky piesne (klikni pre pridanie)</div>
-        <div id="playlist-available-list" class="editor-list"></div>
-<div class="btn-row-2">
-          <button id="playlist-save-btn" class="btn-save" onclick="savePlaylist()">ULOŽIŤ</button>
-          <button class="btn-neutral" onclick="newPlaylist()">NOVÝ PLAYLIST</button>
-          <button class="btn-delete" onclick="clearSelection()">VYMAZAŤ</button>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ALL -->
-    <div class="section-header" onclick="toggleSection('all')">
-      <h2 class="playlist-header-title">ZOZNAM PIESNÍ</h2>
-      <i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
-    </div>
-    <div id="all-section-wrapper" class="section-content" style="display:none;">
-      <div id="piesne-list" class="list-box"><div class="loading">Načítavam...</div></div>
-  </div>
-
-    
-
-    <!-- LITURGICAL CALENDAR -->
-    <div class="section-header" onclick="toggleSection('lit')">
-      <h2 class="playlist-header-title">LITURGICKÝ KALENDÁR</h2>
-      <i class="fas fa-chevron-down section-chevron" id="lit-chevron"></i>
-    </div>
-    <div id="lit-section-wrapper" class="section-content" style="display:none;">
-      <div class="lit-card">
-        <div class="lit-header">
-          <div id="lit-head-left" class="lit-head-left">—</div>
-          <div id="lit-head-right" class="lit-head-right"></div>
-        </div>
-
-        <div class="lit-picker">
-          <div class="date-btn-wrap">
-            <button id="lit-date-btn" class="btn-neutral" type="button"><i class="fas fa-calendar"></i> Vybrať deň</button>
-            <!-- Skrytý natívny date input (použijeme na mobile / tam kde je podporovaný picker) -->
-            <input id="lit-date-input" class="lit-date-hidden" type="date" aria-label="Vybrať deň">
-          </div>
-        </div>
-
-        <!-- Vlastný mini kalendár (fallback na PC, keď natívny picker nefunguje) -->
-        <div id="lit-cal-popup" class="lit-cal-popup" style="display:none;" aria-hidden="true"></div>
-
-        <div id="lit-variant-row" class="lit-variant-row" style="display:none;">
-          <span class="tiny-label">Možnosť:</span>
-          <select id="lit-variant-select"></select>
-        </div>
-
-        <div id="lit-status" class="lit-status loading">Načítavam...</div>
-        <div id="lit-content" class="lit-content"></div>
-      </div>
-    </div>
-
+<button class="btn-save" id="playlist-save-btn" onclick="savePlaylist()">ULOŽIŤ</button>
+<button class="btn-neutral" onclick="newPlaylist()">NOVÝ PLAYLIST</button>
+<button class="btn-delete" onclick="clearSelection()">VYMAZAŤ</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ALL -->
+<div class="section-header" onclick="toggleSection('all')">
+<h2 class="playlist-header-title">ZOZNAM PIESNÍ</h2>
+<i class="fas fa-chevron-down section-chevron" id="all-chevron"></i>
+</div>
+<div class="section-content" id="all-section-wrapper" style="display:none;">
+<div class="list-box" id="piesne-list"><div class="loading">Načítavam...</div></div>
+</div>
+<!-- LITURGICAL CALENDAR -->
+<div class="section-header" onclick="toggleSection('lit')">
+<h2 class="playlist-header-title">LITURGICKÝ KALENDÁR</h2>
+<i class="fas fa-chevron-down section-chevron" id="lit-chevron"></i>
+</div>
+<div class="section-content" id="lit-section-wrapper" style="display:none;">
+<div class="lit-card">
+<div class="lit-header">
+<div class="lit-head-left" id="lit-head-left">—</div>
+<div class="lit-head-right" id="lit-head-right"></div>
+</div>
+<div class="lit-picker">
+<div class="date-btn-wrap">
+<button class="btn-neutral" id="lit-date-btn" type="button"><i class="fas fa-calendar"></i> Vybrať deň</button>
+<!-- Skrytý natívny date input (použijeme na mobile / tam kde je podporovaný picker) -->
+<input aria-label="Vybrať deň" class="lit-date-hidden" id="lit-date-input" type="date"/>
+</div>
+</div>
+<!-- Vlastný mini kalendár (fallback na PC, keď natívny picker nefunguje) -->
+<div aria-hidden="true" class="lit-cal-popup" id="lit-cal-popup" style="display:none;"></div>
+<div class="lit-variant-row" id="lit-variant-row" style="display:none;">
+<span class="tiny-label">Možnosť:</span>
+<select id="lit-variant-select"></select>
+</div>
+<div class="lit-status loading" id="lit-status">Načítavam...</div>
+<div class="lit-content" id="lit-content"></div>
+</div>
+</div>
 <!-- HISTORY (public) -->
-    <div class="section-header" onclick="toggleSection('history')">
-      <h2 class="playlist-header-title">HISTÓRIA</h2>
-      <i id="history-chevron" class="fas fa-chevron-down section-chevron"></i>
-    </div>
-    <div id="history-section-wrapper" class="section-content" style="display:none;">
-      <div class="list-box" style="padding:10px 12px;">
-        <input id="history-search" class="search" type="text" placeholder="Hľadať v histórii..." oninput="filterHistorySearch()" />
-      </div>
-      <div id="history-section" class="list-box"></div>
-    </div>
-  </div>
-
-  <!-- SONG DETAIL -->
-  <div id="song-detail" style="display:none;">
-    <h2 id="render-title"></h2>
-    <button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
-
-    
+<div class="section-header" onclick="toggleSection('history')">
+<h2 class="playlist-header-title">HISTÓRIA</h2>
+<i class="fas fa-chevron-down section-chevron" id="history-chevron"></i>
+</div>
+<div class="section-content" id="history-section-wrapper" style="display:none;">
+<div class="list-box" style="padding:10px 12px;">
+<input class="search" id="history-search" oninput="filterHistorySearch()" placeholder="Hľadať v histórii..." type="text">
+</input></div>
+<div class="list-box" id="history-section"></div>
+</div>
+</div>
+<!-- SONG DETAIL -->
+<div id="song-detail" style="display:none;">
+<h2 id="render-title"></h2>
+<button class="back-btn" onclick="closeSong()"><i class="fas fa-arrow-left"></i> Späť na zoznam</button>
 <div id="song-admin-actions" style="display:none; margin:10px 0 0;">
-  <button id="song-edit-btn" class="btn-neutral" onclick="openSongEditorForCurrent()">
-    <i class="fas fa-pen-to-square"></i> Upraviť pieseň
+<button class="btn-neutral" id="song-edit-btn" onclick="openSongEditorForCurrent()">
+<i class="fas fa-pen-to-square"></i> Upraviť pieseň
   </button>
-  <button id="song-new-btn" class="btn-neutral" onclick="openSongEditorNew()">
-    <i class="fas fa-plus"></i> Nová pieseň
-  </button>
+
 </div>
 <div class="controls">
-      <div class="control-group">
-        <small>Pieseň</small>
-        <div class="btn-row">
-          <button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
-          <button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <small>Tónina: <span id="transpose-val">0</span></small>
-        <div class="btn-row">
-          <button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
-          <button onclick="resetTranspose()"><i class="fas fa-undo"></i></button>
-          <button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <span id="original-key-label" class="tiny-label">-</span>
-      </div>
-
-      <div class="control-group">
-        <small>Text: <span id="font-size-label">17</span>px</small>
-        <div class="btn-row">
-          <button onclick="toggleChords()"><i class="fas fa-guitar"></i></button>
-          <button onclick="changeFontSize(-1)">A-</button>
-          <button onclick="changeFontSize(1)">A+</button>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <small>Doplnenie akordov</small>
-        <div class="btn-row">
-          <button id="tmpl-btn" onclick="toggleChordTemplate()"><i class="fas fa-stream"></i></button>
-        </div>
-        <span id="tmpl-label" class="tiny-label">ON</span>
-      
+<div class="control-group">
+<small>Pieseň</small>
+<div class="btn-row">
+<button onclick="navigateSong(-1)"><i class="fas fa-chevron-left"></i></button>
+<button onclick="navigateSong(1)"><i class="fas fa-chevron-right"></i></button>
 </div>
-
-
-      <div class="control-group" id="dnes-view-group" style="display:none">
-        <small>Zobrazenie</small>
-        <div class="btn-row">
-          <button id="dnes-view-btn" onclick="toggleDnesView()" title="Zobraziť originál"><i class="fas fa-undo"></i></button>
-        </div>
-        <span id="dnes-view-label" class="tiny-label">DNES</span>
-      </div>
-
-
-
-      <div class="control-group">
-        <small>Auto-posun</small>
-        <div class="btn-row">
-          <button onclick="changeScrollSpeed(-1)"><i class="fas fa-minus"></i></button>
-          <button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
-          <button onclick="changeScrollSpeed(1)"><i class="fas fa-plus"></i></button>
-        </div>
-        <span id="speed-label" class="tiny-label">Rýchlosť: 1</span>
-      </div>
-
-      <div class="control-group">
-        <small>Prezentácia</small>
-        <div class="btn-row">
-          <button id="present-btn" onclick="togglePresentationMode()"><i class="fas fa-tv"></i></button>
-        </div>
-        <span class="tiny-label">Režim</span>
-      </div>
-    </div>
-
-    <div id="aleluja-lit-controls" style="display:none;"></div>
-
-    <div id="song-content"></div>
-
-    <!-- ERROR REPORT -->
-    <div id="error-report-container">
-      <p class="error-title">Našiel/la si chybu? Napíš, opravím :)</p>
-
-      <form id="error-form" onsubmit="submitErrorForm(event)">
-        <input type="hidden" name="_subject" id="error-subject" value="Chyba v piesni">
-        <input type="hidden" name="piesen" id="error-song-hidden" value="">
-        <input type="text" name="meno" placeholder="Tvoje meno" required>
-        <textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required></textarea>
-        <button type="submit" id="submit-btn">ODOSLAŤ</button>
-      </form>
-
-      <p id="form-status" style="display:none;">Chyba bola odoslaná!</p>
-    </div>
-
-  </div>
 </div>
-
+<div class="control-group">
+<small>Tónina: <span id="transpose-val">0</span></small>
+<div class="btn-row">
+<button onclick="transposeSong(-1)"><i class="fas fa-minus"></i></button>
+<button onclick="resetTranspose()"><i class="fas fa-undo"></i></button>
+<button onclick="transposeSong(1)"><i class="fas fa-plus"></i></button>
+</div>
+<span class="tiny-label" id="original-key-label">-</span>
+</div>
+<div class="control-group">
+<small>Text: <span id="font-size-label">17</span>px</small>
+<div class="btn-row">
+<button onclick="toggleChords()"><i class="fas fa-guitar"></i></button>
+<button onclick="changeFontSize(-1)">A-</button>
+<button onclick="changeFontSize(1)">A+</button>
+</div>
+</div>
+<div class="control-group">
+<small>Doplnenie akordov</small>
+<div class="btn-row">
+<button id="tmpl-btn" onclick="toggleChordTemplate()"><i class="fas fa-stream"></i></button>
+</div>
+<span class="tiny-label" id="tmpl-label">ON</span>
+</div>
+<div class="control-group" id="dnes-view-group" style="display:none">
+<small>Zobrazenie</small>
+<div class="btn-row">
+<button id="dnes-view-btn" onclick="toggleDnesView()" title="Zobraziť originál"><i class="fas fa-undo"></i></button>
+</div>
+<span class="tiny-label" id="dnes-view-label">DNES</span>
+</div>
+<div class="control-group">
+<small>Auto-posun</small>
+<div class="btn-row">
+<button onclick="changeScrollSpeed(-1)"><i class="fas fa-minus"></i></button>
+<button id="scroll-btn" onclick="toggleAutoscroll()"><i class="fas fa-play"></i></button>
+<button onclick="changeScrollSpeed(1)"><i class="fas fa-plus"></i></button>
+</div>
+<span class="tiny-label" id="speed-label">Rýchlosť: 1</span>
+</div>
+<div class="control-group">
+<small>Prezentácia</small>
+<div class="btn-row">
+<button id="present-btn" onclick="togglePresentationMode()"><i class="fas fa-tv"></i></button>
+</div>
+<span class="tiny-label">Režim</span>
+</div>
+</div>
+<div id="aleluja-lit-controls" style="display:none;"></div>
+<div id="song-content"></div>
+<!-- ERROR REPORT -->
+<div id="error-report-container">
+<p class="error-title">Našiel/la si chybu? Napíš, opravím :)</p>
+<form id="error-form" onsubmit="submitErrorForm(event)">
+<input id="error-subject" name="_subject" type="hidden" value="Chyba v piesni"/>
+<input id="error-song-hidden" name="piesen" type="hidden" value=""/>
+<input name="meno" placeholder="Tvoje meno" required="" type="text"/>
+<textarea name="chyba" placeholder="Napr. chybný akord, preklep v texte..." required=""></textarea>
+<button id="submit-btn" type="submit">ODOSLAŤ</button>
+</form>
+<p id="form-status" style="display:none;">Chyba bola odoslaná!</p>
+</div>
+</div>
+</div>
 <!-- ✅ FLOATING GEAR BUTTON (LEFT) -->
 <div id="fab-update">
-  <button id="fab-btn" onclick="toggleFabMenu(event)" aria-label="Nastavenia">
-    <i class="fas fa-gear"></i>
-  </button>
-
-  <button id="fab-newdata-btn" onclick="runUpdateNow()" aria-label="Nová aktualizácia" style="display:none;">
-    <i class="fas fa-arrows-rotate"></i>
-  </button>
-
-  <div id="fab-menu" class="fab-menu" aria-hidden="true">
-    <button id="fab-update-btn" onclick="hardResetApp()">Aktualizovať aplikáciu</button>
-    <button id="fab-diag-btn" onclick="openDiagnostics()">Diagnostika</button>
-  </div>
+<button aria-label="Nastavenia" id="fab-btn" onclick="toggleFabMenu(event)">
+<i class="fas fa-gear"></i>
+</button>
+<button aria-label="Nová aktualizácia" id="fab-newdata-btn" onclick="runUpdateNow()" style="display:none;">
+<i class="fas fa-arrows-rotate"></i>
+</button>
+<div aria-hidden="true" class="fab-menu" id="fab-menu">
+<button id="fab-update-btn" onclick="hardResetApp()">Aktualizovať aplikáciu</button>
+<button id="fab-diag-btn" onclick="openDiagnostics()">Diagnostika</button>
 </div>
-
+</div>
 <!-- PREZENTAČNÝ REŽIM: OVERLAY OVLÁDANIE -->
-<div id="presentControls" aria-hidden="true">
-  <button id="psSlower" onclick="presentSlower()" aria-label="Pomalšie"><i class="fas fa-minus"></i></button>
-  <button id="psPlayPause" onclick="presentPlayPause()" aria-label="Play/Pause"><i class="fas fa-play"></i></button>
-  <button id="psFaster" onclick="presentFaster()" aria-label="Rýchlejšie"><i class="fas fa-plus"></i></button>
-  <span id="psSpeed" class="psSpeed">Rýchlosť: 1</span>
-  <button id="psExit" onclick="exitPresentationMode()" aria-label="Ukončiť"><i class="fas fa-xmark"></i></button>
+<div aria-hidden="true" id="presentControls">
+<button aria-label="Pomalšie" id="psSlower" onclick="presentSlower()"><i class="fas fa-minus"></i></button>
+<button aria-label="Play/Pause" id="psPlayPause" onclick="presentPlayPause()"><i class="fas fa-play"></i></button>
+<button aria-label="Rýchlejšie" id="psFaster" onclick="presentFaster()"><i class="fas fa-plus"></i></button>
+<span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
+<button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-
 <script src="script.js?v=94"></script>
-
-  <!-- FORM EDITOR MODAL -->
-  <div id="form-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
-      <div class="modal-header">
-        <button class="modal-close" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
-        <div id="form-modal-title" class="modal-title">Forma piesne</div>
-        <button id="form-modal-save" class="modal-save" onclick="saveFormModal()">Uložiť</button>
-      </div>
-
-      <div class="modal-body">
-        <div class="modal-block">
-          <div class="modal-label">Náhľad označení v texte</div>
-          <div id="form-preview" class="form-preview"></div>
-        </div>
-
-        <div class="modal-block">
-          <div class="modal-label">Poradie</div>
-          <div id="form-order" class="form-order"></div>
-          <div class="modal-hint">Klikni na bežnú položku v poradí pre odstránenie. Špeciálne (Predohra/Medzihra/Dohra/Poznámka) klikom upravíš.</div>
-        </div>
-
-        <div class="modal-block">
-          <div class="modal-label">História piesne</div>
-          <div id="form-history" class="form-history"></div>
-          <div class="modal-hint">Klikni na záznam a nastaví sa poradie tak, ako bolo v histórii.</div>
-        </div>
-
-        <div class="modal-block">
-          <div class="modal-label">Pridať časť</div>
-          <div id="form-buttons" class="form-buttons"></div>
-        </div>
-
-        <div class="modal-block">
-          <div class="modal-label">Špeciálne</div>
-          <div class="form-buttons">
-            <button class="chip-btn" onclick="addSpecialStep('PREDOHRA')">Predohra</button>
-            <button class="chip-btn" onclick="addSpecialStep('MEDZIHRA')">Medzihra</button>
-            <button class="chip-btn" onclick="addSpecialStep('DOHRA')">Dohra</button>
-            <button class="chip-btn" onclick="addSpecialStep('POZNAMKA')">Poznámka</button>
-          </div>
-          <div class="modal-hint">Poznámku dopíšeš po kliknutí (napr. akordy, pokyn).</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<!-- FORM EDITOR MODAL -->
+<div class="modal-overlay" id="form-modal" style="display:none;">
+<div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
+<div class="modal-header">
+<button class="modal-close" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
+<div class="modal-title" id="form-modal-title">Forma piesne</div>
+<button class="modal-save" id="form-modal-save" onclick="saveFormModal()">Uložiť</button>
+</div>
+<div class="modal-body">
+<div class="modal-block">
+<div class="modal-label">Náhľad označení v texte</div>
+<div class="form-preview" id="form-preview"></div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Poradie</div>
+<div class="form-order" id="form-order"></div>
+<div class="modal-hint">Klikni na bežnú položku v poradí pre odstránenie. Špeciálne (Predohra/Medzihra/Dohra/Poznámka) klikom upravíš.</div>
+</div>
+<div class="modal-block">
+<div class="modal-label">História piesne</div>
+<div class="form-history" id="form-history"></div>
+<div class="modal-hint">Klikni na záznam a nastaví sa poradie tak, ako bolo v histórii.</div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Pridať časť</div>
+<div class="form-buttons" id="form-buttons"></div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Špeciálne</div>
+<div class="form-buttons">
+<button class="chip-btn" onclick="addSpecialStep('PREDOHRA')">Predohra</button>
+<button class="chip-btn" onclick="addSpecialStep('MEDZIHRA')">Medzihra</button>
+<button class="chip-btn" onclick="addSpecialStep('DOHRA')">Dohra</button>
+<button class="chip-btn" onclick="addSpecialStep('POZNAMKA')">Poznámka</button>
+</div>
+<div class="modal-hint">Poznámku dopíšeš po kliknutí (napr. akordy, pokyn).</div>
+</div>
+</div>
+</div>
+</div>
 <!-- SONG EDITOR MODAL -->
-<div id="song-editor-modal" class="modal-overlay" style="display:none;">
-  <div class="modal-sheet modal-wide" role="dialog" aria-modal="true" aria-labelledby="song-editor-title">
-    <div class="modal-header">
-      <button class="modal-close" onclick="closeSongEditor(false)"><i class="fas fa-times"></i></button>
-      <div id="song-editor-title" class="modal-title">Editor piesne</div>
-      <button class="modal-save" onclick="saveSongEditor()">Uložiť</button>
-    </div>
-
-    <div class="modal-body">
-      <div class="modal-block">
-        <div class="form-row">
-          <div class="form-col">
-            <div class="modal-label">Číslo (author)</div>
-            <input id="se-number" class="text-input" type="text" placeholder="napr. 125 alebo M07" maxlength="12">
-          </div>
-          <div class="form-col" style="flex:2;">
-            <div class="modal-label">Názov</div>
-            <input id="se-title" class="text-input" type="text" placeholder="Názov piesne" maxlength="120">
-          </div>
-        </div>
-        <div class="modal-hint">Ak chceš vytvoriť novú pieseň, zadaj nové číslo a názov. Text píš s akordami v hranatých zátvorkách, napr. <b>[Am]</b>.</div>
-      </div>
-
-      <div class="modal-block">
-        <div class="modal-label">Text + akordy</div>
-        <textarea id="se-text" class="diag-text" style="min-height:260px;" placeholder="Sem vlož text piesne..."></textarea>
-
-        <div class="chord-kbd">
-          <div class="modal-label" style="margin-top:8px;">Rýchle šablóny</div>
-          <div class="form-buttons template-kbd" style="justify-content:flex-start; gap:8px; flex-wrap:wrap;">
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('R: \n', true)">R:</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('R2: \n', true)">R2:</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('B: \n', true)">B:</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('B2: \n', true)">B2:</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('1.: \n', true)">1.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('2.: \n', true)">2.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('3.: \n', true)">3.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('4.: \n', true)">4.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('5.: \n', true)">5.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('6.: \n', true)">6.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('7.: \n', true)">7.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('8.: \n', true)">8.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('9.: \n', true)">9.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('10.: \n', true)">10.</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('Predohra: \n', true)">Predohra</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('Medzihra: \n', true)">Medzihra</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('Dohra: \n', true)">Dohra</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('Poznámka: \n', true)">Poznámka</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('Transpozícia: \n', true)">Transpozícia</button>
-          </div>
-
-          <div class="chord-row">
-            <div class="chord-label">Základ</div>
-            <div class="chord-btns" id="chord-roots"></div>
-          </div>
-          <div class="chord-row">
-            <div class="chord-label">Typ</div>
-            <div class="chord-btns" id="chord-quals"></div>
-          </div>
-          <div class="chord-row">
-            <div class="chord-label">Bas</div>
-            <div class="chord-btns" id="chord-bass"></div>
-          </div>
-
-          <div class="chord-preview">
-            <span class="tiny-label">Akord:</span>
-            <span id="chord-preview" class="chord-preview-val">—</span>
-            <button class="btn-save" type="button" onclick="insertBuiltChord()">Vložiť</button>
-            <button class="btn-neutral" type="button" onclick="resetChordBuilder()">Reset</button>
-          </div>
-
-          <div class="form-buttons" style="justify-content:flex-start; gap:8px; margin-top:8px;">
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('[', true)">[</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret(']', true)">]</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('\n', true)">⏎</button>
-            <button class="chip-btn" type="button" onclick="insertTextAtCaret('— ', true)">—</button>
-          </div>
-
-          <div class="modal-hint">Tip: Najprv vyber „Základ“, potom „Typ“ a prípadne „Bas“ (napr. D + m + /F# → <b>[Dm/F#]</b>).</div>
-        </div>
-      </div>
-
-      <div class="modal-block">
-        <div class="modal-label">Záloha a export</div>
-        <div class="btn-row-2">
-          <button class="btn-neutral" type="button" onclick="downloadSongsBackup()">Stiahnuť zálohu (JSON)</button>
-          <button class="btn-neutral" type="button" onclick="downloadSongsXml()">Exportovať XML (pre Spevník+)</button>
-        </div>
-
-        <div class="btn-row-2" style="margin-top:8px;">
-          <button class="btn-neutral" type="button" onclick="pickBackupFile()">Vybrať súbor zálohy (auto‑save)</button>
-          <button class="btn-delete" type="button" onclick="removeBackupFile()">Zrušiť auto‑save</button>
-        </div>
-
-        <input id="se-import-file" type="file" accept=".json,.xml,text/xml,application/xml" style="display:none;" onchange="importSongsFile(this.files && this.files[0])">
-        <div class="btn-row-2" style="margin-top:8px;">
-          <button class="btn-neutral" type="button" onclick="triggerImportSongs()">Importovať (JSON/XML)</button>
-          <button class="btn-delete" type="button" onclick="deleteSongEditor()">Vymazať túto pieseň</button>
-        </div>
-
-        <div id="backup-file-state" class="modal-hint">Auto‑save: vypnuté</div>
-      </div>
-    </div>
-  </div>
+<div class="modal-overlay" id="song-editor-modal" style="display:none;">
+<div aria-labelledby="song-editor-title" aria-modal="true" class="modal-sheet modal-wide" role="dialog">
+<div class="modal-header">
+<button class="modal-close" onclick="closeSongEditor(false)"><i class="fas fa-times"></i></button>
+<div class="modal-title" id="song-editor-title">Editor piesne</div>
+<button class="modal-save" onclick="saveSongEditor()">Uložiť</button>
 </div>
-
-  <!-- DIAGNOSTIKA -->
-  <div id="diag-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="diag-modal-title">
-      <div class="modal-header">
-        <button class="modal-close" onclick="closeDiagnostics()"><i class="fas fa-times"></i></button>
-        <div id="diag-modal-title" class="modal-title">Diagnostika</div>
-        <button class="modal-save" onclick="copyDiagnostics()">Kopírovať</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-block">
-          <div class="modal-label">Stav</div>
-          <div id="diag-summary" class="diag-summary"></div>
-        </div>
-
-        <div class="modal-block">
-          <div class="modal-label">Detaily</div>
-          <textarea id="diag-text" class="diag-text" readonly></textarea>
-          <div class="modal-hint">Skopíruj a pošli, ak niečo nejde.</div>
-          <div class="form-buttons" style="margin-top:10px; justify-content:flex-end;">
+<div class="modal-body">
+<div class="modal-block">
+<div class="form-row">
+<div class="form-col">
+<div class="modal-label">Číslo (author)</div>
+<input class="text-input" id="se-number" maxlength="12" placeholder="napr. 125 alebo M07" type="text"/>
 </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<div class="form-col" style="flex:2;">
+<div class="modal-label">Názov</div>
+<input class="text-input" id="se-title" maxlength="120" placeholder="Názov piesne" type="text"/>
+</div>
+</div>
+<div class="modal-hint">Ak chceš vytvoriť novú pieseň, zadaj nové číslo a názov. Text píš s akordami v hranatých zátvorkách, napr. <b>[Am]</b>.</div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Text + akordy</div>
+<textarea class="diag-text" id="se-text" placeholder="Sem vlož text piesne..." style="min-height:260px;"></textarea>
+<div class="chord-kbd">
+<div class="modal-label" style="margin-top:8px;">Rýchle šablóny</div>
+<div class="form-buttons template-kbd" style="justify-content:flex-start; gap:8px; flex-wrap:wrap;">
+<button class="chip-btn" onclick="insertTextAtCaret('R: \n', true)" type="button">R:</button>
+<button class="chip-btn" onclick="insertTextAtCaret('R2: \n', true)" type="button">R2:</button>
+<button class="chip-btn" onclick="insertTextAtCaret('B: \n', true)" type="button">B:</button>
+<button class="chip-btn" onclick="insertTextAtCaret('B2: \n', true)" type="button">B2:</button>
+<button class="chip-btn" onclick="insertTextAtCaret('1.: \n', true)" type="button">1.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('2.: \n', true)" type="button">2.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('3.: \n', true)" type="button">3.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('4.: \n', true)" type="button">4.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('5.: \n', true)" type="button">5.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('6.: \n', true)" type="button">6.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('7.: \n', true)" type="button">7.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('8.: \n', true)" type="button">8.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('9.: \n', true)" type="button">9.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('10.: \n', true)" type="button">10.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('Predohra: \n', true)" type="button">Predohra</button>
+<button class="chip-btn" onclick="insertTextAtCaret('Medzihra: \n', true)" type="button">Medzihra</button>
+<button class="chip-btn" onclick="insertTextAtCaret('Dohra: \n', true)" type="button">Dohra</button>
+<button class="chip-btn" onclick="insertTextAtCaret('Poznámka: \n', true)" type="button">Poznámka</button>
+<button class="chip-btn" onclick="insertTextAtCaret('Transpozícia: \n', true)" type="button">Transpozícia</button>
+</div>
+<div class="chord-row">
+<div class="chord-label">Základ</div>
+<div class="chord-btns" id="chord-roots"></div>
+</div>
+<div class="chord-row">
+<div class="chord-label">Typ</div>
+<div class="chord-btns" id="chord-quals"></div>
+</div>
+<div class="chord-row">
+<div class="chord-label">Bas</div>
+<div class="chord-btns" id="chord-bass"></div>
+</div>
+<div class="chord-preview">
+<span class="tiny-label">Akord:</span>
+<span class="chord-preview-val" id="chord-preview">—</span>
+<button class="btn-save" onclick="insertBuiltChord()" type="button">Vložiť</button>
+<button class="btn-neutral" onclick="resetChordBuilder()" type="button">Reset</button>
+</div>
+<div class="form-buttons" style="justify-content:flex-start; gap:8px; margin-top:8px;">
+<button class="chip-btn" onclick="insertTextAtCaret('[', true)" type="button">[</button>
+<button class="chip-btn" onclick="insertTextAtCaret(']', true)" type="button">]</button>
+<button class="chip-btn" onclick="insertTextAtCaret('\n', true)" type="button">⏎</button>
+<button class="chip-btn" onclick="insertTextAtCaret('— ', true)" type="button">—</button>
+</div>
+<div class="modal-hint">Tip: Najprv vyber „Základ“, potom „Typ“ a prípadne „Bas“ (napr. D + m + /F# → <b>[Dm/F#]</b>).</div>
+</div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Záloha a export</div>
+<div class="btn-row-2">
+<button class="btn-neutral" onclick="downloadSongsBackup()" type="button">Stiahnuť zálohu (JSON)</button>
+<button class="btn-neutral" onclick="downloadSongsXml()" type="button">Exportovať XML (pre Spevník+)</button>
+</div>
+<div class="btn-row-2" style="margin-top:8px;">
+<button class="btn-neutral" onclick="pickBackupFile()" type="button">Vybrať súbor zálohy (auto‑save)</button>
+<button class="btn-delete" onclick="removeBackupFile()" type="button">Zrušiť auto‑save</button>
+</div>
+<input accept=".json,.xml,text/xml,application/xml" id="se-import-file" onchange="importSongsFile(this.files &amp;&amp; this.files[0])" style="display:none;" type="file"/>
+<div class="btn-row-2" style="margin-top:8px;">
+<button class="btn-neutral" onclick="triggerImportSongs()" type="button">Importovať (JSON/XML)</button>
+<button class="btn-delete" onclick="deleteSongEditor()" type="button">Vymazať túto pieseň</button>
+</div>
+<div class="modal-hint" id="backup-file-state">Auto‑save: vypnuté</div>
+</div>
+</div>
+</div>
+</div>
+<!-- DIAGNOSTIKA -->
+<div class="modal-overlay" id="diag-modal" style="display:none;">
+<div aria-labelledby="diag-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
+<div class="modal-header">
+<button class="modal-close" onclick="closeDiagnostics()"><i class="fas fa-times"></i></button>
+<div class="modal-title" id="diag-modal-title">Diagnostika</div>
+<button class="modal-save" onclick="copyDiagnostics()">Kopírovať</button>
+</div>
+<div class="modal-body">
+<div class="modal-block">
+<div class="modal-label">Stav</div>
+<div class="diag-summary" id="diag-summary"></div>
+</div>
+<div class="modal-block">
+<div class="modal-label">Detaily</div>
+<textarea class="diag-text" id="diag-text" readonly=""></textarea>
+<div class="modal-hint">Skopíruj a pošli, ak niečo nejde.</div>
+<div class="form-buttons" style="margin-top:10px; justify-content:flex-end;">
+</div>
+</div>
+</div>
+</div>
+</div>
 </body>
 </html>
