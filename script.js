@@ -30,7 +30,7 @@
 // JSONP GET (CORS-free read)
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyrD8pCxgQYiERsOsDFJ_XoBEbg6KYe1oM8Wj9IAzkq4yqzMSkfApgcc3aFeD0-Pxgww/exec';
 // POST endpoint (stable, without redirects) – used for writes
-const SCRIPT_URL_POST = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLju_ASouAiiG5mvUe2YGBZDHtV2dhsjhfJSKpfDMF_hv3tSrtHrruxIGWewkXZ7o-HEpo9eLQPMkOQIEhjf4k2KIKE5SwM7Dy2-9dSHZX9zcx4bcNskpRIX5QDlqt7YULxBGHMxad_TOx49_R6AgGVodCU_-Z3fDijyASqnmCScqHdL9afzKKAwN8CogzEFdEB-F81XY_YVmx9nPepwiYIWSzICJAwdpdTEnRc31pJnHlw8YNHpBlM-zwuP7KB5i6AgTq20fYdfNMAD5er3XMbfE7tuBYHKRCktbXo1&lib=MHLC092P6XK4oKRU9KMqxTCLVZkolgQ1O';
+const SCRIPT_URL_POST = SCRIPT_URL; // always /exec (POST works here)
 
 // ===== META UPDATE BADGE (export + PiesneNaDnes + PlaylistOrder) =====
 const LS_META_SEEN = 'spevnik_meta_seen_v1';
@@ -97,6 +97,14 @@ async function jsonpSave(params){
   const err = (res && res.error) ? String(res.error) : 'save_failed';
   throw new Error(err);
 }
+// ===== GAS SAVE helpers (reliable error reporting) =====
+async function gasSaveFile(name, content){
+  return await jsonpSave({ action:'save', name:String(name||''), pwd:getAuthPwd(), content:String(content ?? '') });
+}
+async function gasDeleteFile(name){
+  return await jsonpSave({ action:'delete', name:String(name||''), pwd:getAuthPwd() });
+}
+
 
 async function checkMetaAndToggleBadge(){
   // Badge check runs every minute. Keep bottom status clean:
@@ -3359,7 +3367,7 @@ async function saveDnesToHistory(){
   renderHistoryUI(true);
 
   try {
-    await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
+    await gasSaveFile(HISTORY_NAME, JSON.stringify(next));
     showToast('Uložené do histórie ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa uložiť do histórie ❌', false);
@@ -3369,19 +3377,19 @@ async function saveDnesToHistory(){
 }
 
 
-function deleteHistoryEntry(ts){
+async function deleteHistoryEntry(ts){
   if (!hasPerm('A')) return;
   if (!confirm('Vymazať tento záznam z histórie?')) return;
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const next = arr.filter(x => Number(x.ts) !== Number(ts));
   localStorage.setItem(LS_HISTORY, JSON.stringify(next));
   renderHistoryUI(true);
-  try { fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
+  try { await gasSaveFile(HISTORY_NAME, JSON.stringify(next)); } catch(e) {}
   loadHistoryFromDrive();
 }
 
 
-function renameHistoryEntry(ts){
+async function renameHistoryEntry(ts){
   if (!hasPerm('A')) return;
   const arr = parseHistory(localStorage.getItem(LS_HISTORY) || "");
   const idx = arr.findIndex(x => Number(x.ts) === Number(ts));
@@ -3394,9 +3402,9 @@ function renameHistoryEntry(ts){
   // persist
   localStorage.setItem(LS_HISTORY, JSON.stringify(arr));
   renderHistoryUI(true);
-  // sync to Drive (best effort)
+  // sync to Drive
   try {
-    fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
+    await gasSaveFile(HISTORY_NAME, JSON.stringify(arr));
   } catch(e) {}
 }
 
@@ -7471,6 +7479,9 @@ function renderKeyHistorySection(songId){
     </div>
   `;
 }
+// Ensure availability even with service-worker stale scopes
+try { window.renderKeyHistorySection = renderKeyHistorySection; } catch(e) {}
+
 
 async function toggleKeyHistory(songId){
   const sid = String(songId||"");

@@ -799,20 +799,25 @@ function _appendChanges_(songId, num, title, who, ctx){
 
 function _htmlToText_(html){
   if (!html) return "";
-  let t = String(html);
-  t = t.replace(/<script[\s\S]*?<\/script>/gi, "\n");
-  t = t.replace(/<style[\s\S]*?<\/style>/gi, "\n");
-  t = t.replace(/<br\s*\/?>(?=\s*)/gi, "\n");
-  t = t.replace(/<\/(p|div|li|tr|h1|h2|h3|h4|h5|h6)>/gi, "\n");
-  t = t.replace(/<[^>]+>/g, " ");
-  t = t.replace(/&nbsp;/g, " ");
+  var t = String(html);
+
+  // Safe regexes (avoid copy/paste flag issues)
+  t = t.replace(new RegExp("<script[\\s\\S]*?<\\/script>", "gi"), "\n");
+  t = t.replace(new RegExp("<style[\\s\\S]*?<\\/style>", "gi"), "\n");
+  t = t.replace(new RegExp("<br\\s*\\/?>", "gi"), "\n");
+  t = t.replace(new RegExp("<\\/(p|div|li|tr|h1|h2|h3|h4|h5|h6)>", "gi"), "\n");
+  t = t.replace(new RegExp("<[^>]+>", "g"), " " );
+
+  t = t.replace(/&nbsp;/g, " " );
   t = t.replace(/&amp;/g, "&");
-  t = t.replace(/&quot;/g, '"');
+  t = t.replace(/&quot;/g, "\"");
   t = t.replace(/&#39;/g, "'");
   t = t.replace(/&lt;/g, "<");
   t = t.replace(/&gt;/g, ">");
-  t = t.replace(/[ \t]+/g, " ");
+
+  t = t.replace(/[ \t]+/g, " " );
   t = t.replace(/\n[ \t]+/g, "\n");
   t = t.replace(/\n{3,}/g, "\n\n");
+
   return t.trim();
 }
