@@ -1,821 +1,681 @@
-// ===== Spevník GAS backend (v99) =====
-// Execute as: Me, Access: Anyone
-// Owner login: password only (OWNER_PWD). Other admins: password only (stored hashed by password), owner may label them with a name.
-//
-// Features:
-// - Export XML file: "Spevník export" (root Drive). Compatible with Spevník+.
-// - Drive folder "Playlisty" stores app JSON/text files (playlists, PiesneNaDnes, history, overrides, admin db, versions, changes, key history).
-// - Export backups visible in Drive folder "Spevník export - backupy" (keep last 5).
-// - Song versions (keep last 10) + trash/restore (owner).
-// - Changes feed (last 50) for owner.
-// - Key history (história tóniny) visible to everyone; owner can delete entries.
-// - doPost supported (frontend uses POST for saving).
-
 const OWNER_PWD = "wert";
 const OWNER_NAME = "Timotej";
 
-const MAIN_FILE_NAME = "Spevník export";
-const FOLDER_NAME = "Playlisty";
+const MAIN_FILE_NAME = "Spevník export"; // XML in Drive root
+const FOLDER_NAME = "Playlisty";         // Drive folder for auxiliary files
 
-const EXPORT_BACKUP_FOLDER = "Spevník export - backupy";
-const EXPORT_BACKUP_KEEP = 5;
-
-// Folder files
+// Internal json files in folder
 const ADMINS_FILE = "Admins.json";
-const SONG_VERSIONS_FILE = "SongVersions.json";
-const SONG_TRASH_FILE = "SongTrash.json";
-const SONG_CHANGES_FILE = "SongChanges.json";
-const OWNER_SEEN_CHANGES_FILE = "OwnerSeenChanges.json";
-const SONG_KEY_HISTORY_FILE = "SongKeyHistory.json";
+const SONG_VERS_FILE = "SongVersion.json";       // keep last 10 versions per song
+const KEY_HIST_FILE = "KeyHistory.json";         // key change history per song
+const CHANGES_FILE = "Changes.json";             // last 50 changes feed
+const HISTORY_FILE = "HistoryLog";               // history of 'Piesne na dnes'
 const LIT_OVERRIDES_FILE = "LiturgiaOverrides.json";
-
-const SONG_VERSION_KEEP = 10;
-const SONG_CHANGES_KEEP = 50;
 
 function authorizeExternalRequests() {
   UrlFetchApp.fetch("https://lc.kbs.sk/?den=2026-02-01&offline=", { muteHttpExceptions: true });
 }
 
-function doGet(e) { return _handle_(e); }
-function doPost(e) { return _handle_(e); }
-
-function _handle_(e){
-  const p = _mergeParams_(e);
+function doGet(e) {
+  const p = (e && e.parameter) ? e.parameter : {};
   const action = p.action ? String(p.action) : "";
   const callback = p.callback ? String(p.callback) : "";
 
-  function out(obj){
+  function out(obj) {
     const payload = JSON.stringify(obj);
-    if (callback){
-      return ContentService.createTextOutput(`${callback}(${payload});`).setMimeType(ContentService.MimeType.JAVASCRIPT);
+    if (callback) {
+      return ContentService
+        .createTextOutput(`${callback}(${payload});`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
-    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+    return ContentService
+      .createTextOutput(payload)
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
-  // --- META ---
-  if (action === "meta"){
-    const folder = _getOrCreateFolder_();
-    const exportFile = _newestFileByNameRoot_(MAIN_FILE_NAME);
-    const dnesFile = _newestFileByNameInFolder_("PiesneNaDnes", folder);
-    const orderFile = _newestFileByNameInFolder_("PlaylistOrder", folder);
-
-    // history file names may vary
-    const histCandidates = ["HistoryLog","History","Historia","PiesneNaDnesHistory","PiesneNaDnesHistoria"];
-    let historyM = 0;
-    for (const n of histCandidates){
-      historyM = Math.max(historyM, _safeMtime_(_newestFileByNameInFolder_(n, folder)));
-    }
-
-    return out({ ok:true, meta:{
-      export: _safeMtime_(exportFile),
-      dnes: _safeMtime_(dnesFile),
-      order: _safeMtime_(orderFile),
-      history: historyM
-    }});
+  function getOrCreateFolder() {
+    const it = DriveApp.getFoldersByName(FOLDER_NAME);
+    return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
   }
 
-  // --- DIAG ---
-  if (action === "diag"){
-    const f = _newestFileByNameRoot_(MAIN_FILE_NAME);
-    if (!f) return out({ ok:true, exportFound:false, exportName: MAIN_FILE_NAME });
-
-    let parsedOk = true, rootName = "", ns = "";
-    try{
-      const txt = f.getBlob().getDataAsString("UTF-8");
-      const doc = XmlService.parse(txt);
-      const r = doc.getRootElement();
-      rootName = r.getName();
-      ns = (r.getNamespace() && r.getNamespace().getURI()) ? r.getNamespace().getURI() : "";
-    }catch(e){ parsedOk = false; }
-
-    return out({ ok:true, exportFound:true, exportName: f.getName(), exportMtime: f.getLastUpdated().getTime(), exportSize: f.getSize(), parsedOk, rootName, ns });
+  function isDeletedMarker(s) {
+    return typeof s === "string" && s.trim() === "deleted";
   }
 
-  // --- AUTH ---
-  if (action === "auth" || action === "adminAuth"){
-    const sess = _sessionFromPwd_(String(p.pwd || ""));
-    if (!sess) return out({ ok:false, error:"unauthorized" });
-    return out({ ok:true, session:{
-      pwd:String(p.pwd||""),
-      isOwner:!!sess.isOwner,
-      owner:!!sess.isOwner,
-      perms:sess.perms,
-      name:sess.name
-    }});
-  }
-
-  // --- Generic folder LIST ---
-  if (action === "list"){
-    const folder = _getOrCreateFolder_();
-    const files = folder.getFiles();
-    const list = [];
-    while (files.hasNext()){
+  function newestFileByNameInFolder(name, folder) {
+    const files = folder.getFilesByName(name);
+    let newest = null;
+    while (files.hasNext()) {
       const f = files.next();
       if (f.isTrashed()) continue;
-      try{
-        const c = f.getBlob().getDataAsString();
-        if (_isDeletedMarker_(c)) continue;
-      }catch(e){}
-      list.push({ name: f.getName() });
+      if (!newest || f.getLastUpdated().getTime() > newest.getLastUpdated().getTime()) newest = f;
     }
-    return out({ ok:true, list });
+    return newest;
   }
 
-  // --- Generic folder GET ---
-  if (action === "get"){
-    const name = String(p.name || "");
-    if (!name) return out({ ok:false, error:"missing_name", text:"" });
-    const folder = _getOrCreateFolder_();
-    const f = _newestFileByNameInFolder_(name, folder);
-    if (!f) return out({ ok:false, error:"not_found", text:"" });
+  function newestFileByNameRoot(name) {
+    const files = DriveApp.getFilesByName(name);
+    let newest = null;
+    while (files.hasNext()) {
+      const f = files.next();
+      if (f.isTrashed()) continue;
+      if (!newest || f.getLastUpdated().getTime() > newest.getLastUpdated().getTime()) newest = f;
+    }
+    return newest;
+  }
+
+  function safeMtime(file) {
+    if (!file) return 0;
+    try {
+      const content = file.getBlob().getDataAsString();
+      if (isDeletedMarker(content)) return 0;
+    } catch (err) {}
+    return file.getLastUpdated().getTime();
+  }
+
+  function readTextFileInFolder(folder, filename) {
+    const f = newestFileByNameInFolder(filename, folder);
+    if (!f) return "";
     const txt = f.getBlob().getDataAsString("UTF-8");
-    if (_isDeletedMarker_(txt)) return out({ ok:false, error:"deleted", text:"" });
-    return out({ ok:true, text: txt });
+    if (!txt || isDeletedMarker(txt)) return "";
+    return txt;
   }
 
-  // --- Generic folder SAVE ---
-  if (action === "save"){
-    const sess = _sessionFromPwd_(String(p.pwd || ""));
-    if (!sess) return out({ ok:false, error:"unauthorized" });
+  function readJsonFileInFolder(folder, filename, fallback) {
+    const txt = readTextFileInFolder(folder, filename);
+    if (!txt) return fallback;
+    try { return JSON.parse(txt); } catch (e) { return fallback; }
+  }
 
-    const name = String(p.name || "");
-    const content = String(p.content || "");
-    if (!name) return out({ ok:false, error:"missing_name" });
+  function writeTextFileInFolder(folder, filename, content) {
+    const old = folder.getFilesByName(filename);
+    while (old.hasNext()) old.next().setTrashed(true);
+    folder.createFile(filename, String(content || ""), MimeType.PLAIN_TEXT);
+  }
 
-    // non-owner restriction: A can edit PiesneNaDnes/history, B can edit playlists/order
-    if (!sess.isOwner){
-      const low = name.toLowerCase();
-      const system = [ADMINS_FILE, SONG_VERSIONS_FILE, SONG_TRASH_FILE, SONG_CHANGES_FILE, OWNER_SEEN_CHANGES_FILE, SONG_KEY_HISTORY_FILE, LIT_OVERRIDES_FILE].map(x=>x.toLowerCase());
-      if (system.includes(low) || low === MAIN_FILE_NAME.toLowerCase()) return out({ ok:false, error:"unauthorized" });
+  function writeJsonFileInFolder(folder, filename, obj) {
+    writeTextFileInFolder(folder, filename, JSON.stringify(obj, null, 2));
+  }
 
-      const isDnes = (low === "piesnenadnes");
-      const isOrder = (low === "playlistorder");
-      const isHist = ["historylog","history","historia","piesnenadneshistory","piesnenadneshistoria"].includes(low);
-      const isPlaylist = !(isDnes || isOrder || isHist);
+  function escapeRegExp(s){
+    return String(s||"").replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+  }
 
-      if ((isDnes || isHist) && !sess.perms.A) return out({ ok:false, error:"unauthorized" });
-      if ((isPlaylist || isOrder) && !sess.perms.B) return out({ ok:false, error:"unauthorized" });
+  // ===== AUTH / ADMINS =====
+
+  function loadAdmins(folder){
+    const data = readJsonFileInFolder(folder, ADMINS_FILE, { list: [] });
+    const list = Array.isArray(data.list) ? data.list : [];
+    return { list: list.map(a => ({
+      id: String(a.id || ""),
+      pwd: String(a.pwd || ""),
+      name: String(a.name || ""),
+      perms: a.perms || {}
+    })) };
+  }
+
+  function saveAdmins(folder, admins){
+    writeJsonFileInFolder(folder, ADMINS_FILE, admins);
+  }
+
+  function sessionFromPwd(pwd, folder){
+    const pw = String(pwd||"");
+    if (pw === OWNER_PWD) {
+      return {
+        pwd: pw,
+        isOwner: true,
+        owner: true,
+        perms: { A:true, B:true, C:true, D:true, E:true },
+        name: OWNER_NAME
+      };
     }
-
-    const folder = _getOrCreateFolder_();
-    _replaceFileInFolder_(folder, name, content);
-    return out({ ok:true });
-  }
-
-  // --- Generic folder DELETE ---
-  if (action === "delete"){
-    const sess = _sessionFromPwd_(String(p.pwd || ""));
-    if (!sess) return out({ ok:false, error:"unauthorized" });
-
-    const name = String(p.name || "");
-    if (!name) return out({ ok:false, error:"missing_name" });
-
-    if (!sess.isOwner){
-      const low = name.toLowerCase();
-      const system = [ADMINS_FILE, SONG_VERSIONS_FILE, SONG_TRASH_FILE, SONG_CHANGES_FILE, OWNER_SEEN_CHANGES_FILE, SONG_KEY_HISTORY_FILE, LIT_OVERRIDES_FILE].map(x=>x.toLowerCase());
-      if (system.includes(low) || low === MAIN_FILE_NAME.toLowerCase()) return out({ ok:false, error:"unauthorized" });
-
-      const isDnes = (low === "piesnenadnes");
-      const isOrder = (low === "playlistorder");
-      const isHist = ["historylog","history","historia","piesnenadneshistory","piesnenadneshistoria"].includes(low);
-      const isPlaylist = !(isDnes || isOrder || isHist);
-
-      if ((isDnes || isHist) && !sess.perms.A) return out({ ok:false, error:"unauthorized" });
-      if ((isPlaylist || isOrder) && !sess.perms.B) return out({ ok:false, error:"unauthorized" });
-    }
-
-    const folder = _getOrCreateFolder_();
-    _replaceFileInFolder_(folder, name, "deleted");
-    return out({ ok:true });
-  }
-
-  // --- ADMINS (owner only) ---
-  if (action === "adminList" || action === "adminsGet"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, ADMINS_FILE) || { admins:{} };
-    const list = [];
-    for (const id in (db.admins||{})){
-      const a = db.admins[id] || {};
-      list.push({ id, pwd:String(a.pwd||""), name:String(a.name||""), perms:a.perms||{A:false,B:false,C:false,D:false,E:false} });
-    }
-    list.sort((x,y)=>(x.name||"").localeCompare(y.name||"", "sk"));
-    return out({ ok:true, list });
-  }
-
-  if (action === "adminUpsert" || action === "adminsUpsert"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const payload = String(p.payload||"");
-    let obj;
-    try{ obj = JSON.parse(payload); }catch(e){ return out({ ok:false, error:"bad_payload_json" }); }
-
-    const newPwd = String(obj.pwd||"").trim();
-    if (!newPwd) return out({ ok:false, error:"missing_admin_pwd" });
-
-    const newId = _sha256Hex_(newPwd);
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, ADMINS_FILE) || { admins:{} };
-    if (!db.admins) db.admins = {};
-
-    const incomingId = String(obj.id||"").trim();
-    if (incomingId && incomingId !== newId){
-      if (db.admins[incomingId]) delete db.admins[incomingId];
-    }
-
-    db.admins[newId] = {
-      pwd: newPwd, // owner wants plaintext visible
-      name: String(obj.name||""),
-      perms: obj.perms || {A:false,B:false,C:false,D:false,E:false}
-    };
-
-    _writeJsonFileInFolder_(folder, ADMINS_FILE, db);
-    return out({ ok:true, id:newId });
-  }
-
-  if (action === "adminDelete" || action === "adminsDelete"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, ADMINS_FILE) || { admins:{} };
-    if (db.admins && db.admins[id]) delete db.admins[id];
-    _writeJsonFileInFolder_(folder, ADMINS_FILE, db);
-    return out({ ok:true });
-  }
-
-  // --- SONG SAVE (D/E) ---
-  if (action === "songSave"){
-    const sess = _requirePerm_(String(p.pwd||""), ["D","E"]);
-    if (!sess) return out({ ok:false, error:"unauthorized" });
-
-    const payload = String(p.payload||"");
-    if (!payload) return out({ ok:false, error:"missing_payload" });
-    let obj;
-    try{ obj = JSON.parse(payload); }catch(e){ return out({ ok:false, error:"bad_payload_json" }); }
-
-    const id = String(obj.id||"").trim();
-    const num = String(obj.author||"").trim();
-    const title = String(obj.title||"").trim();
-    const songtext = (obj.songtext != null) ? String(obj.songtext) : "";
-    const mode = String(obj.mode||""); // D/E
-    const transposeStep = (obj.transposeStep != null) ? Number(obj.transposeStep) : null;
-
-    if (!id || !num || !title) return out({ ok:false, error:"missing_fields" });
-
-    const exportFile = _newestFileByNameRoot_(MAIN_FILE_NAME);
-    if (!exportFile) return out({ ok:false, error:"missing_export_file" });
-
-    const xmlText = exportFile.getBlob().getDataAsString("UTF-8");
-    let doc;
-    try{ doc = XmlService.parse(xmlText); }catch(e){ return out({ ok:false, error:"export_parse_failed", detail:String(e) }); }
-
-    const root = doc.getRootElement();
-    const ns = root.getNamespace();
-    if (root.getName() !== "InetSongDb") return out({ ok:false, error:"bad_export_root", detail:root.getName() });
-
-    const who = sess.isOwner ? OWNER_NAME : sess.name;
-
-    // find song
-    const songs = root.getChildren("song", ns);
-    let songEl = null;
-    for (let i=0;i<songs.length;i++){
-      const sid = _getChildText_(songs[i], ns, "ID");
-      if (String(sid) === id){ songEl = songs[i]; break; }
-    }
-
-    let existed = false;
-    let oldPlain = null;
-
-    if (songEl){
-      existed = true;
-      oldPlain = _songToPlain_(songEl, ns);
-
-      // save version before change
-      _saveSongVersion_(id, oldPlain, who);
-
-      // D guard (server-side): allow chord changes only when transposeStep provided
-      const isE = !!sess.perms.E;
-      const isD = !!sess.perms.D && !isE;
-      if (isD && mode === "D"){
-        const oldCh = _extractChords_(String(oldPlain.songtext||""));
-        const newCh = _extractChords_(songtext);
-        if (oldCh !== newCh){
-          if (!(transposeStep != null && isFinite(transposeStep) && Math.abs(transposeStep) <= 11)){
-            return out({ ok:false, error:"chords_changed_in_D" });
-          }
-        }
+    const admins = loadAdmins(folder).list;
+    for (let i=0;i<admins.length;i++){
+      if (String(admins[i].pwd||"") === pw) {
+        return {
+          pwd: pw,
+          isOwner: false,
+          owner: false,
+          perms: admins[i].perms || {},
+          name: admins[i].name || "Admin"
+        };
       }
+    }
+    return null;
+  }
 
-      // apply
-      _setChildCdata_(songEl, ns, "author", num);
-      _setChildCdata_(songEl, ns, "title", title);
-      _setChildCdata_(songEl, ns, "songtext", songtext);
+  function requireSession(){
+    const folder = getOrCreateFolder();
+    const s = sessionFromPwd(p.pwd ? String(p.pwd) : "", folder);
+    return { folder, session: s };
+  }
 
-    }else{
-      // create new
-      songEl = XmlService.createElement("song", ns);
-      const tags = ["ID","lang","songtext","author","authorId","groupname","title","youtube","step"];
-      for (const t of tags) songEl.addContent(XmlService.createElement(t, ns));
-      _setChildCdata_(songEl, ns, "ID", id);
-      _setChildCdata_(songEl, ns, "lang", "sk");
-      _setChildCdata_(songEl, ns, "songtext", songtext);
-      _setChildCdata_(songEl, ns, "author", num);
-      _setChildCdata_(songEl, ns, "authorId", "");
-      _setChildCdata_(songEl, ns, "groupname", "");
-      _setChildCdata_(songEl, ns, "title", title);
-      _setChildCdata_(songEl, ns, "youtube", "");
-      _setChildCdata_(songEl, ns, "step", "");
-      root.addContent(songEl);
-      existed = false;
+  function hasPerm(sess, key){
+    if (!sess) return false;
+    if (sess.isOwner) return true;
+    return !!(sess.perms && sess.perms[key]);
+  }
+
+  // ===== META =====
+  if (action === "meta") {
+    const folder = getOrCreateFolder();
+    const exportFile = newestFileByNameRoot(MAIN_FILE_NAME);
+    const dnesFile = newestFileByNameInFolder("PiesneNaDnes", folder);
+    const orderFile = newestFileByNameInFolder("PlaylistOrder", folder);
+    const histFile = newestFileByNameInFolder(HISTORY_FILE, folder);
+    const changesFile = newestFileByNameInFolder(CHANGES_FILE, folder);
+
+    return out({
+      ok: true,
+      meta: {
+        export: safeMtime(exportFile),
+        dnes: safeMtime(dnesFile),
+        order: safeMtime(orderFile),
+        history: safeMtime(histFile),
+        changes: safeMtime(changesFile)
+      }
+    });
+  }
+
+  // ===== AUTH =====
+  if (action === "auth") {
+    const folder = getOrCreateFolder();
+    const pwd = p.pwd ? String(p.pwd) : "";
+    const sess = sessionFromPwd(pwd, folder);
+    if (!sess) return out({ ok:false, error:"bad_pwd" });
+    return out({ ok:true, session: sess });
+  }
+
+  // ===== ADMINS: LIST (owner only) =====
+  if (action === "adminsList") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+    const data = loadAdmins(folder);
+    return out({ ok:true, list: data.list.map(a => ({ id:a.id, pwd:a.pwd, name:a.name, perms:a.perms })) });
+  }
+
+  // ===== ADMINS: SAVE (owner only) =====
+  if (action === "adminsSave") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+
+    const payload = p.payload ? String(p.payload) : "";
+    let obj;
+    try { obj = JSON.parse(payload); } catch(e){ return out({ ok:false, error:"bad_payload" }); }
+
+    const pwd = String(obj.pwd || "").trim();
+    const name = String(obj.name || "").trim();
+    const perms = obj.perms || {};
+    if (!pwd) return out({ ok:false, error:"missing_pwd" });
+    if (pwd === OWNER_PWD) return out({ ok:false, error:"reserved_pwd" });
+
+    const data = loadAdmins(folder);
+    let found = false;
+    for (let i=0;i<data.list.length;i++){
+      if (String(data.list[i].id) === String(obj.id||"") || String(data.list[i].pwd) === pwd){
+        data.list[i].pwd = pwd;
+        data.list[i].name = name;
+        data.list[i].perms = perms;
+        found = true;
+        break;
+      }
+    }
+    if (!found){
+      const id = Utilities.getUuid().replace(/-/g, "");
+      data.list.push({ id, pwd, name, perms });
+    }
+    saveAdmins(folder, data);
+    return out({ ok:true });
+  }
+
+  // ===== ADMINS: DELETE (owner only) =====
+  if (action === "adminsDelete") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+
+    const id = p.id ? String(p.id) : "";
+    const data = loadAdmins(folder);
+    data.list = data.list.filter(a => String(a.id) !== id);
+    saveAdmins(folder, data);
+    return out({ ok:true });
+  }
+
+  // ===== LIST files (playlists etc) =====
+  if (action === "list") {
+    const folder = getOrCreateFolder();
+    const files = folder.getFiles();
+    const list = [];
+    while (files.hasNext()) {
+      const file = files.next();
+      if (file.isTrashed()) continue;
+      try {
+        const content = file.getBlob().getDataAsString();
+        if (isDeletedMarker(content)) continue;
+      } catch (err) {}
+      list.push({ name: file.getName() });
+    }
+    return out({ ok: true, list });
+  }
+
+  // ===== GET file =====
+  if (action === "get") {
+    const name = p.name ? String(p.name) : "";
+    if (!name) return out({ ok: false, error: "missing_name", text: "" });
+
+    const folder = getOrCreateFolder();
+    const file = newestFileByNameInFolder(name, folder);
+    if (!file) return out({ ok: false, error: "not_found", text: "" });
+
+    const content = file.getBlob().getDataAsString();
+    if (isDeletedMarker(content)) return out({ ok: false, error: "deleted", text: "" });
+
+    return out({ ok: true, text: content });
+  }
+
+  // ===== SAVE file (admin) =====
+  if (action === "save") {
+    const { folder, session } = requireSession();
+    if (!session) return out({ ok: false, error: "unauthorized" });
+
+    const name = p.name ? String(p.name) : "";
+    const content = p.content ? String(p.content) : "";
+    if (!name) return out({ ok: false, error: "missing_name" });
+
+    // permission gates for A/B
+    const low = name.toLowerCase();
+    if (low === "piesnenadnes" || low === HISTORY_FILE.toLowerCase()) {
+      if (!hasPerm(session, 'A')) return out({ ok:false, error:"forbidden" });
+    }
+    if (low === "playlistorder") {
+      if (!hasPerm(session, 'B')) return out({ ok:false, error:"forbidden" });
+    }
+    // playlists: any non-system file, require B
+    const sys = (low === "piesnenadnes" || low === "playlistorder" || low === HISTORY_FILE.toLowerCase() || low.endsWith('.json'));
+    if (!sys && !hasPerm(session, 'B')) return out({ ok:false, error:"forbidden" });
+
+    // write
+    const old = folder.getFilesByName(name);
+    while (old.hasNext()) old.next().setTrashed(true);
+    folder.createFile(name, content, MimeType.PLAIN_TEXT);
+
+    // simple history snapshots for HistoryLog
+    if (low === HISTORY_FILE.toLowerCase()) {
+      // keep last 5 backups on Drive (visible)
+      try{
+        const bkpName = `HistoryLog_backup_${new Date().getTime()}.json`;
+        folder.createFile(bkpName, content, MimeType.PLAIN_TEXT);
+        // prune
+        const it = folder.getFiles();
+        const arr = [];
+        while (it.hasNext()){
+          const f = it.next();
+          const n = f.getName();
+          if (n.indexOf('HistoryLog_backup_')===0) arr.push(f);
+        }
+        arr.sort((a,b)=>b.getLastUpdated().getTime()-a.getLastUpdated().getTime());
+        for (let i=5;i<arr.length;i++) arr[i].setTrashed(true);
+      }catch(e){}
     }
 
-    // publish
-    const newXml = XmlService.getPrettyFormat().format(doc);
-    _publishExport_(newXml);
-
-    // key history + changes feed
-    try{
-      const newKey = _firstChordRoot_(songtext);
-      const oldKey = oldPlain ? _firstChordRoot_(String(oldPlain.songtext||"")) : "";
-      _maybeAppendKeyHistory_(id, oldKey, newKey, who, existed);
-      _appendChanges_(id, num, title, who, { existed, oldPlain, newPlain:{id,num,title,songtext}, transposeStep });
-    }catch(e){}
-
-    return out({ ok:true });
+    return out({ ok: true });
   }
 
-  // --- SONG VERSIONS (owner) ---
-  if (action === "songVersions"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_VERSIONS_FILE) || { versions:{} };
-    const versions = (db.versions && db.versions[id]) ? db.versions[id] : [];
-    return out({ ok:true, id, versions });
+  // ===== DELETE file (admin) =====
+  if (action === "delete") {
+    const { folder, session } = requireSession();
+    if (!session) return out({ ok: false, error: "unauthorized" });
+
+    const name = p.name ? String(p.name) : "";
+    if (!name) return out({ ok: false, error: "missing_name" });
+
+    // only owner can delete system files
+    const low = name.toLowerCase();
+    const system = (low === "piesnenadnes" || low === "playlistorder" || low === HISTORY_FILE.toLowerCase());
+    if (system && !session.isOwner) return out({ ok:false, error:"forbidden" });
+
+    const old = folder.getFilesByName(name);
+    while (old.hasNext()) old.next().setTrashed(true);
+    folder.createFile(name, "deleted", MimeType.PLAIN_TEXT);
+    return out({ ok: true });
   }
 
-  // --- KEY HISTORY GET (public) ---
-  if (action === "keyHistoryGet"){
-    const id = String(p.id||p.songId||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-    const list = (db.keys && db.keys[id]) ? db.keys[id] : [];
-    return out({ ok:true, id, list });
-  }
-
-  // --- KEY HISTORY DELETE (owner) ---
-  if (action === "keyHistoryDelete"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||p.songId||"");
-    const ts = String(p.ts||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-    const arr = (db.keys && db.keys[id]) ? db.keys[id] : [];
-    db.keys[id] = arr.filter(x => String(x.ts) !== ts);
-    _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, db);
-    return out({ ok:true });
-  }
-
-  if (action === "keyHistoryClear"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||p.songId||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-    db.keys[id] = [];
-    _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, db);
-    return out({ ok:true });
-  }
-
-  // --- CHANGES GET (owner) ---
-  if (action === "changesGet"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_CHANGES_FILE) || { list:[] };
-    return out({ ok:true, list: db.list || [] });
-  }
-
-  if (action === "changesSeenGet"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, OWNER_SEEN_CHANGES_FILE) || { seen:{} };
-    return out({ ok:true, seen: db.seen || {} });
-  }
-
-  if (action === "changesSeenSet"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const payload = String(p.payload||"");
-    let obj;
-    try{ obj = JSON.parse(payload); }catch(e){ return out({ ok:false, error:"bad_payload_json" }); }
-    const ids = Array.isArray(obj.ids) ? obj.ids.map(String) : [];
-    const seenVal = (obj.seen != null) ? !!obj.seen : true;
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, OWNER_SEEN_CHANGES_FILE) || { seen:{} };
-    if (!db.seen) db.seen = {};
-    for (const id of ids) db.seen[id] = seenVal;
-    _writeJsonFileInFolder_(folder, OWNER_SEEN_CHANGES_FILE, db);
-    return out({ ok:true });
-  }
-
-  // --- LITURGIA FETCH ---
-  if (action === "liturgia"){
-    const den = String(p.den||"");
-    if (!den || !/^\d{4}-\d{2}-\d{2}$/.test(den)) return out({ ok:false, error:"bad_date" });
+  // ===== LITURGIA =====
+  if (action === "liturgia") {
+    const den = p.den ? String(p.den) : "";
+    if (!den || !/^\d{4}-\d{2}-\d{2}$/.test(den)) {
+      return out({ ok: false, error: "bad_date" });
+    }
 
     const url = "https://lc.kbs.sk/?den=" + encodeURIComponent(den) + "&offline=";
-    try{
+
+    try {
       const resp = UrlFetchApp.fetch(url, {
-        muteHttpExceptions:true,
-        followRedirects:true,
-        headers:{
-          "User-Agent":"Mozilla/5.0 (Spevnik; GAS)",
-          "Accept-Language":"sk-SK,sk;q=0.9,en;q=0.8",
-          "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        muteHttpExceptions: true,
+        followRedirects: true,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Spevnik; GAS)",
+          "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         }
       });
+
       const code = resp.getResponseCode();
       const html = resp.getContentText() || "";
-      if (code < 200 || code >= 300 || !html) return out({ ok:false, error:"http_"+code });
-      const text = _htmlToText_(html);
-      return out({ ok:true, den, text, variants:[{ label:"Féria", title:"", text }] });
-    }catch(err){
-      return out({ ok:false, error:"fetch_failed", detail:String(err) });
+
+      if (code < 200 || code >= 300 || !html) {
+        return out({ ok: false, error: "http_" + code });
+      }
+
+      const text = _htmlToText(html);
+
+      return out({
+        ok: true,
+        den,
+        text,
+        variants: [{ label: "Féria", title: "", text }]
+      });
+
+    } catch (err) {
+      return out({ ok: false, error: "fetch_failed", detail: String(err) });
     }
   }
 
-  // --- LIT OVERRIDES ---
-  if (action === "litOverrideGet"){
-    const folder = _getOrCreateFolder_();
-    const data = _readJsonFileInFolder_(folder, LIT_OVERRIDES_FILE) || { overrides:{} };
-    return out({ ok:true, data });
+  // ===== LIT OVERRIDES GET/SAVE/DELETE =====
+  if (action === "litOverrideGet") {
+    const folder = getOrCreateFolder();
+    const data = readJsonFileInFolder(folder, LIT_OVERRIDES_FILE, { overrides: {} });
+    return out({ ok: true, data });
   }
 
-  if (action === "litOverrideSave"){
-    const sess = _requirePerm_(String(p.pwd||""), ["C"]);
-    if (!sess) return out({ ok:false, error:"unauthorized" });
+  if (action === "litOverrideSave") {
+    const { folder, session } = requireSession();
+    if (!session || !hasPerm(session,'C')) return out({ ok: false, error: "unauthorized" });
 
-    const key = String(p.key||"");
-    const payload = String(p.payload||"");
-    if (!key || !payload) return out({ ok:false, error:"missing_key_or_payload" });
+    const key = p.key ? String(p.key) : "";
+    const payload = p.payload ? String(p.payload) : "";
+    if (!key || !payload) return out({ ok: false, error: "missing_key_or_payload" });
 
     let obj;
-    try{ obj = JSON.parse(payload); }catch(e){ return out({ ok:false, error:"bad_payload_json" }); }
+    try { obj = JSON.parse(payload); } catch (e) { return out({ ok:false, error:"bad_payload_json" }); }
 
-    const folder = _getOrCreateFolder_();
-    const data = _readJsonFileInFolder_(folder, LIT_OVERRIDES_FILE) || { overrides:{} };
+    const data = readJsonFileInFolder(folder, LIT_OVERRIDES_FILE, { overrides: {} });
     data.overrides[key] = obj;
-    _writeJsonFileInFolder_(folder, LIT_OVERRIDES_FILE, data);
+    writeJsonFileInFolder(folder, LIT_OVERRIDES_FILE, data);
+
+    return out({ ok: true });
+  }
+
+  if (action === "litOverrideDelete") {
+    const { folder, session } = requireSession();
+    if (!session || !hasPerm(session,'C')) return out({ ok: false, error: "unauthorized" });
+
+    const key = p.key ? String(p.key) : "";
+    if (!key) return out({ ok: false, error: "missing_key" });
+
+    const data = readJsonFileInFolder(folder, LIT_OVERRIDES_FILE, { overrides: {} });
+    if (data.overrides && data.overrides[key]) {
+      delete data.overrides[key];
+      writeJsonFileInFolder(folder, LIT_OVERRIDES_FILE, data);
+    }
+    return out({ ok: true });
+  }
+
+  // ===== SONG SAVE (D/E) =====
+
+  function firstChordFromText(txt){
+    const m = String(txt||"").match(/\[([^\]]+)\]/);
+    if (!m) return "";
+    return String(m[1]||"").trim();
+  }
+
+  function normalizeKey(k){
+    // take first token up to whitespace or slash
+    const s = String(k||"").trim();
+    if (!s) return "";
+    return s.split(/[\s/]+/)[0];
+  }
+
+  function pushSongVersion(folder, songId, who, title, author, songtext){
+    const data = readJsonFileInFolder(folder, SONG_VERS_FILE, { versions: {} });
+    if (!data.versions) data.versions = {};
+    const sid = String(songId);
+    const arr = Array.isArray(data.versions[sid]) ? data.versions[sid] : [];
+    arr.unshift({ ts: Date.now(), who: who||"", song: { id:sid, title:title||"", author:author||"", songtext:songtext||"" } });
+    while (arr.length > 10) arr.pop();
+    data.versions[sid] = arr;
+    writeJsonFileInFolder(folder, SONG_VERS_FILE, data);
+  }
+
+  function addChange(folder, entry){
+    const data = readJsonFileInFolder(folder, CHANGES_FILE, { list: [] });
+    const arr = Array.isArray(data.list) ? data.list : [];
+    arr.unshift(entry);
+    while (arr.length > 50) arr.pop();
+    data.list = arr;
+    writeJsonFileInFolder(folder, CHANGES_FILE, data);
+  }
+
+  function addKeyHistory(folder, songId, who, fromKey, toKey){
+    const data = readJsonFileInFolder(folder, KEY_HIST_FILE, { keys: {} });
+    if (!data.keys) data.keys = {};
+    const sid = String(songId);
+    const arr = Array.isArray(data.keys[sid]) ? data.keys[sid] : [];
+    const ts = String(new Date().getTime());
+    arr.unshift({ ts, who: who||"", date: "1.1.2026", from: fromKey||"", to: toKey||"" });
+    data.keys[sid] = arr;
+    writeJsonFileInFolder(folder, KEY_HIST_FILE, data);
+  }
+
+  function getKeyHistory(folder, songId){
+    const data = readJsonFileInFolder(folder, KEY_HIST_FILE, { keys: {} });
+    const sid = String(songId);
+    const arr = data.keys && Array.isArray(data.keys[sid]) ? data.keys[sid] : [];
+    return arr;
+  }
+
+  function updateSongInXml(xml, payload){
+    const sid = String(payload.id||"").trim();
+    const title = String(payload.title||"");
+    const author = String(payload.author||"");
+    const songtext = String(payload.songtext||"");
+
+    if (!sid) throw new Error('missing_id');
+
+    // match <song> block containing this ID
+    const re = new RegExp(`(<song>[\\s\\S]*?<ID><!\\[CDATA\\[${escapeRegExp(sid)}\\]\\]><\\/ID>[\\s\\S]*?<\\/song>)`, 'm');
+    const m = xml.match(re);
+
+    function replCdata(block, tag, value){
+      const r = new RegExp(`(<${tag}><!\\[CDATA\\[)[\\s\\S]*?(\\]\\]><\\/${tag}>)`, 'm');
+      if (r.test(block)) return block.replace(r, `$1${value}$2`);
+      // if missing, insert before </song>
+      return block.replace(/<\/song>\s*$/m, `  <${tag}><![CDATA[${value}]]></${tag}>\n</song>`);
+    }
+
+    if (m && m[1]){
+      let block = m[1];
+      block = replCdata(block, 'author', author);
+      block = replCdata(block, 'title', title);
+      block = replCdata(block, 'songtext', songtext);
+      return xml.replace(re, block);
+    }
+
+    // not found => create new
+    const lang = 'cz';
+    const newSong = [
+      '    <song>',
+      `        <ID><![CDATA[${sid}]]></ID>`,
+      `        <lang><![CDATA[${lang}]]></lang>`,
+      `        <songtext><![CDATA[${songtext}]]></songtext>`,
+      `        <author><![CDATA[${author}]]></author>`,
+      '        <authorId><![CDATA[]]></authorId>',
+      '        <groupname><![CDATA[[local]]]></groupname>',
+      `        <title><![CDATA[${title}]]></title>`,
+      '    </song>'
+    ].join('\n');
+
+    // insert before </InetSongDb>
+    const outXml = xml.replace(/\n<\/InetSongDb>\s*$/m, `\n${newSong}\n</InetSongDb>`);
+    if (outXml === xml) {
+      // fallback if formatting differs
+      return xml.replace(/<\/InetSongDb>\s*$/m, `\n${newSong}\n</InetSongDb>`);
+    }
+    return outXml;
+  }
+
+  function writeExportXml(xml){
+    // create new root file and keep last 5
+    const old = DriveApp.getFilesByName(MAIN_FILE_NAME);
+    while (old.hasNext()) old.next().setTrashed(true);
+    DriveApp.createFile(MAIN_FILE_NAME, xml, MimeType.XML);
+
+    const all = [];
+    const files = DriveApp.getFilesByName(MAIN_FILE_NAME);
+    while (files.hasNext()) {
+      const f = files.next();
+      if (!f.isTrashed()) all.push(f);
+    }
+    all.sort((a, b) => b.getLastUpdated().getTime() - a.getLastUpdated().getTime());
+    for (let i = 5; i < all.length; i++) all[i].setTrashed(true);
+
+    return newestFileByNameRoot(MAIN_FILE_NAME);
+  }
+
+  if (action === "songSave") {
+    const { folder, session } = requireSession();
+    if (!session) return out({ ok:false, error:"unauthorized" });
+    if (!(hasPerm(session,'D') || hasPerm(session,'E'))) return out({ ok:false, error:"forbidden" });
+
+    const payloadRaw = p.payload ? String(p.payload) : "";
+    let payload;
+    try { payload = JSON.parse(payloadRaw); } catch(e){ return out({ ok:false, error:"bad_payload" }); }
+
+    const sid = String(payload.id||"").trim();
+    if (!sid) return out({ ok:false, error:"missing_id" });
+
+    const exportFile = newestFileByNameRoot(MAIN_FILE_NAME);
+    if (!exportFile) return out({ ok:false, error:"export_missing" });
+
+    const xmlOld = exportFile.getBlob().getDataAsString("UTF-8");
+    const beforeKey = normalizeKey(firstChordFromText(xmlOld.match(new RegExp(`<song>[\\s\\S]*?<ID><!\\[CDATA\\[${escapeRegExp(sid)}\\]\\]><\\/ID>[\\s\\S]*?<songtext><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/songtext>`, 'm'))?.[1] || ""));
+    const afterKey = normalizeKey(firstChordFromText(payload.songtext || ""));
+
+    // store version BEFORE change for owner
+    try{
+      pushSongVersion(folder, sid, session.name || "", String(payload.title||""), String(payload.author||""), String(payload.songtext||""));
+    }catch(e){}
+
+    // update xml
+    let xmlNew;
+    try { xmlNew = updateSongInXml(xmlOld, payload); } catch(err){ return out({ ok:false, error:"xml_update_failed", detail:String(err) }); }
+
+    const newFile = writeExportXml(xmlNew);
+
+    // key history
+    try{
+      if (afterKey && afterKey !== beforeKey) addKeyHistory(folder, sid, session.name || "", beforeKey, afterKey);
+    }catch(e){}
+
+    // changes feed
+    try{
+      addChange(folder, {
+        ts: Date.now(),
+        who: session.name || "",
+        type: payload.isNew ? 'new_song' : 'edit_song',
+        songId: sid,
+        title: String(payload.title||""),
+        author: String(payload.author||"")
+      });
+    }catch(e){}
+
+    return out({ ok:true, exportMtime: safeMtime(newFile) });
+  }
+
+  if (action === "songVersions") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+    const id = p.id ? String(p.id) : "";
+    const data = readJsonFileInFolder(folder, SONG_VERS_FILE, { versions: {} });
+    const arr = (data.versions && Array.isArray(data.versions[id])) ? data.versions[id] : [];
+    return out({ ok:true, id, versions: arr });
+  }
+
+  // key history API (public list; delete/clear owner)
+  if (action === "keyHistoryGet") {
+    const folder = getOrCreateFolder();
+    const id = p.id ? String(p.id) : "";
+    return out({ ok:true, id, list: getKeyHistory(folder, id) });
+  }
+
+  if (action === "keyHistoryDelete") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+    const id = p.id ? String(p.id) : "";
+    const ts = p.ts ? String(p.ts) : "";
+    const data = readJsonFileInFolder(folder, KEY_HIST_FILE, { keys: {} });
+    const arr = (data.keys && Array.isArray(data.keys[id])) ? data.keys[id] : [];
+    data.keys[id] = arr.filter(r => String(r.ts||"") !== ts);
+    writeJsonFileInFolder(folder, KEY_HIST_FILE, data);
     return out({ ok:true });
   }
 
-  if (action === "litOverrideDelete"){
-    const sess = _requirePerm_(String(p.pwd||""), ["C"]);
-    if (!sess) return out({ ok:false, error:"unauthorized" });
-
-    const key = String(p.key||"");
-    if (!key) return out({ ok:false, error:"missing_key" });
-
-    const folder = _getOrCreateFolder_();
-    const data = _readJsonFileInFolder_(folder, LIT_OVERRIDES_FILE) || { overrides:{} };
-    if (data.overrides && data.overrides[key]) delete data.overrides[key];
-    _writeJsonFileInFolder_(folder, LIT_OVERRIDES_FILE, data);
+  if (action === "keyHistoryClear") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+    const id = p.id ? String(p.id) : "";
+    const data = readJsonFileInFolder(folder, KEY_HIST_FILE, { keys: {} });
+    if (data.keys) data.keys[id] = [];
+    writeJsonFileInFolder(folder, KEY_HIST_FILE, data);
     return out({ ok:true });
   }
 
-  // --- DEFAULT: return export XML ---
-  const newest = _newestFileByNameRoot_(MAIN_FILE_NAME);
+  // changes feed (owner)
+  if (action === "changesGet") {
+    const { folder, session } = requireSession();
+    if (!session || !session.isOwner) return out({ ok:false, error:"unauthorized" });
+    const data = readJsonFileInFolder(folder, CHANGES_FILE, { list: [] });
+    return out({ ok:true, list: Array.isArray(data.list) ? data.list : [] });
+  }
+
+  // DEFAULT: return export XML
+  const newest = newestFileByNameRoot(MAIN_FILE_NAME);
   const xml = newest ? newest.getBlob().getDataAsString("UTF-8") : "";
-  _keepOnlyNewestRootExport_();
 
-  if (callback) return out({ ok:true, xml });
-  return ContentService.createTextOutput(xml).setMimeType(ContentService.MimeType.XML);
-}
-
-// ================= Helpers =================
-
-function _mergeParams_(e){
-  const p = {};
-  const ep = (e && e.parameter) ? e.parameter : {};
-  Object.keys(ep).forEach(k => p[k] = ep[k]);
-
-  try{
-    if (e && e.postData && e.postData.contents){
-      const body = String(e.postData.contents || "");
-      if (body){
-        // JSON
-        try{
-          const obj = JSON.parse(body);
-          if (obj && typeof obj === 'object'){
-            Object.keys(obj).forEach(k => { if (p[k] == null) p[k] = obj[k]; });
-            return p;
-          }
-        }catch(_){ }
-
-        // x-www-form-urlencoded
-        if (body.includes('=')){
-          body.split('&').forEach(pair => {
-            const idx = pair.indexOf('=');
-            if (idx < 0) return;
-            const k = decodeURIComponent(pair.slice(0, idx));
-            const v = decodeURIComponent(pair.slice(idx+1));
-            if (p[k] == null) p[k] = v;
-          });
-        }
-      }
-    }
-  }catch(e2){}
-
-  return p;
-}
-
-function _sha256Hex_(s){
-  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s||""), Utilities.Charset.UTF_8);
-  return bytes.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-}
-
-function _isDeletedMarker_(s){ return typeof s === 'string' && s.trim() === 'deleted'; }
-
-function _getOrCreateFolder_(){
-  const it = DriveApp.getFoldersByName(FOLDER_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
-}
-
-function _newestFileByNameInFolder_(name, folder){
-  const it = folder.getFilesByName(name);
-  let newest = null;
-  while (it.hasNext()){
-    const f = it.next();
-    if (f.isTrashed()) continue;
-    if (!newest || f.getLastUpdated().getTime() > newest.getLastUpdated().getTime()) newest = f;
+  // keep last 5 root export copies
+  const all = [];
+  const files = DriveApp.getFilesByName(MAIN_FILE_NAME);
+  while (files.hasNext()) {
+    const f = files.next();
+    if (!f.isTrashed()) all.push(f);
   }
-  return newest;
+  all.sort((a, b) => b.getLastUpdated().getTime() - a.getLastUpdated().getTime());
+  for (let i = 5; i < all.length; i++) all[i].setTrashed(true);
+
+  if (callback) return out({ ok:true, xml: xml });
+
+  return ContentService
+    .createTextOutput(xml)
+    .setMimeType(ContentService.MimeType.XML);
 }
 
-function _newestFileByNameRoot_(name){
-  const it = DriveApp.getFilesByName(name);
-  let newest = null;
-  while (it.hasNext()){
-    const f = it.next();
-    if (f.isTrashed()) continue;
-    if (!newest || f.getLastUpdated().getTime() > newest.getLastUpdated().getTime()) newest = f;
-  }
-  return newest;
-}
-
-function _safeMtime_(file){
-  if (!file) return 0;
-  try{
-    const c = file.getBlob().getDataAsString();
-    if (_isDeletedMarker_(c)) return 0;
-  }catch(e){}
-  return file.getLastUpdated().getTime();
-}
-
-function _readJsonFileInFolder_(folder, name){
-  const f = _newestFileByNameInFolder_(name, folder);
-  if (!f) return null;
-  const txt = f.getBlob().getDataAsString('UTF-8');
-  if (!txt || _isDeletedMarker_(txt)) return null;
-  try{ return JSON.parse(txt); }catch(e){ return null; }
-}
-
-function _writeJsonFileInFolder_(folder, name, obj){
-  const old = folder.getFilesByName(name);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(name, JSON.stringify(obj, null, 2), MimeType.PLAIN_TEXT);
-}
-
-function _replaceFileInFolder_(folder, name, content){
-  const old = folder.getFilesByName(name);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(name, String(content||""), MimeType.PLAIN_TEXT);
-}
-
-function _keepOnlyNewestRootExport_(){
-  const arr = [];
-  const it = DriveApp.getFilesByName(MAIN_FILE_NAME);
-  while (it.hasNext()){
-    const f = it.next();
-    if (!f.isTrashed()) arr.push(f);
-  }
-  arr.sort((a,b)=>b.getLastUpdated().getTime()-a.getLastUpdated().getTime());
-  for (let i=1;i<arr.length;i++){
-    try{ arr[i].setTrashed(true); }catch(e){}
-  }
-}
-
-function _ensureBackupFolder_(){
-  const it = DriveApp.getFoldersByName(EXPORT_BACKUP_FOLDER);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(EXPORT_BACKUP_FOLDER);
-}
-
-function _rotateBackups_(folder){
-  const arr = [];
-  const it = folder.getFiles();
-  while (it.hasNext()){
-    const f = it.next();
-    if (!f.isTrashed()) arr.push(f);
-  }
-  arr.sort((a,b)=>b.getLastUpdated().getTime()-a.getLastUpdated().getTime());
-  for (let i=EXPORT_BACKUP_KEEP;i<arr.length;i++){
-    try{ arr[i].setTrashed(true); }catch(e){}
-  }
-}
-
-function _backupExport_(xmlText){
-  try{
-    const folder = _ensureBackupFolder_();
-    const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
-    // IMPORTANT: DriveApp MimeType.XML is NOT valid -> store as plain text
-    folder.createFile(MAIN_FILE_NAME + ' ' + ts, xmlText, MimeType.PLAIN_TEXT);
-    _rotateBackups_(folder);
-  }catch(e){}
-}
-
-function _publishExport_(xmlText){
-  _backupExport_(xmlText);
-  DriveApp.createFile(MAIN_FILE_NAME, xmlText, MimeType.PLAIN_TEXT);
-  _keepOnlyNewestRootExport_();
-}
-
-function _isOwnerPwd_(pwd){ return String(pwd||"") === OWNER_PWD; }
-
-function _sessionFromPwd_(pwd){
-  const pass = String(pwd||"");
-  if (!pass) return null;
-  if (pass === OWNER_PWD){
-    return { isOwner:true, name:OWNER_NAME, perms:{A:true,B:true,C:true,D:true,E:true} };
-  }
-  const folder = _getOrCreateFolder_();
-  const db = _readJsonFileInFolder_(folder, ADMINS_FILE) || { admins:{} };
-  const hash = _sha256Hex_(pass);
-  const a = (db.admins && db.admins[hash]) ? db.admins[hash] : null;
-  if (!a) return null;
-  const pr = a.perms || {};
-  return { isOwner:false, name:String(a.name||"Admin"), perms:{A:!!pr.A,B:!!pr.B,C:!!pr.C,D:!!pr.D,E:!!pr.E} };
-}
-
-function _requirePerm_(pwd, list){
-  const sess = _sessionFromPwd_(pwd);
-  if (!sess) return null;
-  if (sess.isOwner) return sess;
-  for (const c of list){
-    if (sess.perms && sess.perms[c]) return sess;
-  }
-  return null;
-}
-
-function _getChildText_(el, ns, tag){
-  const c = el.getChild(tag, ns);
-  return c ? c.getText() : "";
-}
-
-function _songToPlain_(songEl, ns){
-  const tags = ["ID","lang","songtext","author","authorId","groupname","title","youtube","step"];
-  const o = {};
-  tags.forEach(t => o[t] = _getChildText_(songEl, ns, t));
-  return o;
-}
-
-function _setChildCdata_(songEl, ns, tag, value){
-  let el = songEl.getChild(tag, ns);
-  if (!el){
-    el = XmlService.createElement(tag, ns);
-    songEl.addContent(el);
-  }
-  el.removeContent();
-  el.addContent(XmlService.createCdata(String(value||"")));
-}
-
-function _saveSongVersion_(id, plainSong, who){
-  const folder = _getOrCreateFolder_();
-  const db = _readJsonFileInFolder_(folder, SONG_VERSIONS_FILE) || { versions:{} };
-  if (!db.versions) db.versions = {};
-  if (!db.versions[id]) db.versions[id] = [];
-  db.versions[id].unshift({ ts: Date.now(), who, song: plainSong });
-  while (db.versions[id].length > SONG_VERSION_KEEP) db.versions[id].pop();
-  _writeJsonFileInFolder_(folder, SONG_VERSIONS_FILE, db);
-}
-
-function _extractChords_(txt){
-  const m = String(txt||"").match(/\[[^\]]*\]/g) || [];
-  return m.join('|');
-}
-
-function _normalizeToSharps_(note){
-  const n = String(note||"").toUpperCase();
-  const map = { "DB":"C#","EB":"D#","GB":"F#","AB":"G#","BB":"A#","CB":"B","FB":"E" };
-  return map[n] || n;
-}
-
-function _firstChordRoot_(txt){
-  const m = String(txt||"").match(/\[([^\]]+)\]/);
-  if (!m) return "";
-  const chord = String(m[1]||"").trim();
-  if (!chord) return "";
-  const mm = chord.match(/^([A-G])([#b]?)/i);
-  if (!mm) return "";
-  return _normalizeToSharps_((mm[1]||"").toUpperCase() + (mm[2]||""));
-}
-
-function _maybeAppendKeyHistory_(songId, oldKey, newKey, who, existed){
-  newKey = String(newKey||"");
-  oldKey = String(oldKey||"");
-  if (!newKey) return;
-
-  // B: always check on save and write only if changed or new
-  const should = (!existed) || (oldKey && oldKey !== newKey);
-  if (!should) return;
-
-  const folder = _getOrCreateFolder_();
-  const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-  if (!db.keys) db.keys = {};
-  if (!db.keys[songId]) db.keys[songId] = [];
-
-  db.keys[songId].push({ ts: Date.now(), who, from: existed ? oldKey : "", to: newKey });
-  _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, db);
-}
-
-function _appendChanges_(songId, num, title, who, ctx){
-  const existed = !!ctx.existed;
-  const oldPlain = ctx.oldPlain;
-  const newPlain = ctx.newPlain;
-  const transposeStep = ctx.transposeStep;
-
-  const types = [];
-  if (!existed) types.push('new');
-  if (existed && oldPlain){
-    if (String(oldPlain.title||"") !== String(title||"")) types.push('title');
-    if (String(oldPlain.author||"") !== String(num||"")) types.push('number');
-
-    // text compare without chords
-    const oldNoCh = String(oldPlain.songtext||"").replace(/\[[^\]]*\]/g, '');
-    const newNoCh = String(newPlain.songtext||"").replace(/\[[^\]]*\]/g, '');
-    if (oldNoCh !== newNoCh) types.push('text');
-
-    const oldCh = _extractChords_(oldPlain.songtext||"");
-    const newCh = _extractChords_(newPlain.songtext||"");
-    if (oldCh !== newCh){
-      if (transposeStep != null && isFinite(transposeStep)) types.push('transpose');
-      else types.push('chords');
-    }
-  }
-
-  // key change
-  const oldKey = oldPlain ? _firstChordRoot_(String(oldPlain.songtext||"")) : "";
-  const newKey = _firstChordRoot_(String(newPlain.songtext||""));
-  if (newKey && (oldKey !== newKey)) types.push('key');
-
-  if (!types.length) return;
-
-  const folder = _getOrCreateFolder_();
-  const db = _readJsonFileInFolder_(folder, SONG_CHANGES_FILE) || { list:[] };
-  if (!Array.isArray(db.list)) db.list = [];
-
-  const id = String(Date.now()) + '_' + String(songId);
-  db.list.unshift({
-    id,
-    ts: Date.now(),
-    who,
-    songId,
-    number: String(num||""),
-    title: String(title||""),
-    types,
-    titleFrom: oldPlain ? String(oldPlain.title||"") : "",
-    titleTo: String(title||""),
-    numberFrom: oldPlain ? String(oldPlain.author||"") : "",
-    numberTo: String(num||""),
-    keyFrom: oldKey,
-    keyTo: newKey
-  });
-
-  while (db.list.length > SONG_CHANGES_KEEP) db.list.pop();
-  _writeJsonFileInFolder_(folder, SONG_CHANGES_FILE, db);
-}
-
-function _htmlToText_(html){
+function _htmlToText(html) {
   if (!html) return "";
-  var t = String(html);
+  let t = String(html);
 
-  // Safe regexes (avoid copy/paste flag issues)
-  t = t.replace(new RegExp("<script[\\s\\S]*?<\\/script>", "gi"), "\n");
-  t = t.replace(new RegExp("<style[\\s\\S]*?<\\/style>", "gi"), "\n");
-  t = t.replace(new RegExp("<br\\s*\\/?>", "gi"), "\n");
-  t = t.replace(new RegExp("<\\/(p|div|li|tr|h1|h2|h3|h4|h5|h6)>", "gi"), "\n");
-  t = t.replace(new RegExp("<[^>]+>", "g"), " " );
+  t = t.replace(/<script[\s\S]*?<\/script>/gi, "\n");
+  t = t.replace(/<style[\s\S]*?<\/style>/gi, "\n");
+  t = t.replace(/<br\s*\/?\s*>/gi, "\n");
+  t = t.replace(/<\/(p|div|li|tr|h1|h2|h3|h4|h5|h6)>/gi, "\n");
+  t = t.replace(/<[^>]+>/g, " ");
 
-  t = t.replace(/&nbsp;/g, " " );
+  t = t.replace(/&nbsp;/g, " ");
   t = t.replace(/&amp;/g, "&");
   t = t.replace(/&quot;/g, "\"");
   t = t.replace(/&#39;/g, "'");
   t = t.replace(/&lt;/g, "<");
   t = t.replace(/&gt;/g, ">");
 
-  t = t.replace(/[ \t]+/g, " " );
+  t = t.replace(/[ \t]+/g, " ");
   t = t.replace(/\n[ \t]+/g, "\n");
   t = t.replace(/\n{3,}/g, "\n\n");
 
