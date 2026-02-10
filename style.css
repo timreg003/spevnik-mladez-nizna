@@ -14,7 +14,7 @@ body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0
 .container { max-width:700px; margin:auto; }
 
 .toast{
-  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
   background: #1e1e1e; border: 1px solid #333; color: #fff;
   padding: 10px 14px; border-radius: 12px; font-weight: 800;
   z-index: 999999; box-shadow: 0 8px 30px rgba(0,0,0,0.55);
@@ -1245,3 +1245,54 @@ body.present #presentControls{ display:flex; }
   background: rgba(0,0,0,0.12);
 }
 
+
+
+/* ===== v96 status panel (2 riadky) ===== */
+.status-panel{
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px;
+  z-index: 999999; max-width: 92vw; pointer-events: none;
+}
+.status-line{
+  display:none;
+  background: #1e1e1e; border: 1px solid #333; color: #fff;
+  padding: 10px 14px; border-radius: 12px; font-weight: 800;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+  text-align: center; pointer-events: none;
+}
+.status-line.ok{ border-color:#00c853; }
+.status-line.warn{ border-color:#ffbb33; }
+.status-line.err{ border-color:#ff4444; }
+
+/* Hard update overlay (blokovanie UI) */
+.app-update-overlay{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.70);
+  z-index: 1000000;
+  display: flex; align-items: center; justify-content: center;
+}
+.app-update-box{
+  background: #111; border: 1px solid #333;
+  padding: 18px 22px; border-radius: 16px;
+  max-width: 92vw;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.65);
+}
+.app-update-title{
+  color: #fff; font-weight: 900; font-size: 18px;
+}
+
+#admin-manage-btn{ margin-left: 10px; }
+
+
+/* ===== v96 diff (verzie piesne) ===== */
+.version-item{ border:1px solid #2d2d2d; border-radius:12px; padding:10px; margin:8px 0; background:#111; }
+.version-head{ display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; }
+.version-label{ font-weight:800; opacity:.95; }
+.version-actions{ display:flex; gap:8px; }
+.version-diff{ margin-top:10px; }
+.diff-wrap{ display:flex; gap:10px; flex-wrap:wrap; }
+.diff-col{ flex:1 1 260px; border:1px solid #2d2d2d; border-radius:12px; overflow:hidden; }
+.diff-title{ padding:8px 10px; font-weight:900; background:#0b0b0b; border-bottom:1px solid #2d2d2d; }
+.diff-pre{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; line-height:1.35; padding:8px 10px; }
+.diff-line{ white-space:pre-wrap; word-break:break-word; padding:2px 0; }
+.diff-line.diff-chg{ background: rgba(255, 68, 68, 0.10); }

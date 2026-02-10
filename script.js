@@ -46,10 +46,12 @@ function metaIsNewer(remote, seen){
   const rE = Number(remote.export || 0);
   const rD = Number(remote.dnes || 0);
   const rO = Number(remote.order || 0);
+  const rH = Number(remote.history || 0);
   const sE = Number(seen.export || 0);
   const sD = Number(seen.dnes || 0);
   const sO = Number(seen.order || 0);
-  return (rE > sE) || (rD > sD) || (rO > sO);
+  const sH = Number(seen.history || 0);
+  return (rE > sE) || (rD > sD) || (rO > sO) || (rH > sH);
 }
 function setUpdateBadgeVisible(on){
   // Update now runs automatically; keep the manual wheel hidden.
@@ -62,7 +64,7 @@ async function fetchRemoteMeta(){
   const data = await jsonpRequest(`${SCRIPT_URL}?action=meta`);
   const meta = (data && data.meta) ? data.meta : (data || null);
   if (meta && typeof meta === 'object') {
-    return { export: Number(meta.export||0), dnes: Number(meta.dnes||0), order: Number(meta.order||0) };
+    return { export: Number(meta.export||0), dnes: Number(meta.dnes||0), order: Number(meta.order||0), history: Number(meta.history||0) };
   }
   return null;
 }
@@ -73,7 +75,7 @@ async function checkMetaAndToggleBadge(){
   // - do NOT spam "Aktualizované" every minute
   if (!navigator.onLine){
     setUpdateBadgeVisible(false);
-    setSyncStatus("Offline", "sync-warn");
+    setSyncStatus("Offline", "warn", 0);
     return;
   }
 
@@ -122,16 +124,15 @@ function startMetaPolling(){
 
 async function runUpdateNow(fromAuto=false){
   if (!navigator.onLine){
-    showToast("Si offline – aktualizácia nie je dostupná.", false);
+    setSyncStatus("Offline", "warn", 0);
     return;
   }
   // zavri FAB menu (ak je otvorené) – len ak to spúšťa používateľ
   if (!fromAuto) { try { closeFabMenu(); } catch(e) {} }
   setUpdateBadgeVisible(false);
 
-  setSyncStatus("Aktualizujem…", "sync-warn");
+  setSyncStatus("Aktualizujem…", "warn", 0);
 
-  showToast("Aktualizujem...", true, 0);
 
   // fetch meta (aby sme po update vedeli badge schovať)
   try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
@@ -144,7 +145,7 @@ async function runUpdateNow(fromAuto=false){
   try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
   if (lastRemoteMeta) setSeenMeta(lastRemoteMeta);
 
-  setSyncStatus("Aktualizované", "sync-ok");
+  setSyncStatus("Aktualizované", "ok", 2000);
 
   // najstabilnejšie: tvrdý reload UI
   try{ renderAllSongs(); }catch(e){}
@@ -480,6 +481,10 @@ function applyPermsToUI(){
   const newWrap = document.getElementById('song-new-btn-wrap');
   if (newWrap) newWrap.style.display = (logged && (hasPerm('D') || hasPerm('E'))) ? 'block' : 'none';
 
+  // admin manage button near 'Nová pieseň' (owner only)
+  const admBtn = document.getElementById('admin-manage-btn');
+  if (admBtn) admBtn.style.display = (logged && isOwner()) ? '' : 'none';
+
   // collapse on show
   if (dnesPanel && dnesPanel.style.display === 'block') dnesPanel.classList.add('collapsed');
   if (plPanel && plPanel.style.display === 'block') plPanel.classList.add('collapsed');
@@ -641,32 +646,56 @@ function showToast(message, ok=true, durationMs=1700){
 }
 
 
-function setSyncStatus(text, kind){
-  return;
-  const el = document.getElementById('syncStatus');
-  if (!el) return;
+function _statusPanelEnsure(){
+  const panel = document.getElementById('statusPanel');
+  if (!panel) return null;
+  return panel;
+}
 
-  // clear any pending auto-hide timer
-  if (syncStatusTimer){
-    clearTimeout(syncStatusTimer);
-    syncStatusTimer = null;
+function _statusLineSet(id, text, kind, durationMs){
+  const panel = _statusPanelEnsure();
+  const el = document.getElementById(id);
+  if (!panel || !el) return;
+
+  // timers
+  if (!window.__statusTimers) window.__statusTimers = {};
+  const timers = window.__statusTimers;
+
+  // clear previous timer for this line
+  if (timers[id]){
+    clearTimeout(timers[id]);
+    timers[id] = null;
   }
 
-  el.textContent = text || '';
-  el.classList.remove('sync-ok','sync-warn','sync-err');
-  if (kind) el.classList.add(kind);
-
-  // Auto-hide "Aktualizované" after a short moment
-  if (el.textContent === "Aktualizované"){
-    syncStatusTimer = setTimeout(() => {
-      const el2 = document.getElementById('syncStatus');
-      if (!el2) return;
-      if (el2.textContent === "Aktualizované"){
-        el2.textContent = "";
-        el2.classList.remove('sync-ok','sync-warn','sync-err');
-      }
-    }, 1600);
+  if (!text){
+    el.textContent = '';
+    el.style.display = 'none';
+  } else {
+    el.textContent = text;
+    el.style.display = 'block';
+    el.classList.remove('ok','warn','err');
+    if (kind) el.classList.add(kind);
   }
+
+  // show/hide panel based on any visible line
+  const anyVisible = (document.getElementById('statusSave') && document.getElementById('statusSave').style.display !== 'none' && document.getElementById('statusSave').textContent)
+                  || (document.getElementById('statusSync') && document.getElementById('statusSync').style.display !== 'none' && document.getElementById('statusSync').textContent);
+  panel.style.display = anyVisible ? 'flex' : 'none';
+
+  // durationMs <= 0 => sticky
+  if (text && typeof durationMs === 'number' && durationMs > 0){
+    timers[id] = setTimeout(() => {
+      _statusLineSet(id, '', null, 0);
+    }, durationMs);
+  }
+}
+
+function setSaveStatus(text, kind, durationMs=1700){
+  _statusLineSet('statusSave', text, kind, durationMs);
+}
+
+function setSyncStatus(text, kind, durationMs=1700){
+  _statusLineSet('statusSync', text, kind, durationMs);
 }
 
 
@@ -879,21 +908,43 @@ function forceInitialCollapsed(){
 }
 
 /* ===== HOME UI ===== */
-function goHomeUI() {
-  if (!confirmDiscardEdits()) return;
+function forceCollapseAllSections(){
+  const sections = ['dnes','playlists','all','lit','history'];
+  sections.forEach(sec=>{
+    const content = document.getElementById(sec+'-section-wrapper');
+    const chev = document.getElementById(sec+'-chevron');
+    if (content) content.style.display = 'none';
+    if (chev) chev.classList.remove('open');
+  });
+}
+
+function goHomeUI(force=false) {
+  if (!force && !confirmDiscardEdits()) return;
   stopAutoscroll();
   closeSong();
   playlistViewName = null;
   renderPlaylistsUI(true);
   loadHistoryCacheFirst(true);
-  document.getElementById('search').value = "";
+
+  const s = document.getElementById('search');
+  if (s) s.value = "";
   filterSongs();
 
-  toggleSection('dnes', false);
-  toggleSection('playlists', false);
-  toggleSection('all', false);
+  forceCollapseAllSections();
 
   window.scrollTo(0,0);
+}
+
+
+function openAdminsManager(){
+  if (!isOwner()) return;
+  const adPanel = document.getElementById('admins-editor-panel');
+  if (!adPanel) return;
+  adPanel.style.display = 'block';
+  adPanel.classList.remove('collapsed');
+  // ensure it is visible even if someone collapsed sections
+  try{ adPanel.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
+  try{ loadAdmins(); }catch(e){}
 }
 
 /* ===== LOGIN ===== */
@@ -1154,6 +1205,14 @@ function openSongById(id, source) {
     currentDnesOrder = it ? String(it.order||'') : '';
   } else if (source === 'playlist') {
     currentDnesOrder = '';
+    // ensure arrows stay inside this playlist
+    try{
+      if (playlistViewName){
+        const raw = (localStorage.getItem('playlist_' + playlistViewName) || '').trim();
+        const ids = raw ? raw.split(',').map(x=>x.trim()).filter(Boolean) : [];
+        currentModeList = ids.map(pid => songs.find(x => x.id === pid)).filter(Boolean);
+      }
+    }catch(e){}
   } else {
     currentModeList = [...songs];
     currentDnesOrder = '';
@@ -3325,6 +3384,8 @@ async function loadPlaylistsFromDrive() {
     if (low === "liturgiaoverrides") return false;
     if (low === "_liturgiaoverrides") return false;
     if (low === "liturgiaoverrides.json") return false;
+    if (low.includes("songversion")) return false;
+    if (low.endsWith(".json")) return false;
     return true;
   });
   const names = list.map(p => p.name);
@@ -3856,40 +3917,63 @@ function hardReset(){
   return hardResetApp();
 }
 
+async function _lockAppUpdateOverlay(text){
+  const ov = document.getElementById('appUpdateOverlay');
+  const tx = document.getElementById('appUpdateText');
+  if (!ov || !tx) return;
+  tx.textContent = text || '';
+  ov.style.display = 'flex';
+  ov.setAttribute('aria-hidden','false');
+  // block scrolling under overlay
+  document.body.dataset._prevOverflow = document.body.style.overflow || '';
+  document.body.style.overflow = 'hidden';
+}
+function _unlockAppUpdateOverlay(){
+  const ov = document.getElementById('appUpdateOverlay');
+  if (!ov) return;
+  ov.style.display = 'none';
+  ov.setAttribute('aria-hidden','true');
+  const prev = document.body.dataset._prevOverflow;
+  document.body.style.overflow = prev != null ? prev : '';
+  delete document.body.dataset._prevOverflow;
+}
+
 async function hardResetApp() {
   if (!navigator.onLine){
-    showToast("Si offline – aktualizácia nie je dostupná.", false);
+    showToast("Si offline – aktualizácia aplikácie nie je dostupná.", false);
     return;
   }
 
-  // Toto je "Aktualizovať aplikáciu" z ozubeného kolieska:
-  // hneď zbaľ všetko a počas celej operácie nech dole svieti "Aktualizujem…"
   try { closeFabMenu(); } catch(e) {}
-  try { forceInitialCollapsed(); } catch(e) {}
 
-  setSyncStatus("Aktualizujem…", "sync-warn");
-  showToast("Aktualizujem...", true, 0);
+  // hneď plochu + zbalenie + vyčistenie vyhľadávania
+  try { goHomeUI(true); } catch(e) {}
 
-  if (!confirm("Vymazať pamäť?")){
-    setSyncStatus("Zrušené", "sync-warn");
-    showToast("Zrušené", true, 1200);
-    return;
-  }
+  // lock UI + hláška pre app update
+  _lockAppUpdateOverlay("Aktualizujem aplikáciu…");
 
+  // paralelne spusti aj sync dát (aby si videl obe hlášky)
+  try { setSyncStatus("Aktualizujem…", "warn", 0); } catch(e) {}
+  try { await runUpdateNow(true); } catch(e) {}
+
+  // vymaž cache + localStorage a urob tvrdý reload
   try{ localStorage.clear(); }catch(e){}
   try{
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
   } catch (e) {}
 
-  setSyncStatus("Aktualizované", "sync-ok");
-  showToast("Aktualizované", true, 1600);
+  // ukončenie app update hlášky (na 2s)
+  try { document.getElementById('appUpdateText').textContent = "Aplikácia aktualizovaná"; } catch(e) {}
+  await new Promise(r=>setTimeout(r, 2000));
 
-  // tvrdý reload s cache-busting URL (spoľahlivejšie než location.reload(true))
+  _unlockAppUpdateOverlay();
+
+  // tvrdý reload s cache-busting URL
   try{
     const base = location.href.split('#')[0].split('?')[0];
     const hash = location.hash || '';
-    location.replace(base + '?v=95&ts=' + Date.now() + hash);
+    location.replace(base + '?v=96&ts=' + Date.now() + hash);
   }catch(e){
     try{ location.reload(); }catch(e2){}
   }
@@ -4045,7 +4129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // vždy začni na domovskej obrazovke (zoznam)
   try{ closeSong(); }catch(e){}
 
-  setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "sync-warn" : "sync-warn");
+  setSyncStatus(navigator.onLine ? "Aktualizujem…" : "Offline", navigator.onLine ? "warn" : "warn");
   // restore song font size (detail)
   const savedSong = parseInt(localStorage.getItem(LS_SONG_FONT_SIZE) || String(fontSize), 10);
   if (!isNaN(savedSong)) fontSize = Math.max(12, Math.min(34, savedSong));
@@ -4069,9 +4153,8 @@ if ('serviceWorker' in navigator) {
 
       reg.addEventListener('updatefound', () => {
         // show "Aktualizujem…" while new SW is installing
-        setSyncStatus("Aktualizujem…", "sync-warn");
-        showToast("Aktualizujem...", true, 0);
-      });
+        setSyncStatus("Aktualizujem…", "warn", 0);
+            });
     }).catch(()=>{});
   } catch(e) {}
   // When the new SW takes control, reload to use the new files.
@@ -4081,7 +4164,7 @@ if ('serviceWorker' in navigator) {
     let hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (reloaded) return;
-      setSyncStatus("Aktualizované", "sync-ok");
+      setSyncStatus("Aktualizované", "ok", 2000);
       showToast("Aktualizované", true, 1800);
       if (!hadController){
         // first install – just mark as ready
@@ -6222,6 +6305,230 @@ function openSongEditorForCurrent(){
   if (!(hasPerm('D') || hasPerm('E')) || !currentSong) return;
   openSongEditorWithSong(currentSong.id);
 }
+
+function toggleBackupMore(force){
+  const wrap = document.getElementById('backup-more-wrap');
+  if (!wrap) return;
+  const open = (wrap.style.display !== 'none');
+  const willOpen = (force == null) ? !open : !!force;
+  wrap.style.display = willOpen ? 'block' : 'none';
+}
+
+/* ===== v96: Editor transpozícia akordov (uložiť natrvalo) ===== */
+let __editorTransposeBaseText = null;
+
+function _normalizeNoteToken(tok){
+  // support Slovak naming (B= Bb, H = B natural) and flats
+  const t = String(tok||'').trim();
+  if (!t) return t;
+  // keep case as written (we'll output with outSharp list below)
+  return t;
+}
+
+function _transposeRoot(note, step, preferFlat=false){
+  const map = {
+    "C":0, "C#":1, "DB":1,
+    "D":2, "D#":3, "EB":3,
+    "E":4,
+    "F":5, "F#":6, "GB":6,
+    "G":7, "G#":8, "AB":8,
+    "A":9, "A#":10, "BB":10,
+    "B":10, // in this app: B = Bb
+    "H":11
+  };
+  const outSharp = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
+  const outFlat  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","B","H"];
+
+  const normKey = String(note||'').toUpperCase().replace(/\s+/g,'');
+  const idx = map[normKey];
+  if (idx == null) return note;
+
+  let newIdx = (idx + step) % 12;
+  while (newIdx < 0) newIdx += 12;
+  return (preferFlat ? outFlat : outSharp)[newIdx];
+}
+
+function _transposeChordStrict(ch, step){
+  const s = String(ch||'').trim();
+  if (!s) return s;
+
+  // split optional slash bass
+  const parts = s.split('/');
+  const main = parts[0];
+  const bass = parts.length > 1 ? parts[1] : null;
+
+  // main: root note + rest
+  const m = /^\s*([A-Ha-h])([#b]?)(.*)$/.exec(main);
+  if (!m) return s;
+
+  const ltr = m[1].toUpperCase();
+  const acc = (m[2]||'');
+  const rest = m[3]||'';
+  const preferFlat = (acc.toLowerCase()==='b' && ltr !== 'B');
+
+  const root = _transposeRoot((ltr+acc).toUpperCase(), step, preferFlat);
+  let out = root + rest;
+
+  if (bass){
+    const mb = /^\s*([A-Ha-h])([#b]?)(.*)$/.exec(bass);
+    if (mb){
+      const bl = mb[1].toUpperCase();
+      const ba = (mb[2]||'');
+      const br = mb[3]||'';
+      const bPreferFlat = (ba.toLowerCase()==='b' && bl !== 'B');
+      const bRoot = _transposeRoot((bl+ba).toUpperCase(), step, bPreferFlat);
+      out += '/' + bRoot + br;
+    } else {
+      out += '/' + bass;
+    }
+  }
+  return out;
+}
+
+function editorTranspose(step){
+  if (!(isOwner() || hasPerm('E'))) return;
+  const ta = document.getElementById('se-text');
+  if (!ta) return;
+
+  // first transpose remembers base, so Reset returns to exact original
+  if (__editorTransposeBaseText == null) __editorTransposeBaseText = String(ta.value||'');
+
+  const src = String(ta.value||'');
+  const next = src.replace(CHORD_TOKEN_RE_G, (m0, c) => `[${_transposeChordStrict(c, step)}]`);
+  ta.value = next;
+}
+
+function editorTransposeReset(){
+  if (!(isOwner() || hasPerm('E'))) return;
+  const ta = document.getElementById('se-text');
+  if (!ta) return;
+  if (__editorTransposeBaseText != null){
+    ta.value = __editorTransposeBaseText;
+  }
+  __editorTransposeBaseText = null;
+}
+
+/* ===== v96: Verzie piesne (owner) ===== */
+let __songVersionsCache = [];
+
+function _fmtTs(ts){
+  try{
+    const d = new Date(Number(ts||0));
+    if (isNaN(d.getTime())) return String(ts||'');
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }catch(e){ return String(ts||''); }
+}
+
+function _escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _diffHtml(a,b){
+  const A = String(a||'').split(/\r?\n/);
+  const B = String(b||'').split(/\r?\n/);
+  const n = Math.max(A.length, B.length);
+  let outA = [];
+  let outB = [];
+  for (let i=0;i<n;i++){
+    const la = A[i] ?? '';
+    const lb = B[i] ?? '';
+    const same = la === lb;
+    const cls = same ? 'diff-same' : 'diff-chg';
+    outA.push(`<div class="diff-line ${cls}">${_escapeHtml(la)}</div>`);
+    outB.push(`<div class="diff-line ${cls}">${_escapeHtml(lb)}</div>`);
+  }
+  return `<div class="diff-wrap">
+    <div class="diff-col"><div class="diff-title">Vybraná</div><div class="diff-pre">${outA.join('')}</div></div>
+    <div class="diff-col"><div class="diff-title">Aktuálna</div><div class="diff-pre">${outB.join('')}</div></div>
+  </div>`;
+}
+
+function renderSongVersionsUI(list){
+  const box = document.getElementById('song-versions-list');
+  if (!box) return;
+  const arr = Array.isArray(list) ? list : [];
+  __songVersionsCache = arr;
+
+  if (!arr.length){
+    box.innerHTML = '<div style="opacity:.75;">(Žiadne verzie)</div>';
+    return;
+  }
+
+  box.innerHTML = arr.map((v, idx)=>{
+    const ts = Number(v && v.ts || 0);
+    const who = (v && v.who) ? String(v.who) : '';
+    const label = `${_fmtTs(ts)}${who ? ' • ' + _escapeHtml(who) : ''}`;
+    return `
+      <div class="version-item" data-vidx="${idx}">
+        <div class="version-head">
+          <div class="version-label">${label}</div>
+          <div class="version-actions">
+            <button class="btn-neutral" onclick="event.stopPropagation(); insertSongVersion(${idx})" type="button">Vložiť</button>
+            <button class="btn-neutral" onclick="event.stopPropagation(); toggleSongVersionDiff(${idx})" type="button">Diff</button>
+          </div>
+        </div>
+        <div class="version-diff" id="version-diff-${idx}" style="display:none;"></div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadSongVersions(){
+  if (!isOwner() || seIsNew) return;
+  if (!navigator.onLine){
+    showToast('Si offline – verzie sa nedajú načítať.', false, 2000);
+    return;
+  }
+  setSyncStatus('Načítavam verzie…', 'warn', 0);
+  try{
+    const data = await jsonpRequest(`${SCRIPT_URL}?action=songVersions&id=${encodeURIComponent(seEditingId)}&pwd=${encodeURIComponent(getAuthPwd())}`);
+    const list = (data && data.versions) ? data.versions : [];
+    renderSongVersionsUI(list);
+    setSyncStatus('Verzie načítané', 'ok', 1200);
+  }catch(e){
+    setSyncStatus('Nepodarilo sa načítať verzie', 'err', 2200);
+  }
+}
+
+function insertSongVersion(idx){
+  if (!isOwner()) return;
+  const v = __songVersionsCache[idx];
+  if (!v || !v.song) return;
+  const song = v.song;
+
+  const num = document.getElementById('se-number');
+  const title = document.getElementById('se-title');
+  const ta = document.getElementById('se-text');
+
+  if (num) num.value = String(song.originalId||'');
+  if (title) title.value = String(song.title||'');
+  if (ta) ta.value = String(song.songtext||'');
+
+  // reset transpose base (so Reset works from this inserted version)
+  __editorTransposeBaseText = null;
+
+  showToast('Vložená verzia – ak chceš, daj Uložiť.', true, 1600);
+}
+
+function toggleSongVersionDiff(idx){
+  const v = __songVersionsCache[idx];
+  if (!v || !v.song) return;
+  const diffEl = document.getElementById(`version-diff-${idx}`);
+  if (!diffEl) return;
+  const open = diffEl.style.display !== 'none';
+  if (open){
+    diffEl.style.display = 'none';
+    diffEl.innerHTML = '';
+    return;
+  }
+  const ta = document.getElementById('se-text');
+  const cur = ta ? String(ta.value||'') : '';
+  const sel = String(v.song.songtext||'');
+  diffEl.innerHTML = _diffHtml(sel, cur);
+  diffEl.style.display = 'block';
+}
+
 function openSongEditorNew(){
   if (!(hasPerm('D') || hasPerm('E'))) return;
   seIsNew = true;
@@ -6264,6 +6571,21 @@ function showSongEditorModal(on){
   const m = document.getElementById('song-editor-modal');
   if (!m) return;
   m.style.display = on ? 'flex' : 'none';
+if (on){
+  // owner-only blocks
+  const be = document.getElementById('backup-export-block');
+  if (be) be.style.display = isOwner() ? 'block' : 'none';
+  const vb = document.getElementById('song-versions-block');
+  if (vb) vb.style.display = (isOwner() && !seIsNew) ? 'block' : 'none';
+
+  // editor chord transpose (owner + E)
+  const tr = document.getElementById('editor-transpose-row');
+  if (tr) tr.style.display = (isOwner() || hasPerm('E')) ? 'flex' : 'none';
+
+  // close advanced backup panel by default
+  try{ toggleBackupMore(false); }catch(e){}
+  try{ renderSongVersionsUI([]); }catch(e){}
+}
   document.body.classList.toggle('modal-open', !!on);
 
   // E = text+chords editor, D = text-only (chords locked)
@@ -6338,7 +6660,7 @@ async function saveSongEditor(){
     return;
   }
 
-  setSyncStatus("Aktualizujem…", "sync-warn");
+  setSyncStatus("Aktualizujem…", "warn", 0);
   showToast('Ukladám...', true, 0);
 
   const payload = { id: String(seEditingId||''), author: originalId, title: ttl, songtext: txt, mode: mode, isNew: !!seIsNew };
@@ -6357,12 +6679,12 @@ async function saveSongEditor(){
     await runUpdateNow(true);
     const afterMeta = getSeenMeta();
     if (beforeMeta && afterMeta && Number(afterMeta.export||0) === Number(beforeMeta.export||0)){
-      showToast('Pozor: zmena sa možno neuložila na server (export sa nezmenil).', false, 3200);
+      setSaveStatus('Pozor: zmena sa možno neuložila na server (export sa nezmenil).', 'err', 3200);
     } else {
-      showToast('Uložené', true, 1500);
+      setSaveStatus('Uložené', 'ok', 2000);
     }
   }catch(e){
-    showToast('Uloženie zlyhalo.', false, 2400);
+    setSaveStatus('Uloženie zlyhalo.', 'err', 2400);
   }
 
   closeSongEditor(true);
@@ -6381,7 +6703,7 @@ async function deleteSongEditor(){
     return;
   }
 
-  setSyncStatus("Aktualizujem…", "sync-warn");
+  setSyncStatus("Aktualizujem…", "warn", 0);
   showToast('Mažem...', true, 0);
 
   try{

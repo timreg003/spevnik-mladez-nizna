@@ -5,19 +5,28 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>Mládežnícky spevník NIŽNÁ</title>
-<link href="manifest.json?v=94" rel="manifest"/>
+<link href="manifest.json?v=96" rel="manifest"/>
 <meta content="#00bfff" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Spevník" name="apple-mobile-web-app-title"/>
-<link href="icon.png?v=94" rel="apple-touch-icon"/>
-<link href="icon.png?v=94" rel="icon" type="image/png"/>
+<link href="icon.png?v=96" rel="apple-touch-icon"/>
+<link href="icon.png?v=96" rel="icon" type="image/png"/>
 <link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
-<link href="style.css?v=94" rel="stylesheet">
+<link href="style.css?v=96" rel="stylesheet">
 </link></link></link></head>
 <body>
 <div class="toast" id="toast" style="display:none;"></div>
+<div class="status-panel" id="statusPanel" style="display:none;">
+  <div class="status-line" id="statusSave"></div>
+  <div class="status-line" id="statusSync"></div>
+</div>
+<div class="app-update-overlay" id="appUpdateOverlay" style="display:none;" aria-hidden="true">
+  <div class="app-update-box">
+    <div class="app-update-title" id="appUpdateText">Aktualizujem aplikáciu…</div>
+  </div>
+</div>
 <div class="container">
 <button id="scroll-to-top" onclick="stopAutoscroll(); window.scrollTo({top: 0, behavior: 'smooth'})">
 <i class="fas fa-arrow-up"></i>
@@ -270,7 +279,7 @@
 <span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
 <button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-<script src="script.js?v=94"></script>
+<script src="script.js?v=96"></script>
 <!-- FORM EDITOR MODAL -->
 <div class="modal-overlay" id="form-modal" style="display:none;">
 <div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
@@ -343,16 +352,16 @@
 <button class="chip-btn" onclick="insertTextAtCaret('R2: \n', true)" type="button">R2:</button>
 <button class="chip-btn" onclick="insertTextAtCaret('B: \n', true)" type="button">B:</button>
 <button class="chip-btn" onclick="insertTextAtCaret('B2: \n', true)" type="button">B2:</button>
-<button class="chip-btn" onclick="insertTextAtCaret('1.: \n', true)" type="button">1.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('2.: \n', true)" type="button">2.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('3.: \n', true)" type="button">3.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('4.: \n', true)" type="button">4.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('5.: \n', true)" type="button">5.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('6.: \n', true)" type="button">6.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('7.: \n', true)" type="button">7.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('8.: \n', true)" type="button">8.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('9.: \n', true)" type="button">9.</button>
-<button class="chip-btn" onclick="insertTextAtCaret('10.: \n', true)" type="button">10.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('1. \n', true)" type="button">1.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('2. \n', true)" type="button">2.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('3. \n', true)" type="button">3.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('4. \n', true)" type="button">4.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('5. \n', true)" type="button">5.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('6. \n', true)" type="button">6.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('7. \n', true)" type="button">7.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('8. \n', true)" type="button">8.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('9. \n', true)" type="button">9.</button>
+<button class="chip-btn" onclick="insertTextAtCaret('10. \n', true)" type="button">10.</button>
 <button class="chip-btn" onclick="insertTextAtCaret('Predohra: \n', true)" type="button">Predohra</button>
 <button class="chip-btn" onclick="insertTextAtCaret('Medzihra: \n', true)" type="button">Medzihra</button>
 <button class="chip-btn" onclick="insertTextAtCaret('Dohra: \n', true)" type="button">Dohra</button>
@@ -383,25 +392,48 @@
 <button class="chip-btn" onclick="insertTextAtCaret('\n', true)" type="button">⏎</button>
 <button class="chip-btn" onclick="insertTextAtCaret('— ', true)" type="button">—</button>
 </div>
-<div class="modal-hint">Tip: Najprv vyber „Základ“, potom „Typ“ a prípadne „Bas“ (napr. D + m + /F# → <b>[Dm/F#]</b>).</div>
+<div class="modal-hint"><div class="btn-row" id="editor-transpose-row" style="display:none; margin-top:6px;">
+  <button class="btn-neutral" onclick="editorTranspose(-1)" type="button">Akordy −</button>
+  <button class="btn-neutral" onclick="editorTransposeReset()" type="button">Reset</button>
+  <button class="btn-neutral" onclick="editorTranspose(1)" type="button">Akordy +</button>
+</div>
+Tip: Najprv vyber „Základ“, potom „Typ“ a prípadne „Bas“ (napr. D + m + /F# → <b>[Dm/F#]</b>).</div>
 </div>
 </div>
-<div class="modal-block">
-<div class="modal-label">Záloha a export</div>
-<div class="btn-row-2">
-<button class="btn-neutral" onclick="downloadSongsBackup()" type="button">Stiahnuť zálohu (JSON)</button>
-<button class="btn-neutral" onclick="downloadSongsXml()" type="button">Exportovať XML (pre Spevník+)</button>
+<div class="modal-block" id="song-versions-block" style="display:none;">
+  <div class="modal-label">Verzie (owner)</div>
+  <div class="btn-row-2">
+    <button class="btn-neutral" onclick="loadSongVersions()" type="button">Načítať verzie</button>
+  </div>
+  <div class="editor-list" id="song-versions-list" style="margin-top:8px;"></div>
+  <div class="modal-hint">Klikni na verziu → „Vložiť“ načíta text/akordy do editora. Až „Uložiť“ to uloží ako aktuálnu.</div>
 </div>
-<div class="btn-row-2" style="margin-top:8px;">
-<button class="btn-neutral" onclick="pickBackupFile()" type="button">Vybrať súbor zálohy (auto‑save)</button>
-<button class="btn-delete" onclick="removeBackupFile()" type="button">Zrušiť auto‑save</button>
-</div>
-<input accept=".json,.xml,text/xml,application/xml" id="se-import-file" onchange="importSongsFile(this.files &amp;&amp; this.files[0])" style="display:none;" type="file"/>
-<div class="btn-row-2" style="margin-top:8px;">
-<button class="btn-neutral" onclick="triggerImportSongs()" type="button">Importovať (JSON/XML)</button>
-<button class="btn-delete" onclick="deleteSongEditor()" type="button">Vymazať túto pieseň</button>
-</div>
-<div class="modal-hint" id="backup-file-state">Auto‑save: vypnuté</div>
+<div class="modal-block" id="backup-export-block" style="display:none;">
+  <div class="modal-label">Záloha a export</div>
+  <div class="btn-row-2">
+    <button class="btn-neutral" id="btn-export-xml" onclick="downloadSongsXml()" type="button">Exportovať XML (pre Spevník+)</button>
+    <button class="btn-neutral" id="btn-backup-more" onclick="toggleBackupMore()" type="button">Ostatné</button>
+  </div>
+
+  <div id="backup-more-wrap" style="display:none; margin-top:8px;">
+    <div class="btn-row-2">
+      <button class="btn-neutral" onclick="downloadSongsBackup()" type="button">Stiahnuť zálohu (JSON)</button>
+      <button class="btn-neutral" onclick="triggerImportSongs()" type="button">Importovať (JSON/XML)</button>
+    </div>
+
+    <div class="btn-row-2" style="margin-top:8px;">
+      <button class="btn-neutral" onclick="pickBackupFile()" type="button">Vybrať súbor zálohy (auto‑save)</button>
+      <button class="btn-delete" onclick="removeBackupFile()" type="button">Zrušiť auto‑save</button>
+    </div>
+
+    <div class="btn-row-2" style="margin-top:8px;">
+      <button class="btn-delete" onclick="deleteSongEditor()" type="button">Vymazať túto pieseň</button>
+      <button class="btn-neutral" onclick="toggleBackupMore(false)" type="button">Zavrieť</button>
+    </div>
+
+    <input accept=".json,.xml,text/xml,application/xml" id="se-import-file" onchange="importSongsFile(this.files &amp;&amp; this.files[0])" style="display:none;" type="file"/>
+    <div class="modal-hint" id="backup-file-state">Auto‑save: vypnuté</div>
+  </div>
 </div>
 </div>
 </div>
