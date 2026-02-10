@@ -1296,3 +1296,13 @@ body.present #presentControls{ display:flex; }
 .diff-pre{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; line-height:1.35; padding:8px 10px; }
 .diff-line{ white-space:pre-wrap; word-break:break-word; padding:2px 0; }
 .diff-line.diff-chg{ background: rgba(255, 68, 68, 0.10); }
+
+
+/* Admin user line */
+.admin-userline{
+  margin: -4px 0 8px 12px;
+  font-size: 12px;
+  opacity: 0.9;
+  cursor: pointer;
+  user-select: none;
+}

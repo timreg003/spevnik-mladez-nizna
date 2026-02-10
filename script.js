@@ -473,6 +473,20 @@ function applyPermsToUI(){
   const t = document.getElementById('admin-toggle-text');
   if (t) t.innerText = logged ? "ODHLÁSIŤ" : "PRIHLÁSIŤ";
 
+  // admin user line (name + rights)
+  const ul = document.getElementById('admin-userline');
+  if (ul){
+    if (logged){
+      const nm = (adminSession && adminSession.name) ? adminSession.name : '';
+      ul.textContent = nm ? (`👤 ${nm}`) : '👤';
+      ul.style.display = 'block';
+    } else {
+      ul.style.display = 'none';
+      ul.textContent = '';
+    }
+  }
+
+
   // show panels based on perms
   const dnesPanel = document.getElementById('dnes-editor-panel');
   if (dnesPanel) dnesPanel.style.display = (logged && hasPerm('A')) ? 'block' : 'none';
@@ -3147,7 +3161,7 @@ async function saveDnesEditor() {
   loadDnesCacheFirst(true);
 
   try {
-    await fetch(`${SCRIPT_URL_POST}?action=save&name=PiesneNaDnes&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL_POST}&action=save&name=PiesneNaDnes&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
     dnesDirty = false;
     showToast("Uložené ✅", true);
     setButtonStateById('dnes-save-btn', false);
@@ -3315,7 +3329,7 @@ async function saveDnesToHistory(){
   renderHistoryUI(true);
 
   try {
-    await fetch(`${SCRIPT_URL_POST}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' });
     showToast('Uložené do histórie ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa uložiť do histórie ❌', false);
@@ -3332,7 +3346,7 @@ function deleteHistoryEntry(ts){
   const next = arr.filter(x => Number(x.ts) !== Number(ts));
   localStorage.setItem(LS_HISTORY, JSON.stringify(next));
   renderHistoryUI(true);
-  try { fetch(`${SCRIPT_URL_POST}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
+  try { fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(next))}`, { mode:'no-cors' }); } catch(e) {}
   loadHistoryFromDrive();
 }
 
@@ -3352,7 +3366,7 @@ function renameHistoryEntry(ts){
   renderHistoryUI(true);
   // sync to Drive (best effort)
   try {
-    fetch(`${SCRIPT_URL_POST}?action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
+    fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(HISTORY_NAME)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(arr))}`, { mode:'no-cors' });
   } catch(e) {}
 }
 
@@ -3749,12 +3763,12 @@ const newName = rawName;
   newPlaylist();
 // persist to Drive
   try {
-    await fetch(`${SCRIPT_URL_POST}?action=save&name=${encodeURIComponent(newName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL_POST}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(newName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
-      try { await fetch(`${SCRIPT_URL_POST}?action=delete&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
-      try { await fetch(`${SCRIPT_URL_POST}?action=save&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL_POST}&action=delete&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
+      try { await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=`, { mode:'no-cors' }); } catch(e) {}
     }
     playlistDirty = false;
     showToast('Uložené ✅', true);
@@ -3812,8 +3826,8 @@ async function deletePlaylist(nameEnc){
   renderPlaylistsUI(true);
 
   try {
-    try { await fetch(`${SCRIPT_URL_POST}?action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
-    await fetch(`${SCRIPT_URL_POST}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    try { await fetch(`${SCRIPT_URL_POST}&action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
+    await fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
     showToast('Vymazané ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa vymazať ❌', false);
@@ -3852,7 +3866,7 @@ function applyReorder(ctx, from, to) {
     renderPlaylistsUI(true);
     // best-effort persist order
     if (isAdmin) {
-      try { fetch(`${SCRIPT_URL_POST}?action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
+      try { fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
     }
   }
   else if (ctx === 'plsel') {
@@ -4346,7 +4360,7 @@ async function saveLitOverridesToDrive(){
     if (!SCRIPT_URL) return;
     const obj = getLitOverrides();
     obj.updatedAt = Date.now();
-    const url = `${SCRIPT_URL_POST}?action=save&pwd=${encodeURIComponent(getAuthPwd())}&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}&content=${encodeURIComponent(JSON.stringify(obj))}`;
+    const url = `${SCRIPT_URL_POST}&action=save&pwd=${encodeURIComponent(getAuthPwd())}&name=${encodeURIComponent(LIT_OVERRIDES_FILE)}&content=${encodeURIComponent(JSON.stringify(obj))}`;
     const res = await jsonpRequest(url);
     if (res && res.ok){
       __litOverrides = obj;
@@ -7364,4 +7378,31 @@ function openSongById(id){
     return;
   }
   showToast('Pieseň sa nenašla v aktuálnych dátach.', false, 2000);
+}
+
+
+
+// ===== v98 helpers =====
+function showMyRights(){
+  if (!adminSession){
+    showToast('Nie si prihlásený.', false);
+    return;
+  }
+  const p = adminSession.perms || {};
+  const parts = [];
+  if (isOwner()){
+    parts.push('Owner (všetko)');
+  } else {
+    if (p.A) parts.push('A – Piesne na dnes + história');
+    if (p.B) parts.push('B – Playlisty');
+    if (p.C) parts.push('C – Liturgia (999 Aleluja + kalendár)');
+    if (p.D) parts.push('D – Editor piesní: text + transpozícia');
+    if (p.E) parts.push('E – Editor piesní: text + akordy + transpozícia');
+  }
+  alert((adminSession.name ? adminSession.name : 'Admin') + '\n\nPráva:\n' + (parts.length ? parts.join('\n') : '(žiadne)'));
+}
+
+// Backward-compat: some templates call openSong(...)
+if (typeof window.openSong !== 'function' && typeof openSongById === 'function') {
+  window.openSong = openSongById;
 }
