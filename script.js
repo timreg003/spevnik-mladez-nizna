@@ -72,6 +72,32 @@ async function fetchRemoteMeta(){
   return null;
 }
 
+// Robust URL builder: appends params using the right separator (? vs &).
+function addParams(baseUrl, params){
+  const sep = baseUrl.includes('?') ? '&' : '?';
+  const qs = Object.entries(params || {})
+    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v ?? ''))}`)
+    .join('&');
+  return baseUrl + sep + qs;
+}
+
+// After a successful SAVE to GAS, update our local "seen" meta so we don't overwrite our own changes on refresh.
+async function updateSeenMetaFromServer(){
+  try{
+    const m = await fetchRemoteMeta();
+    if (m) setSeenMeta(m);
+  }catch(e){}
+}
+
+// CORS-free SAVE using JSONP (so we can reliably detect unauthorized/errors).
+// Use for small payloads (dnes, playlists, history, ...). For large payloads (full XML) we use POST.
+async function jsonpSave(params){
+  const res = await jsonpRequest(addParams(SCRIPT_URL, params));
+  if (res && res.ok) return res;
+  const err = (res && res.error) ? String(res.error) : 'save_failed';
+  throw new Error(err);
+}
+
 async function checkMetaAndToggleBadge(){
   // Badge check runs every minute. Keep bottom status clean:
   // - show "Offline" when offline
@@ -2722,7 +2748,7 @@ async function loadDnesFromDrive() {
   dnesFetchInFlight = false;
   loadDnesCacheFirst(true);
   if (hasPerm('A')) openDnesEditor(true);
-
+}
 
 function refreshOpenDnesSongOrderIfNeeded(){
   // Keď admin zmení poradie (forma) piesne v "Piesne na dnes", iné zariadenia si to dotiahnu automaticky.
@@ -2739,8 +2765,6 @@ function refreshOpenDnesSongOrderIfNeeded(){
       try{ renderSong(); }catch(e){}
     }
   }catch(e){}
-}
-
 }
 
 /* dnes editor (zachované) */
@@ -3161,7 +3185,13 @@ async function saveDnesEditor() {
   loadDnesCacheFirst(true);
 
   try {
-    await fetch(`${SCRIPT_URL_POST}&action=save&name=PiesneNaDnes&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
+    await jsonpSave({
+      action: 'save',
+      name: 'PiesneNaDnes',
+      pwd: getAuthPwd(),
+      content: payload
+    });
+    await updateSeenMetaFromServer();
     dnesDirty = false;
     showToast("Uložené ✅", true);
     setButtonStateById('dnes-save-btn', false);
@@ -3761,15 +3791,15 @@ const newName = rawName;
 
     // clear editor fields after save so it doesn't overwrite the same playlist
   newPlaylist();
-// persist to Drive
+  // persist to Drive
   try {
-    await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(newName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(payload)}`, { mode:'no-cors' });
-    await fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    await jsonpSave({ action:'save', name:newName, pwd:getAuthPwd(), content: payload });
+    await jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
     // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
-      try { await fetch(`${SCRIPT_URL_POST}&action=delete&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
-      try { await fetch(`${SCRIPT_URL_POST}&action=save&name=${encodeURIComponent(oldName)}&pwd=${encodeURIComponent(getAuthPwd())}&content=`, { mode:'no-cors' }); } catch(e) {}
+      try { await jsonpSave({ action:'delete', name: oldName, pwd:getAuthPwd() }); } catch(e) {}
     }
+    await updateSeenMetaFromServer();
     playlistDirty = false;
     showToast('Uložené ✅', true);
     setButtonStateById('playlist-save-btn', false);
@@ -3826,8 +3856,9 @@ async function deletePlaylist(nameEnc){
   renderPlaylistsUI(true);
 
   try {
-    try { await fetch(`${SCRIPT_URL_POST}&action=delete&name=${encodeURIComponent(name)}&pwd=${encodeURIComponent(getAuthPwd())}`, { mode:'no-cors' }); } catch(e) {}
-    await fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' });
+    try { await jsonpSave({ action:'delete', name:name, pwd:getAuthPwd() }); } catch(e) {}
+    await jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
+    await updateSeenMetaFromServer();
     showToast('Vymazané ✅', true);
   } catch(e) {
     showToast('Nepodarilo sa vymazať ❌', false);
@@ -3866,7 +3897,7 @@ function applyReorder(ctx, from, to) {
     renderPlaylistsUI(true);
     // best-effort persist order
     if (isAdmin) {
-      try { fetch(`${SCRIPT_URL_POST}&action=save&name=PlaylistOrder&pwd=${encodeURIComponent(getAuthPwd())}&content=${encodeURIComponent(JSON.stringify(playlistOrder))}`, { mode:'no-cors' }); } catch(e) {}
+      try { jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) }).then(updateSeenMetaFromServer).catch(()=>{}); } catch(e) {}
     }
   }
   else if (ctx === 'plsel') {
@@ -7348,7 +7379,7 @@ function openChangeDetail(id){
       </div>
     </div>`;
   det.querySelector('#ch-open-song').onclick = ()=>{
-    try{ openSongById(String(ch.songId||'')); }catch(e){}
+    try{ openSongByAnyId(String(ch.songId||'')); }catch(e){}
   };
   det.querySelector('#ch-close-btn').onclick = ()=>closeChangeDetail();
 }
@@ -7367,14 +7398,14 @@ async function closeChangeDetail(){
   }catch(e){}
 }
 
-function openSongById(id){
+// Helper for places where we may only know numeric "author" (originalId) or the internal XML <ID>.
+// NOTE: Do NOT overwrite openSongById(id, source) which drives the whole UI.
+function openSongByAnyId(id){
   const sid = String(id||'').replace(/^0+/,'');
   if (!sid) return;
-  // prefer current filtered list
-  const s = songs.find(x=>String(x.originalId||'').replace(/^0+/,'')===sid) || songs.find(x=>String(x.id||'')===sid);
+  const s = songs.find(x=>String(x.id||'')===sid) || songs.find(x=>String(x.originalId||'').replace(/^0+/,'')===sid);
   if (s){
-    currentListSource = 'all';
-    openSong(s);
+    openSongById(String(s.id||''), 'all');
     return;
   }
   showToast('Pieseň sa nenašla v aktuálnych dátach.', false, 2000);
@@ -7382,7 +7413,7 @@ function openSongById(id){
 
 
 
-// ===== v98 helpers =====
+// ===== v99 helpers =====
 function showMyRights(){
   if (!adminSession){
     showToast('Nie si prihlásený.', false);

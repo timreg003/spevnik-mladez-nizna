@@ -1,4 +1,4 @@
-// ===== Spevník GAS backend (v98) =====
+// ===== Spevník GAS backend (v99) =====
 // Execute as: Me, Access: Anyone
 // Owner login: password only (OWNER_PWD). Other admins: password only (stored hashed by password), owner may label them with a name.
 //
