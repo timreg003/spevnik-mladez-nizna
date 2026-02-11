@@ -196,8 +196,8 @@ async function runUpdateNow(fromAuto=false){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v107';
-const APP_CACHE_NAME = 'spevnik-v107';
+const APP_BUILD = 'v106';
+const APP_CACHE_NAME = 'spevnik-v106';
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
 const POLL_INTERVAL_MS = 30 * 1000;
