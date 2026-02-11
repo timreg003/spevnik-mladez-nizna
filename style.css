@@ -1249,17 +1249,9 @@ body.present #presentControls{ display:flex; }
 
 /* ===== v96 status panel (2 riadky) ===== */
 .status-panel{
-  position: fixed;
-  right: 12px;
-  bottom: 40px;
-  left: auto;
-  transform: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 999999;
-  max-width: 70vw;
-  pointer-events: none;
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px;
+  z-index: 999999; max-width: 92vw; pointer-events: none;
 }
 .status-line{
   display:none;
@@ -1314,22 +1306,3 @@ body.present #presentControls{ display:flex; }
   cursor: pointer;
   user-select: none;
 }
-
-
-/* ===== v105: Zmeny + Kôš styling ===== */
-.unread-item{ background: rgba(60, 140, 255, 0.18); }
-.editor-item--sep{ border-bottom: 1px solid rgba(255,255,255,0.10); padding-bottom:10px; margin-bottom:10px; }
-
-/* ===== v105: História tóniny ===== */
-.kh-wrap{ margin-top:14px; border:1px solid rgba(255,255,255,0.10); border-radius:14px; overflow:hidden; }
-.kh-head{ padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.04); }
-.kh-title{ font-weight:900; }
-.kh-body{ padding:10px 12px; }
-.kh-rowwrap{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-.kh-row{ display:flex; flex-wrap:wrap; gap:8px; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,0.08); flex:1; }
-.kh-row:last-child{ border-bottom:none; }
-.kh-who{ font-weight:800; }
-.kh-dt{ opacity:0.85; }
-.kh-to{ flex:1; min-width:180px; }
-.kh-del{ border:none; background:transparent; cursor:pointer; font-size:16px; }
-.kh-actions{ margin-top:10px; }

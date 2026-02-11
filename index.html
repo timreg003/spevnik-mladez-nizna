@@ -5,16 +5,16 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>Mládežnícky spevník NIŽNÁ</title>
-<link href="manifest.json?v=105" rel="manifest"/>
+<link href="manifest.json?v=106" rel="manifest"/>
 <meta content="#00bfff" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Spevník" name="apple-mobile-web-app-title"/>
-<link href="icon.png?v=105" rel="apple-touch-icon"/>
-<link href="icon.png?v=105" rel="icon" type="image/png"/>
+<link href="icon.png?v=106" rel="apple-touch-icon"/>
+<link href="icon.png?v=106" rel="icon" type="image/png"/>
 <link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
-<link href="style.css?v=105" rel="stylesheet">
+<link href="style.css?v=106" rel="stylesheet">
 </link></link></link></head>
 <body>
 <div class="toast" id="toast" style="display:none;"></div>
@@ -47,7 +47,6 @@
   <button class="btn-neutral" id="song-new-btn-list" onclick="openSongEditorNew()"><i class="fas fa-plus"></i> Nová pieseň</button>
   <button class="btn-neutral" id="admins-open-btn" onclick="toggleEditor('admins-editor-panel')" style="display:none;"><i class="fas fa-user-shield"></i> Správa adminov</button>
   <button class="btn-neutral" id="changes-open-btn" onclick="toggleEditor('changes-editor-panel')" style="display:none;"><i class="fas fa-clock-rotate-left"></i> Zmeny</button>
-  <button class="btn-neutral" id="trash-open-btn" onclick="toggleEditor('trash-editor-panel')" style="display:none;"><i class="fas fa-trash"></i> Kôš</button>
 </div>
 
 <!-- Owner-only panels live here (NOT inside sekcie), aby neboli schované pri zrolovaní -->
@@ -114,22 +113,7 @@
 <div class="section-content" id="dnes-section-wrapper" style="display:none;">
 <div class="list-box" id="dnes-section"><div class="loading">Načítavam...</div>
 </div>
-<div class="editor-panel" 
-  <div class="editor-panel" id="trash-editor-panel" style="display:none; margin-top:6px;">
-    <div class="editor-toggle" onclick="toggleEditor('trash-editor-panel')">
-      <div class="editor-toggle-title">Kôš</div>
-      <i class="fas fa-chevron-down editor-toggle-ico"></i>
-    </div>
-    <div class="editor-body">
-      <h3 class="editor-title">Kôš</h3>
-      <div class="modal-hint" style="margin-top:0;">
-        <div>Tu sú piesne, ktoré boli vymazané (owner). Vieš ich <b>obnoviť</b> alebo <b>natrvalo vymazať</b>.</div>
-      </div>
-      <div class="editor-list" id="trash-list"></div>
-    </div>
-  </div>
-
-id="dnes-editor-panel" style="display:none;">
+<div class="editor-panel" id="dnes-editor-panel" style="display:none;">
 <div class="editor-toggle" onclick="toggleEditor('dnes-editor-panel')">
 <div class="editor-toggle-title">Editor – Piesne na dnes</div>
 <i class="fas fa-chevron-down editor-toggle-ico"></i>
@@ -329,7 +313,7 @@ id="dnes-editor-panel" style="display:none;">
 <span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
 <button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-<script src="script.js?v=105"></script>
+<script src="script.js?v=106"></script>
 <!-- FORM EDITOR MODAL -->
 <div class="modal-overlay" id="form-modal" style="display:none;">
 <div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">

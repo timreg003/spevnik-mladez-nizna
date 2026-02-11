@@ -15,8 +15,6 @@ const OWNER_PWD = "wert";
 const OWNER_NAME = "Timotej";
 
 const MAIN_FILE_NAME = "Spevník export";
-// Folder where the manual base export lives (uploaded from Spevník+)
-const EXPORT_MAIN_FOLDER = "Spevnik export";
 const FOLDER_NAME = "Playlisty";
 
 const EXPORT_BACKUP_FOLDER = "Spevník export - backupy";
@@ -57,7 +55,7 @@ function _handle_(e){
   // --- META ---
   if (action === "meta"){
     const folder = _getOrCreateFolder_();
-    const exportFile = _getActiveExportFile_();
+    const exportFile = _newestFileByNameRoot_(MAIN_FILE_NAME);
     const dnesFile = _newestFileByNameInFolder_("PiesneNaDnes", folder);
     const orderFile = _newestFileByNameInFolder_("PlaylistOrder", folder);
 
@@ -78,7 +76,7 @@ function _handle_(e){
 
   // --- DIAG ---
   if (action === "diag"){
-    const f = _getActiveExportFile_();
+    const f = _newestFileByNameRoot_(MAIN_FILE_NAME);
     if (!f) return out({ ok:true, exportFound:false, exportName: MAIN_FILE_NAME });
 
     let parsedOk = true, rootName = "", ns = "";
@@ -264,7 +262,7 @@ function _handle_(e){
 
     if (!id || !num || !title) return out({ ok:false, error:"missing_fields" });
 
-    const exportFile = _getActiveExportFile_();
+    const exportFile = _newestFileByNameRoot_(MAIN_FILE_NAME);
     if (!exportFile) return out({ ok:false, error:"missing_export_file" });
 
     const xmlText = exportFile.getBlob().getDataAsString("UTF-8");
@@ -357,175 +355,6 @@ function _handle_(e){
     return out({ ok:true, id, versions });
   }
 
-  // --- SONG TRASH (owner) ---
-  if (action === "songTrash"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-
-    const exportFile = _getActiveExportFile_();
-    if (!exportFile) return out({ ok:false, error:"missing_export_file" });
-
-    const xmlText = exportFile.getBlob().getDataAsString("UTF-8");
-    let doc;
-    try{ doc = XmlService.parse(xmlText); }catch(e){ return out({ ok:false, error:"export_parse_failed", detail:String(e) }); }
-    const root = doc.getRootElement();
-    const ns = root.getNamespace();
-    if (root.getName() !== "InetSongDb") return out({ ok:false, error:"bad_export_root", detail:root.getName() });
-
-    const songs = root.getChildren("song", ns);
-    let songEl = null;
-    for (let i=0;i<songs.length;i++){
-      const sid = _getChildText_(songs[i], ns, "ID");
-      if (String(sid) === id){ songEl = songs[i]; break; }
-    }
-    if (!songEl) return out({ ok:false, error:"song_not_found" });
-
-    const who = OWNER_NAME;
-    const plain = _songToPlain_(songEl, ns);
-
-    // Save version before deletion
-    try{ _saveSongVersion_(id, plain, who); }catch(e){}
-
-    // Remove from export
-    try{ root.removeContent(songEl); }catch(e){
-      // fallback: rebuild list excluding element
-      try{
-        const all = root.getChildren("song", ns);
-        all.forEach(el=>{
-          const sid = _getChildText_(el, ns, "ID");
-          if (String(sid) === id) root.removeContent(el);
-        });
-      }catch(e2){}
-    }
-
-    const newXml = XmlService.getPrettyFormat().format(doc);
-    _publishExport_(newXml);
-
-    // add to trash db
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_TRASH_FILE) || { list:[] };
-    if (!Array.isArray(db.list)) db.list = [];
-    db.list = db.list.filter(x => String(x.songId||"") !== id);
-    db.list.unshift({
-      songId:id,
-      ts: Date.now(),
-      who,
-      number: String(plain.author||""),
-      title: String(plain.title||""),
-      song: plain
-    });
-    _writeJsonFileInFolder_(folder, SONG_TRASH_FILE, db);
-
-    // changes feed
-    try{
-      _appendChanges_(id, String(plain.author||""), String(plain.title||""), who, { forceTypes:["delete"], oldPlain:plain, newPlain:null });
-    }catch(e){}
-    return out({ ok:true });
-  }
-
-  if (action === "songTrashList"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_TRASH_FILE) || { list:[] };
-    return out({ ok:true, list: db.list || [] });
-  }
-
-  function _plainToSongEl_(plain, ns){
-    const el = XmlService.createElement("song", ns);
-    const tags = ["ID","lang","songtext","author","authorId","groupname","title","youtube","step"];
-    for (const t of tags) el.addContent(XmlService.createElement(t, ns));
-    _setChildCdata_(el, ns, "ID", plain.ID || plain.id || "");
-    _setChildCdata_(el, ns, "lang", plain.lang || "sk");
-    _setChildCdata_(el, ns, "songtext", plain.songtext || "");
-    _setChildCdata_(el, ns, "author", plain.author || "");
-    _setChildCdata_(el, ns, "authorId", plain.authorId || "");
-    _setChildCdata_(el, ns, "groupname", plain.groupname || "");
-    _setChildCdata_(el, ns, "title", plain.title || "");
-    _setChildCdata_(el, ns, "youtube", plain.youtube || "");
-    _setChildCdata_(el, ns, "step", plain.step || "");
-    return el;
-  }
-
-  if (action === "songRestore"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_TRASH_FILE) || { list:[] };
-    const list = Array.isArray(db.list) ? db.list : [];
-    const item = list.find(x=>String(x.songId||"")===id);
-    if (!item || !item.song) return out({ ok:false, error:"not_in_trash" });
-
-    const exportFile = _getActiveExportFile_();
-    if (!exportFile) return out({ ok:false, error:"missing_export_file" });
-
-    const xmlText = exportFile.getBlob().getDataAsString("UTF-8");
-    let doc;
-    try{ doc = XmlService.parse(xmlText); }catch(e){ return out({ ok:false, error:"export_parse_failed", detail:String(e) }); }
-    const root = doc.getRootElement();
-    const ns = root.getNamespace();
-    if (root.getName() !== "InetSongDb") return out({ ok:false, error:"bad_export_root", detail:root.getName() });
-
-    // ensure it doesn't exist already
-    const songs = root.getChildren("song", ns);
-    for (let i=0;i<songs.length;i++){
-      const sid = _getChildText_(songs[i], ns, "ID");
-      if (String(sid) === id) return out({ ok:false, error:"already_exists" });
-    }
-
-    const who = OWNER_NAME;
-    const plain = item.song;
-    const songEl = _plainToSongEl_(plain, ns);
-    root.addContent(songEl);
-
-    const newXml = XmlService.getPrettyFormat().format(doc);
-    _publishExport_(newXml);
-
-    db.list = list.filter(x=>String(x.songId||"")!==id);
-    _writeJsonFileInFolder_(folder, SONG_TRASH_FILE, db);
-
-    try{
-      _appendChanges_(id, String(plain.author||""), String(plain.title||""), who, { forceTypes:["restore"], oldPlain:null, newPlain:plain });
-    }catch(e){}
-    return out({ ok:true });
-  }
-
-  if (action === "songDeletePermanent"){
-    if (!_isOwnerPwd_(String(p.pwd||""))) return out({ ok:false, error:"unauthorized" });
-    const id = String(p.id||"");
-    if (!id) return out({ ok:false, error:"missing_id" });
-
-    const folder = _getOrCreateFolder_();
-    const db = _readJsonFileInFolder_(folder, SONG_TRASH_FILE) || { list:[] };
-    const list = Array.isArray(db.list) ? db.list : [];
-    const item = list.find(x=>String(x.songId||"")===id);
-    const plain = item ? item.song : null;
-
-    db.list = list.filter(x=>String(x.songId||"")!==id);
-    _writeJsonFileInFolder_(folder, SONG_TRASH_FILE, db);
-
-    // remove versions
-    try{
-      const vdb = _readJsonFileInFolder_(folder, SONG_VERSIONS_FILE) || { versions:{} };
-      if (vdb.versions && vdb.versions[id]) delete vdb.versions[id];
-      _writeJsonFileInFolder_(folder, SONG_VERSIONS_FILE, vdb);
-    }catch(e){}
-
-    // remove key history
-    try{
-      const kdb = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-      if (kdb.keys && kdb.keys[id]) delete kdb.keys[id];
-      _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, kdb);
-    }catch(e){}
-
-    try{
-      _appendChanges_(id, plain?String(plain.author||""):"", plain?String(plain.title||""):"", OWNER_NAME, { forceTypes:["permadelete"], oldPlain:plain, newPlain:null });
-    }catch(e){}
-    return out({ ok:true });
-  }
-
   // --- KEY HISTORY GET (public) ---
   if (action === "keyHistoryGet"){
     const id = String(p.id||p.songId||"");
@@ -542,15 +371,10 @@ function _handle_(e){
     const id = String(p.id||p.songId||"");
     const ts = String(p.ts||"");
     if (!id) return out({ ok:false, error:"missing_id" });
-    if (!ts) return out({ ok:false, error:"missing_ts" });
 
     const folder = _getOrCreateFolder_();
     const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
     const arr = (db.keys && db.keys[id]) ? db.keys[id] : [];
-    const item = arr.find(x => String(x.ts) === ts);
-    if (item && String(item.from||"") === ""){
-      return out({ ok:false, error:"cannot_delete_initial" });
-    }
     db.keys[id] = arr.filter(x => String(x.ts) !== ts);
     _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, db);
     return out({ ok:true });
@@ -562,9 +386,7 @@ function _handle_(e){
     if (!id) return out({ ok:false, error:"missing_id" });
     const folder = _getOrCreateFolder_();
     const db = _readJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE) || { keys:{} };
-    const arr = (db.keys && db.keys[id]) ? db.keys[id] : [];
-    // Keep the initial record (from == "") if present
-    db.keys[id] = arr.filter(x => String(x.from||"") === "").slice(0,1);
+    db.keys[id] = [];
     _writeJsonFileInFolder_(folder, SONG_KEY_HISTORY_FILE, db);
     return out({ ok:true });
   }
@@ -650,6 +472,23 @@ function _handle_(e){
     return out({ ok:true });
   }
 
+
+  if (action === "litOverrideDelete"){
+    const sess = _requirePerm_(String(p.pwd||""), ["C"]);
+    if (!sess) return out({ ok:false, error:"unauthorized" });
+
+    const key = String(p.key||"");
+    if (!key) return out({ ok:false, error:"missing_key" });
+
+    const folder = _getOrCreateFolder_();
+    const data = _readJsonFileInFolder_(folder, LIT_OVERRIDES_FILE) || { overrides:{} };
+    if (data && data.overrides && data.overrides[key] != null){
+      delete data.overrides[key];
+    }
+    _writeJsonFileInFolder_(folder, LIT_OVERRIDES_FILE, data);
+    return out({ ok:true });
+  }
+
   if (action === "litOverrideDelete"){
     const sess = _requirePerm_(String(p.pwd||""), ["C"]);
     if (!sess) return out({ ok:false, error:"unauthorized" });
@@ -665,9 +504,9 @@ function _handle_(e){
   }
 
   // --- DEFAULT: return export XML ---
-  const newest = _getActiveExportFile_();
+  const newest = _newestFileByNameRoot_(MAIN_FILE_NAME);
   const xml = newest ? newest.getBlob().getDataAsString("UTF-8") : "";
-  // IMPORTANT: never trash/replace the main export file; backups are handled separately.
+  _keepOnlyNewestRootExport_();
 
   if (callback) return out({ ok:true, xml });
   return ContentService.createTextOutput(xml).setMimeType(ContentService.MimeType.XML);
@@ -720,50 +559,6 @@ function _isDeletedMarker_(s){ return typeof s === 'string' && s.trim() === 'del
 function _getOrCreateFolder_(){
   const it = DriveApp.getFoldersByName(FOLDER_NAME);
   return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
-}
-
-function _getFolderByName_(name, createIfMissing){
-  const it = DriveApp.getFoldersByName(String(name||""));
-  if (it.hasNext()) return it.next();
-  return createIfMissing ? DriveApp.createFolder(String(name||"")) : null;
-}
-
-function _newestFileInFolder_(folder){
-  if (!folder) return null;
-  const it = folder.getFiles();
-  let newest = null;
-  while (it.hasNext()){
-    const f = it.next();
-    if (f.isTrashed()) continue;
-    try{
-      const c = f.getBlob().getDataAsString();
-      if (_isDeletedMarker_(c)) continue;
-    }catch(e){}
-    if (!newest || f.getLastUpdated().getTime() > newest.getLastUpdated().getTime()) newest = f;
-  }
-  return newest;
-}
-
-function _getMainExportFile_(){
-  const folder = _getFolderByName_(EXPORT_MAIN_FOLDER, false);
-  if (!folder) return null;
-  return _newestFileByNameInFolder_(MAIN_FILE_NAME, folder);
-}
-
-function _getNewestBackupExportFile_(){
-  const folder = _getFolderByName_(EXPORT_BACKUP_FOLDER, false);
-  if (!folder) return null;
-  return _newestFileInFolder_(folder);
-}
-
-// Active export = newer of (manual main export) and (last backup)
-function _getActiveExportFile_(){
-  const main = _getMainExportFile_();
-  const backup = _getNewestBackupExportFile_();
-  const mtMain = _safeMtime_(main);
-  const mtBack = _safeMtime_(backup);
-  if (mtMain >= mtBack) return main;
-  return backup;
 }
 
 function _newestFileByNameInFolder_(name, folder){
@@ -859,8 +654,9 @@ function _backupExport_(xmlText){
 }
 
 function _publishExport_(xmlText){
-  // Write ONLY a backup into EXPORT_BACKUP_FOLDER. Never touch MAIN export.
   _backupExport_(xmlText);
+  DriveApp.createFile(MAIN_FILE_NAME, xmlText, MimeType.PLAIN_TEXT);
+  _keepOnlyNewestRootExport_();
 }
 
 function _isOwnerPwd_(pwd){ return String(pwd||"") === OWNER_PWD; }
@@ -968,11 +764,8 @@ function _appendChanges_(songId, num, title, who, ctx){
   const oldPlain = ctx.oldPlain;
   const newPlain = ctx.newPlain;
   const transposeStep = ctx.transposeStep;
-  const forceTypes = ctx.forceTypes;
 
-  const types = Array.isArray(forceTypes) ? forceTypes.slice(0) : [];
-  const isForced = !!types.length;
-  if (!isForced){
+  const types = [];
   if (!existed) types.push('new');
   if (existed && oldPlain){
     if (String(oldPlain.title||"") !== String(title||"")) types.push('title');
@@ -991,12 +784,10 @@ function _appendChanges_(songId, num, title, who, ctx){
     }
   }
 
-  }
-
   // key change
   const oldKey = oldPlain ? _firstChordRoot_(String(oldPlain.songtext||"")) : "";
-  const newKey = newPlain ? _firstChordRoot_(String(newPlain.songtext||"")) : "";
-  if (!isForced && newKey && (oldKey !== newKey)) types.push('key');
+  const newKey = _firstChordRoot_(String(newPlain.songtext||""));
+  if (newKey && (oldKey !== newKey)) types.push('key');
 
   if (!types.length) return;
 
@@ -1018,9 +809,7 @@ function _appendChanges_(songId, num, title, who, ctx){
     numberFrom: oldPlain ? String(oldPlain.author||"") : "",
     numberTo: String(num||""),
     keyFrom: oldKey,
-    keyTo: newKey,
-    before: oldPlain || null,
-    after: newPlain || null
+    keyTo: newKey
   });
 
   while (db.list.length > SONG_CHANGES_KEEP) db.list.pop();
