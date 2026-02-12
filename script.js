@@ -279,11 +279,11 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v112';
-const APP_CACHE_NAME = 'spevnik-v112';
+const APP_BUILD = 'v113';
+const APP_CACHE_NAME = 'spevnik-v113';
 
 function _buildNum(){
-  // APP_BUILD is like "v112"
+  // APP_BUILD is like "v113"
   const m = String(APP_BUILD||'').match(/(\d+)/);
   return m ? m[1] : '0';
 }
@@ -5725,6 +5725,8 @@ function _litKbsLikeHtmlFromText(rawText){
     const line = String(lineRaw||'').trimEnd();
 
     if (!line.trim()){
+      // inside psalm we ignore empty lines to avoid huge gaps between verses
+      if (inPsalm) continue;
       html += '<div class="kbs-gap"></div>';
       continue;
     }
@@ -5778,16 +5780,29 @@ if (expectBriefAfterIntro){
     }
 
 
-// Reading/Gospel intro line: next non-empty line is the brief sentence
+// Reading/Psalm/Gospel intro lines: render bigger + bold + italic.
+// For reading/gospel intro, the next non-empty line is often a brief sentence (grey + smaller).
 const tLine = line.trim();
 const tLineNorm = tLine
   .replace(/^[\s>*\-_•]+/g,'')
   .replace(/^[*_]+/g,'')
   .replace(/[*_]+$/g,'')
   .trim();
-if (!inPsalm && (/^Čítanie\s+z\s+/i.test(tLineNorm) || /^Čítanie\s+zo\s+/i.test(tLineNorm))){
+
+const isReadingIntro = /^Čítanie\s+z\s+/i.test(tLineNorm) || /^Čítanie\s+zo\s+/i.test(tLineNorm);
+const isPsalmIntro = /^Responzóriový\s+žalm\b/i.test(tLineNorm);
+const isGospelIntro = /^Evanjelium\b/i.test(tLineNorm) || /^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(tLineNorm);
+
+if (isReadingIntro || isPsalmIntro || isGospelIntro){
+  // if gospel intro comes right after aleluja/verse, add extra spacing
+  if (isGospelIntro && afterVerse){
+    html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
+    afterVerse = false;
+  }
   html += '<div class="kbs-lit-intro">'+esc(tLine)+'</div>';
-  expectBriefAfterIntro = true;
+  expectBriefAfterIntro = (isReadingIntro || isGospelIntro);
+  // psalm section starts here even when it's not formatted as ####
+  inPsalm = isPsalmIntro;
   continue;
 }
 
@@ -5805,12 +5820,27 @@ if (!inPsalm && (/^(Začiatok|Koniec)\b/i.test(tLineNorm))){
     // keep psalm line breaks
     if (inPsalm){
       const tPsalm = String(line||'').trim();
-      // Refren lines: "R." / "R:" / "R.:"
+
+      // Refren lines at the beginning: "R." / "R:" / "R.:"
       if (/^R\s*[\.:]/i.test(tPsalm)){
         const rest = tPsalm.replace(/^R\s*[\.:]/i,'').trimStart();
         html += '<div class="kbs-psalm-line kbs-ref-line"><span class="kbs-r">R.</span>' + (rest ? (' ' + esc(rest)) : '') + '</div>';
         continue;
       }
+
+      // Refren marker at the end of stanza line: "... R."
+      const mEndR = tPsalm.match(/^(.*?)(?:\s+)R\.\s*$/);
+      if (mEndR && mEndR[1] && mEndR[1].trim()){
+        html += '<div class="kbs-psalm-line">'+esc(mEndR[1].trimEnd())+' <span class="kbs-r">R.</span></div>';
+        continue;
+      }
+
+      // Lone "R." line
+      if (/^R\.?$/i.test(tPsalm)){
+        html += '<div class="kbs-psalm-line kbs-ref-line"><span class="kbs-r">R.</span></div>';
+        continue;
+      }
+
       html += '<div class="kbs-psalm-line">'+esc(line)+'</div>';
       continue;
     }
