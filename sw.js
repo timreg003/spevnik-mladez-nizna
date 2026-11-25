@@ -1,5 +1,5 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
-const CACHE_NAME = "spevnik-v115";
+const CACHE_NAME = "spevnik-v112";
 
 const CORE_ASSETS = [
   './',
@@ -22,11 +22,18 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // Cache core assets one-by-one (so one missing file never breaks install)
-    await Promise.allSettled(CORE_ASSETS.map(u => cache.add(u)));
+    // cache:'reload' = obíď HTTP cache prehliadača, nech sa do novej verzie nedostanú staré súbory
+    await Promise.allSettled(CORE_ASSETS.map(u => cache.add(new Request(u, { cache: 'reload' }))));
     // Optional assets – don't fail install if they are slow/offline
     await Promise.allSettled(OPTIONAL_ASSETS.map(u => cache.add(u)));
   })());
-  self.skipWaiting();
+  // ŽIADNE automatické skipWaiting – nová verzia počká a aktivuje sa
+  // pri ďalšom otvorení aplikácie (alebo keď používateľ ťukne „Aktualizovať“).
+});
+
+// Stránka pošle {type:'SKIP_WAITING'}, keď chce novú verziu aktivovať hneď.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

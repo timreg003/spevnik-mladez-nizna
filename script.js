@@ -279,11 +279,11 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v115';
-const APP_CACHE_NAME = 'spevnik-v115';
+const APP_BUILD = 'v112';
+const APP_CACHE_NAME = 'spevnik-v112';
 
 function _buildNum(){
-  // APP_BUILD is like "v114"
+  // APP_BUILD is like "v111"
   const m = String(APP_BUILD||'').match(/(\d+)/);
   return m ? m[1] : '0';
 }
@@ -1615,8 +1615,12 @@ function normalizeOrderToken(tok){
   m = s.match(/^B(\d*)\s*:?$/i);
   if (m) return `B${m[1]||""}:`;
   // keep specials as-is
-  m = s.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)(?:\(.*\))?$/i);
-  if (m) return s.toUpperCase().replace(/\s+/g,'');
+  // veľkými písmenami len názov kroku, text poznámky ostáva tak, ako bol napísaný
+  m = s.match(/^(PREDOHRA|MEDZIHRA|DOHRA|POZNAMKA|POZNÁMKA)\s*(?:\((.*)\))?$/i);
+  if (m){
+    const note = (m[2] || '').trim();
+    return m[1].toUpperCase() + (note ? `(${note})` : '');
+  }
   return s;
 }
 function joinOrderTokens(tokens){ return (tokens||[]).map(t=>t.trim()).filter(Boolean).join(','); }
@@ -4436,32 +4440,58 @@ try {
 } catch(e) {}
 
 // PWA offline
+// Nová verzia aplikácie sa stiahne potichu na pozadí a NEREŠTARTUJE appku počas používania.
+// Aktivuje sa sama pri ďalšom otvorení (po zatvorení appky), alebo hneď po ťuknutí na „Aktualizovať“.
+let __swUserRequestedReload = false;
+
+function showAppUpdateReady(reg){
+  if (!reg || !reg.waiting) return;
+  if (document.getElementById('sw-update-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'sw-update-banner';
+  b.setAttribute('role', 'status');
+  b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:9999;display:flex;gap:10px;align-items:center;background:#1e1e1e;color:#fff;border:1px solid #00bfff;border-radius:12px;padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,.5);font-size:14px;max-width:calc(100% - 24px);';
+  b.innerHTML = '<span>Nová verzia aplikácie je pripravená.</span>'
+    + '<button type="button" id="sw-update-now" style="background:#00bfff;color:#000;border:0;border-radius:8px;padding:6px 10px;font-weight:700;">Aktualizovať</button>'
+    + '<button type="button" id="sw-update-later" aria-label="Neskôr" style="background:none;color:#aaa;border:0;font-size:18px;padding:0 4px;">×</button>';
+  document.body.appendChild(b);
+  document.getElementById('sw-update-later').onclick = () => b.remove();
+  document.getElementById('sw-update-now').onclick = () => {
+    __swUserRequestedReload = true;
+    b.remove();
+    try { _lockAppUpdateOverlay('Aktualizujem aplikáciu…'); } catch(e) {}
+    try { reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch(e) { location.reload(); }
+  };
+}
+
 if ('serviceWorker' in navigator) {
   try {
-    navigator.serviceWorker.register('sw.js').then((reg) => {
-      // Proactively check for a new SW (app shell update)
-      try { reg.update(); } catch(e) {}
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      // Nová verzia už čaká (stiahnutá skôr) → len ponúkni tlačidlo
+      if (reg.waiting && navigator.serviceWorker.controller) showAppUpdateReady(reg);
 
       reg.addEventListener('updatefound', () => {
-        // show "Aktualizujem…" while new SW is installing
-        setSyncStatus("Aktualizujem…", "warn", 0);
-            });
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          // "installed" + existujúci controller = nová verzia čaká (nie prvá inštalácia)
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) showAppUpdateReady(reg);
+        });
+      });
+
+      try { reg.update(); } catch(e) {}
+      // kontrola novej verzie aj pri návrate do appky
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { try { reg.update(); } catch(e) {} }
+      });
     }).catch(()=>{});
   } catch(e) {}
-  // When the new SW takes control, reload to use the new files.
-  // Avoid a reload on first install (when there was no controller yet).
+
+  // Reload len vtedy, keď si o to používateľ sám povedal (ťukol „Aktualizovať“).
   try{
     let reloaded = false;
-    let hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloaded) return;
-      setSyncStatus("Aktualizované", "ok", 2000);
-      showToast("Aktualizované", true, 1800);
-      if (!hadController){
-        // first install – just mark as ready
-        hadController = true;
-        return;
-      }
+      if (reloaded || !__swUserRequestedReload) return;
       reloaded = true;
       try { location.reload(); } catch(e) {}
     });
@@ -5714,20 +5744,9 @@ function _litKbsLikeHtmlFromText(rawText){
 
   let html = '<div class="kbs-like">';
   let inPsalm = false;
-  let inSeq = false;
   let lastH4 = '';
   let afterVerse = false;
   let expectBriefAfterIntro = false;
-  let pendingPsalmRefrain = null;
-  let expectAcclVerseNext = false;
-
-  function peekNextNonEmpty(idx){
-    for (let j=idx+1;j<lines.length;j++){
-      const t = String(lines[j]||'').trim();
-      if (t) return t;
-    }
-    return '';
-  }
 
   function esc(x){ return escapeHtml(String(x||'')); }
 
@@ -5736,13 +5755,6 @@ function _litKbsLikeHtmlFromText(rawText){
     const line = String(lineRaw||'').trimEnd();
 
     if (!line.trim()){
-      // inside psalm we ignore empty lines to avoid huge gaps between verses
-      if (inPsalm) continue;
-      // inside sequence, keep only a small stanza separator
-      if (inSeq){
-        html += '<div class="kbs-seq-stanza-gap"></div>';
-        continue;
-      }
       html += '<div class="kbs-gap"></div>';
       continue;
     }
@@ -5756,28 +5768,6 @@ if (expectBriefAfterIntro){
   continue;
 }
 
-// if we printed Aleluja/pôstne zvolanie title, style the very next line as the verse
-if (expectAcclVerseNext){
-  const t = String(line||'').trim();
-  html += '<div class="kbs-accl-verse">'+esc(t)+'</div>';
-  expectAcclVerseNext = false;
-  continue;
-}
-
-    // Buffer psalm refrain line that sometimes comes before "Responzóriový žalm"
-    if (!inPsalm && pendingPsalmRefrain===null){
-      const tBuf = String(line||'').trim();
-      const tBufNorm = tBuf.replace(/^[\s>*\-_•]+/g,'').trim();
-      if (/^R\s*[\.:]/i.test(tBufNorm)){
-        const next = peekNextNonEmpty(i).trim();
-        const nextNorm = next.replace(/^[\s>*\-_•]+/g,'').trim();
-        if (/^Responzóriový\s+žalm\b/i.test(nextNorm) || /^#{4,5}\s+Responzóriový\s+žalm\b/i.test(nextNorm)){
-          pendingPsalmRefrain = tBuf;
-          continue;
-        }
-      }
-    }
-
     // headings
     if (/^#{5}\s+/.test(line)){
       const h5 = line.replace(/^#{5}\s+/, '').trim();
@@ -5786,12 +5776,9 @@ if (expectAcclVerseNext){
         // medzi veršom/aklamáciou a evanjeliom nech sú dva prázdne riadky (aj keď Evanjelium je #####)
         html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
       }
-      if (inPsalm) html += '<div class="kbs-gap"></div>';
       inPsalm = false;
-      if (inSeq){ html += '<div class=\"kbs-gap\"></div>'; inSeq = false; }
       expectBriefAfterIntro = false;
-      const isLitTitle = /^(Čítanie\s+z\b|Čítanie\s+zo\b|Responzóriový\s+žalm\b|Sekvencia\b|Evanjelium\b|Čítanie\s+zo\s+svätého\s+Evanjelia\b)/i.test(h5);
-      html += '<div class="kbs-h5'+(isLitTitle?' kbs-lit-title':'')+'">'+esc(h5)+'</div>';
+      html += '<div class="kbs-h5">'+esc(h5)+'</div>';
       continue;
     }
     if (/^#{4}\s+/.test(line)){
@@ -5804,16 +5791,12 @@ if (expectAcclVerseNext){
         html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
       }
 
-      const nextIsPsalm = /^Responzóriový\s+žalm\b/i.test(h);
-      if (inPsalm && !nextIsPsalm) html += '<div class="kbs-gap"></div>';
-      if (inSeq){ html += '<div class=\"kbs-gap\"></div>'; inSeq = false; }
-      inPsalm = nextIsPsalm;
+      inPsalm = /^Responzóriový\s+žalm\b/i.test(h);
       afterVerse = /(\bverš\b|aklamáci|aleluja)/i.test(h);
       lastH4 = h;
       expectBriefAfterIntro = false;
 
-      const isLitTitle = /^(Čítanie\s+z\b|Čítanie\s+zo\b|Responzóriový\s+žalm\b|Sekvencia\b|Evanjelium\b|Čítanie\s+zo\s+svätého\s+Evanjelia\b)/i.test(h);
-      html += '<div class="kbs-h4'+(isLitTitle?' kbs-lit-title':'')+'">'+esc(h)+'</div>';
+      html += '<div class="kbs-h4">'+esc(h)+'</div>';
       continue;
     }
     // Ak "Evanjelium" príde ako bežný riadok (nie nadpis), vlož medzeru po aleluja/verši
@@ -5823,118 +5806,16 @@ if (expectAcclVerseNext){
     }
 
 
-// Reading/Psalm/Gospel intro lines: render bigger + bold + italic.
-// For reading/gospel intro, the next non-empty line is often a brief sentence (grey + smaller).
+// Reading/Gospel intro line: next non-empty line is the brief sentence
 const tLine = line.trim();
 const tLineNorm = tLine
   .replace(/^[\s>*\-_•]+/g,'')
   .replace(/^[*_]+/g,'')
   .replace(/[*_]+$/g,'')
   .trim();
-
-// Aleluja / pôstne zvolania pred evanjeliom (väčšie ako nadpisy, verš pod tým)
-const ACCL_PHRASES = [
-  'Chvála ti, Kriste, Kráľ večnej slávy',
-  'Sláva ti a chvála, Ježišu Kriste',
-  'Sláva ti, Kriste, ty Božie slovo'
-];
-
-let acclTitle = '';
-let acclInlineVerse = '';
-
-// detect Lenten acclamation even when the verse is on the same line
-for (const ph of ACCL_PHRASES){
-  const phL = ph.toLowerCase();
-  const tl = tLineNorm.toLowerCase();
-  if (tl.startsWith(phL)){
-    acclTitle = ph + '.';
-    let rest = tLineNorm.slice(ph.length);
-    // strip punctuation right after the acclamation
-    rest = rest.replace(/^\s*[\.!;:—–-]*\s*/, '');
-    acclInlineVerse = rest.trim();
-    break;
-  }
-}
-
-const isAcclLine = /^Aleluja\b/i.test(tLineNorm) || !!acclTitle;
-
-if (isAcclLine){
-  if (inPsalm){
-    html += '<div class="kbs-gap"></div>';
-    inPsalm = false;
-  }
-  if (inSeq){
-    html += '<div class="kbs-gap"></div>';
-    inSeq = false;
-  }
-
-  let title = tLine.trim();
-  let inlineVerse = '';
-
-  if (/^Aleluja\b/i.test(tLineNorm)){
-    // Normalizuj "Aleluja, aleluja..." -> len "Aleluja" (verš môže byť na tom istom riadku)
-    const m = tLineNorm.match(/^Aleluja(?:[\s,!.]+Aleluja){0,3}[\s,!.]*(.*)$/i);
-    title = 'Aleluja';
-    inlineVerse = (m && m[1]) ? String(m[1]).trim() : '';
-  }else{
-    // pôstne zvolanie
-    title = acclTitle || title;
-    inlineVerse = acclInlineVerse || '';
-  }
-
-  html += '<div class="kbs-accl-title">'+esc(title)+'</div>';
-  afterVerse = true;
-
-  if (inlineVerse){
-    html += '<div class="kbs-accl-verse">'+esc(inlineVerse)+'</div>';
-  }else{
-    expectAcclVerseNext = true;
-  }
-  continue;
-}
-
-const isReadingIntro = /^Čítanie\s+z\s+/i.test(tLineNorm) || /^Čítanie\s+zo\s+/i.test(tLineNorm);
-const isPsalmIntro = /^Responzóriový\s+žalm\b/i.test(tLineNorm);
-const isGospelIntro = /^Evanjelium\b/i.test(tLineNorm) || /^Čítanie\s+zo\s+svätého\s+Evanjelia\b/i.test(tLineNorm);
-const isSeqIntro = /^Sekvencia\b/i.test(tLineNorm);
-
-if (isReadingIntro || isPsalmIntro || isGospelIntro || isSeqIntro){
-  // if we are leaving psalm section, add a single blank line after the psalm
-  if (inPsalm && !isPsalmIntro){
-    html += '<div class="kbs-gap"></div>';
-  }
-
-  // if we are leaving sequence section, add a single blank line after the sequence
-  if (inSeq && !isSeqIntro){
-    html += '<div class="kbs-gap"></div>';
-    inSeq = false;
-  }
-
-  // if gospel intro comes right after aleluja/verse, add extra spacing
-  if (isGospelIntro && afterVerse){
-    html += '<div class="kbs-gap"></div><div class="kbs-gap"></div>';
-    afterVerse = false;
-  }
-
-  html += '<div class="kbs-lit-intro">'+esc(tLine)+'</div>';
-  expectBriefAfterIntro = (isReadingIntro || isGospelIntro);
-  // psalm/sequence sections start here even when not formatted as ####
-  inPsalm = isPsalmIntro;
-  inSeq = isSeqIntro;
-
-  // If the refrain line came BEFORE the psalm intro, render it now (under the intro)
-  if (isPsalmIntro && pendingPsalmRefrain){
-    const tPsalm = pendingPsalmRefrain.trim();
-    const rest = tPsalm.replace(/^R\s*[\.:]/i,'').trimStart();
-    html += '<div class="kbs-psalm-line kbs-psalm-refrain-top"><span class="kbs-r">R.</span>' + (rest ? (' ' + esc(rest)) : '') + '</div>';
-    pendingPsalmRefrain = null;
-  }
-  continue;
-}
-
-// Begin/End lines (sometimes used for reading/gospel)
-if (!inPsalm && (/^(Začiatok|Koniec)\b/i.test(tLineNorm))){
-  html += '<div class="kbs-beginend">'+esc(tLine)+'</div>';
+if (!inPsalm && (/^Čítanie\s+z\s+/i.test(tLineNorm) || /^Čítanie\s+zo\s+/i.test(tLineNorm))){
+  html += '<div class="kbs-line">'+esc(tLine)+'</div>';
+  expectBriefAfterIntro = true;
   continue;
 }
     // responses
@@ -5945,38 +5826,7 @@ if (!inPsalm && (/^(Začiatok|Koniec)\b/i.test(tLineNorm))){
 
     // keep psalm line breaks
     if (inPsalm){
-      const tPsalm = String(line||'').trim();
-
-      // Refren lines at the beginning: "R." / "R:" / "R.:"
-      if (/^R\s*[\.:]/i.test(tPsalm)){
-        const rest = tPsalm.replace(/^R\s*[\.:]/i,'').trimStart();
-        html += '<div class="kbs-psalm-line kbs-ref-line"><span class="kbs-r">R.</span>' + (rest ? (' ' + esc(rest)) : '') + '</div>';
-        continue;
-      }
-
-      // Refren marker at the end of stanza line: "... R."
-      const mEndR = tPsalm.match(/^(.*?)(?:\s+)R\.\s*$/);
-      if (mEndR && mEndR[1] && mEndR[1].trim()){
-        html += '<div class="kbs-psalm-line">'+esc(mEndR[1].trimEnd())+' <span class="kbs-r">R.</span></div>';
-        // one blank line between stanzas
-        html += '<div class="kbs-psalm-stanza-gap"></div>';
-        continue;
-      }
-
-      // Lone "R." line
-      if (/^R\.?$/i.test(tPsalm)){
-        html += '<div class="kbs-psalm-line kbs-ref-line"><span class="kbs-r">R.</span></div>';
-        continue;
-      }
-
       html += '<div class="kbs-psalm-line">'+esc(line)+'</div>';
-      continue;
-    }
-
-    // keep sequence line breaks
-    if (inSeq){
-      const tSeq = String(line||'').trim();
-      html += '<div class="kbs-seq-line">'+esc(tSeq)+'</div>';
       continue;
     }
 
