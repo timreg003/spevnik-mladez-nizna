@@ -313,8 +313,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v121';
-const APP_CACHE_NAME = 'spevnik-v121';
+const APP_BUILD = 'v122';
+const APP_CACHE_NAME = 'spevnik-v122';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -887,9 +887,7 @@ function updatePlaylistSaveEnabled(){
 
 function confirmDiscardEdits(){
   if (!isAdmin) return true;
-  if (dnesDirty && hasPerm('A')){
-    return confirm('Zoznam Piesne na dnes nie je uložený. Odísť bez uloženia?');
-  }
+  if (dnesDirty && hasPerm('A')) askSaveDnesIfDirty();
   if (playlistDirty){
     return confirm('Máš neuložené zmeny v editore. Naozaj chceš pokračovať bez uloženia?');
   }
@@ -1144,7 +1142,7 @@ function toggleEditor(panelId){
   if (!panel) return;
   const willCollapse = !panel.classList.contains('collapsed');
   if (willCollapse){
-    if (panelId === 'dnes-editor-panel' && dnesDirty && !confirm('Máš neuložené zmeny v editore Piesne na dnes. Zbaliť bez uloženia?')) return;
+    if (panelId === 'dnes-editor-panel' && dnesDirty) askSaveDnesIfDirty();
     if (panelId === 'admin-panel' && playlistDirty && !confirm('Máš neuložené zmeny v editore playlistu. Zbaliť bez uloženia?')) return;
   }
   panel.classList.toggle('collapsed');
@@ -3524,9 +3522,26 @@ function markDnesChanged(){
   updateDnesUnsavedUI();
 }
 
+// Pri odchode z neuloženého zoznamu: OK = uložiť, Zrušiť = zahodiť zmeny
+function askSaveDnesIfDirty(){
+  if (!(isAdmin && hasPerm('A') && dnesDirty)) return;
+  if (confirm('Zoznam Piesne na dnes nie je uložený.\n\nOK = Uložiť\nZrušiť = Zahodiť zmeny')){
+    saveDnesEditor(false);   // heslo sa vezme hneď pri volaní, takže uloží aj pri odhlásení
+    dnesDirty = false;       // nepýtaj sa druhýkrát, kým beží ukladanie
+    updateDnesUnsavedUI();
+  } else {
+    try { openDnesEditor(true); } catch(e) {}   // vráť uloženú verziu
+    dnesDirty = false;
+    updateDnesUnsavedUI();
+  }
+}
+
 // Pripomienka „Zoznam nie je uložený“ (lišta dole na zozname + červené tlačidlo ULOŽIŤ)
 function updateDnesUnsavedUI(){
   const show = !!(isAdmin && hasPerm('A') && dnesDirty);
+  const btn0 = document.getElementById('dnes-save-btn');
+  if (btn0) btn0.classList.toggle('needs-save', show);
+  return; // v121: lišta „nie je uložený“ zavadzala – appka sa radšej opýta pri odchode
   let bar = document.getElementById('dnes-unsaved-bar');
   if (!bar && show){
     bar = document.createElement('div');
