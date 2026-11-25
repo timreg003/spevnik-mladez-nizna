@@ -309,8 +309,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v113';
-const APP_CACHE_NAME = 'spevnik-v113';
+const APP_BUILD = 'v114';
+const APP_CACHE_NAME = 'spevnik-v114';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -7750,6 +7750,46 @@ function initChordModeOnOpen(){
   applyChordMode(saved);
 }
 
+// ⌫ v editore (hlavne pre režim akordov, kde je klávesnica skrytá):
+// - označený text → zmaže označenie
+// - kurzor hneď za akordom alebo v ňom → zmaže celý akord [Am]
+// - inak zmaže jeden znak pred kurzorom
+function editorBackspace(){
+  const ta = document.getElementById('se-text');
+  if (!ta) return;
+  const val = String(ta.value||'');
+  let start = ta.selectionStart ?? val.length;
+  let end = ta.selectionEnd ?? val.length;
+
+  if (start === end){
+    if (start <= 0) return;
+    // nájdi akord, v ktorom kurzor stojí alebo ktorý končí tesne pred kurzorom
+    const open = val.lastIndexOf('[', start - 1);
+    const close = (open >= 0) ? val.indexOf(']', open) : -1;
+    if (open >= 0 && close >= 0 && close + 1 >= start && !val.slice(open, close).includes('\n')){
+      start = open; end = close + 1;
+    } else {
+      start = start - 1;
+    }
+  }
+  const removed = val.slice(start, end);
+  if (__dChordLockEnabled && /[\[\]]/.test(removed)){
+    showToast('Admin D môže meniť iba text (akordy sú zamknuté).', false, 2200);
+    return;
+  }
+  const body = ta.closest('.modal-body');
+  const taTop = ta.scrollTop, bodyTop = body ? body.scrollTop : 0;
+  if (typeof ta.setRangeText === 'function') ta.setRangeText('', start, end, 'end');
+  else { ta.value = val.slice(0, start) + val.slice(end); }
+  ta.selectionStart = ta.selectionEnd = start;
+  if (document.activeElement !== ta){ try { ta.focus({ preventScroll: true }); } catch(e) { ta.focus(); } }
+  ta.scrollTop = taTop; if (body) body.scrollTop = bodyTop;
+  if (__dChordLockEnabled){
+    __dChordLockLastGood = String(ta.value||'');
+  }
+  __lastQuickChord = null;
+}
+
 // Rýchle vloženie: ťuk na základ = hneď vloží [X]; ťuk na typ hneď potom = zmení ho na [Xm] atď.
 function chordQuickRoot(root){
   const ta = document.getElementById('se-text');
@@ -7776,7 +7816,32 @@ function chordQuickQual(qual){
 }
 
 // Tlačidlá v paneli akordov nesmú textareu odfokusovať (inak skáče obrazovka a stratí sa kurzor).
+// ⌫: ťuk = zmaže jeden znak (alebo celý akord), podržanie = maže ďalej a postupne zrýchľuje
+function initEditorDeleteButton(){
+  const btn = document.getElementById('editor-del-btn');
+  if (!btn || btn.dataset.inited) return;
+  btn.dataset.inited = '1';
+  let timer = null, count = 0;
+  const stop = () => { if (timer){ clearTimeout(timer); timer = null; } };
+  const tick = () => {
+    editorBackspace();
+    count++;
+    timer = setTimeout(tick, count < 6 ? 140 : (count < 20 ? 70 : 35));
+  };
+  btn.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();               // textarea ostane vo fokuse, nič neskáče
+    stop(); count = 0;
+    editorBackspace();                 // prvý znak hneď
+    timer = setTimeout(tick, 450);     // po podržaní začne mazať ďalej
+  });
+  ['pointerup','pointerleave','pointercancel','blur'].forEach(t => btn.addEventListener(t, stop));
+  btn.addEventListener('contextmenu', (ev) => ev.preventDefault()); // dlhé podržanie na mobile neotvorí menu
+  // klávesnica / čítačka (bez pointerdown)
+  btn.addEventListener('click', (ev) => { if (ev.detail === 0) editorBackspace(); });
+}
+
 function initChordKbdNoBlur(){
+  try { initEditorDeleteButton(); } catch(e) {}
   const kbd = document.querySelector('#song-editor-modal .chord-kbd');
   if (!kbd || kbd.dataset.noblur) return;
   kbd.dataset.noblur = '1';

@@ -1395,3 +1395,21 @@ body.present #presentControls{ display:flex; }
 #song-editor-modal.chord-mode .chord-kbd .chord-preview{
   display:none;
 }
+.chip-btn.chip-del{
+  border-color: rgba(255,82,82,0.6);
+  color:#ff8a80;
+}
+/* v režime akordov: riadok s ⌫ / ⏎ hore v paneli, aby bol vždy po ruke */
+#song-editor-modal.chord-mode .chord-kbd{
+  display:flex;
+  flex-direction:column;
+}
+#song-editor-modal.chord-mode .chord-kbd .edit-keys{
+  order:-1;
+  margin:0 0 10px !important;
+}
+#song-editor-modal.chord-mode .chord-kbd .edit-keys .chip-btn{
+  padding: 8px 14px;
+  font-size: 15px;
+}
+#editor-del-btn{ touch-action: manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }

@@ -5,16 +5,16 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>Mládežnícky spevník NIŽNÁ</title>
-<link href="manifest.json?v=113" rel="manifest"/>
+<link href="manifest.json?v=114" rel="manifest"/>
 <meta content="#00bfff" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Spevník" name="apple-mobile-web-app-title"/>
-<link href="icon.png?v=113" rel="apple-touch-icon"/>
-<link href="icon.png?v=113" rel="icon" type="image/png"/>
+<link href="icon.png?v=114" rel="apple-touch-icon"/>
+<link href="icon.png?v=114" rel="icon" type="image/png"/>
 <link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
-<link href="style.css?v=113" rel="stylesheet"/>
+<link href="style.css?v=114" rel="stylesheet"/>
 </head>
 <body>
 <div class="toast" id="toast" style="display:none;"></div>
@@ -314,7 +314,7 @@
 <span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
 <button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-<script src="script.js?v=113"></script>
+<script src="script.js?v=114"></script>
 <!-- FORM EDITOR MODAL -->
 <div class="modal-overlay" id="form-modal" style="display:none;">
 <div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
@@ -421,11 +421,12 @@
 <button class="btn-save" onclick="insertBuiltChord()" type="button">Vložiť</button>
 <button class="btn-neutral" onclick="resetChordBuilder()" type="button">Reset</button>
 </div>
-<div class="form-buttons" style="justify-content:flex-start; gap:8px; margin-top:8px;">
+<div class="form-buttons edit-keys" style="justify-content:flex-start; gap:8px; margin-top:8px;">
 <button class="chip-btn" onclick="insertTextAtCaret('[', true)" type="button">[</button>
 <button class="chip-btn" onclick="insertTextAtCaret(']', true)" type="button">]</button>
 <button class="chip-btn" onclick="insertTextAtCaret('\n', true)" type="button">⏎</button>
 <button class="chip-btn" onclick="insertTextAtCaret('— ', true)" type="button">—</button>
+<button class="chip-btn chip-del" id="editor-del-btn" type="button" title="Zmaže znak pred kurzorom (akord celý naraz). Podrž = maže ďalej.">⌫ Zmazať</button>
 </div>
 <div class="modal-hint"><div class="btn-row" id="editor-transpose-row" style="display:none; margin-top:6px;">
   <button class="btn-neutral" onclick="editorTranspose(-1)" type="button">Akordy −</button>
