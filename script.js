@@ -309,8 +309,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v116';
-const APP_CACHE_NAME = 'spevnik-v116';
+const APP_BUILD = 'v117';
+const APP_CACHE_NAME = 'spevnik-v117';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -8655,15 +8655,11 @@ const QUICK_MSG_GROUPS = [
     { c:'again_all', t:'Ešte raz celá pieseň' },
   ]},
   { title: 'Dohra (hudobníci)', items: [
-    { c:'d_chord',    t:'Dohra: iba posledný akord – držíme' },
-    { c:'d_1line',    t:'Dohra: prvý riadok' },
-    { c:'d_2lines',   t:'Dohra: prvé dva riadky' },
-    { c:'d_last_sl',  t:'Dohra: posledný riadok slohy' },
-    { c:'d_last_ref', t:'Dohra: posledný riadok refrénu' },
-    { c:'d_half_sl',  t:'Dohra: polovica slohy' },
-    { c:'d_full_sl',  t:'Dohra: celá sloha' },
-    { c:'d_half_ref', t:'Dohra: polovica refrénu' },
-    { c:'d_full_ref', t:'Dohra: celý refrén' },
+    { c:'d_chord', l:'Držíme posledný akord', t:'Dohra: držíme posledný akord' },
+    { c:'d_sl',    l:'Sloha',                 t:'Dohra: sloha' },
+    { c:'d_ref',   l:'Refrén',                t:'Dohra: refrén' },
+    { c:'d_end_sl',  l:'Koniec slohy',        t:'Dohra: koniec slohy' },
+    { c:'d_end_ref', l:'Koniec refrénu',      t:'Dohra: koniec refrénu' },
   ]},
   { title: 'Tempo a hlasitosť', items: [
     { c:'slower',  t:'Pomalšie' },
@@ -8677,8 +8673,23 @@ const QUICK_MSG_GROUPS = [
     { c:'goto',       t:'Ideme na pieseň…' },
   ]},
 ];
-const QUICK_MSG_TEXT = {};
+// staré kódy (keby niekto mal ešte staršiu verziu appky)
+const QUICK_MSG_TEXT = {
+  d_1line:'Dohra: prvý riadok', d_2lines:'Dohra: prvé dva riadky', d_last_sl:'Dohra: koniec slohy',
+  d_last_ref:'Dohra: koniec refrénu', d_half_sl:'Dohra: polovica slohy', d_full_sl:'Dohra: sloha',
+  d_half_ref:'Dohra: polovica refrénu', d_full_ref:'Dohra: refrén'
+};
 QUICK_MSG_GROUPS.forEach(g => g.items.forEach(it => { QUICK_MSG_TEXT[it.c] = it.t; }));
+const QMSG_CUSTOM_MAX = 80;
+const LS_QMSG_RECENT = 'qmsg_recent_custom_v1';
+function _qmsgRecent(){ try { const a = JSON.parse(localStorage.getItem(LS_QMSG_RECENT) || '[]'); return Array.isArray(a) ? a.slice(0,4) : []; } catch(e) { return []; } }
+function _qmsgRememberCustom(t){
+  try{
+    const a = _qmsgRecent().filter(x => x !== t);
+    a.unshift(t);
+    localStorage.setItem(LS_QMSG_RECENT, JSON.stringify(a.slice(0,4)));
+  }catch(e){}
+}
 
 function _qmsgDeviceId(){
   try{
@@ -8699,7 +8710,18 @@ function openQuickMsgPicker(){
   const body = document.getElementById('qmsg-body');
   if (!body) return;
   const song = (currentSong && document.getElementById('song-detail')?.style.display === 'block') ? currentSong : null;
-  body.innerHTML = QUICK_MSG_GROUPS.map(g => `
+  const recent = _qmsgRecent();
+  const customHtml = `
+    <div class="modal-block">
+      <div class="modal-label">Vlastná hláška</div>
+      <div class="qmsg-custom">
+        <input id="qmsg-custom-input" class="text-input" type="text" maxlength="${QMSG_CUSTOM_MAX}" placeholder="Napíš krátku hlášku…" enterkeyhint="send"
+          onkeydown="if(event.key==='Enter'){event.preventDefault(); sendQuickMsgCustom();}"/>
+        <button type="button" class="btn-save qmsg-send" onclick="sendQuickMsgCustom()"><i class="fas fa-paper-plane"></i> Poslať</button>
+      </div>
+      ${recent.length ? `<div class="qmsg-grid" style="margin-top:8px;">${recent.map((t,i) => `<button type="button" class="qmsg-chip qmsg-recent" onclick="sendQuickMsgCustom(${i})">${escapeHtml(t)}</button>`).join('')}</div>` : ''}
+    </div>`;
+  body.innerHTML = customHtml + QUICK_MSG_GROUPS.map(g => `
     <div class="modal-block">
       <div class="modal-label">${escapeHtml(g.title)}</div>
       <div class="qmsg-grid">
@@ -8708,7 +8730,7 @@ function openQuickMsgPicker(){
             const lab = song ? `Ideme na pieseň ${song.displayId}. ${song.title}` : 'Ideme na pieseň… (najprv otvor pieseň)';
             return `<button type="button" class="qmsg-chip qmsg-goto" ${song ? '' : 'disabled'} onclick="sendQuickMsg('goto')">${escapeHtml(lab)}</button>`;
           }
-          return `<button type="button" class="qmsg-chip${it.c.startsWith('d_') ? ' qmsg-dohra' : ''}" onclick="sendQuickMsg('${it.c}')">${escapeHtml(it.t)}</button>`;
+          return `<button type="button" class="qmsg-chip${it.c.startsWith('d_') ? ' qmsg-dohra' : ''}" onclick="sendQuickMsg('${it.c}')">${escapeHtml(it.l || it.t)}</button>`;
         }).join('')}
       </div>
     </div>`).join('') +
@@ -8723,11 +8745,22 @@ function closeQuickMsgPicker(){
 
 // --- odoslanie ---
 let __qmsgLastSendAt = 0;
-async function sendQuickMsg(code){
+function sendQuickMsgCustom(recentIdx){
+  let t = '';
+  if (recentIdx != null) t = _qmsgRecent()[recentIdx] || '';
+  else { const inp = document.getElementById('qmsg-custom-input'); t = inp ? inp.value : ''; }
+  t = String(t||'').replace(/\s+/g,' ').trim().slice(0, QMSG_CUSTOM_MAX);
+  if (!t){ showToast('Napíš text hlášky.', false, 1600); return; }
+  _qmsgRememberCustom(t);
+  return sendQuickMsg('txt', t);
+}
+
+async function sendQuickMsg(code, customText){
   if (!isAdmin) return;
   if (Date.now() - __qmsgLastSendAt < 1200) return; // dvojité ťuknutie
   __qmsgLastSendAt = Date.now();
   const msg = { v:1, c:String(code), from:(adminSession && adminSession.name) ? String(adminSession.name) : 'Admin', dev:_qmsgDeviceId(), id: Math.random().toString(36).slice(2,10) };
+  if (code === 'txt') msg.x = String(customText||'').slice(0, QMSG_CUSTOM_MAX);
   if (code === 'goto'){
     if (!currentSong) return;
     msg.s = String(currentSong.id);
@@ -8746,6 +8779,7 @@ async function sendQuickMsg(code){
 
 function _qmsgText(msg){
   if (msg.c === 'goto') return 'Ideme na pieseň ' + (msg.st || '');
+  if (msg.c === 'txt') return String(msg.x || '').slice(0, QMSG_CUSTOM_MAX);
   return QUICK_MSG_TEXT[msg.c] || '';
 }
 

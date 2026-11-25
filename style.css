@@ -1471,3 +1471,8 @@ body.present #qmsg-btn{ bottom: 150px; }
 #qmsg-toast .qmsg-tap{ font-size: 12px; opacity: 0.8; margin-top: 4px; }
 #qmsg-toast.qmsg-in{ animation: qmsgIn .22s ease-out; }
 @keyframes qmsgIn{ from{ opacity:0; transform: translate(-50%, 12px); } to{ opacity:1; transform: translate(-50%, 0); } }
+.qmsg-custom{ display:flex; gap:8px; }
+.qmsg-custom .text-input{ flex:1; min-width:0; }
+.qmsg-send{ white-space:nowrap; padding: 0 14px; border-radius:12px; }
+.qmsg-chip.qmsg-recent{ border-style:dashed; }
+#qmsg-modal{ z-index: 1000004; }
