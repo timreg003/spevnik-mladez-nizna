@@ -313,8 +313,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v120';
-const APP_CACHE_NAME = 'spevnik-v120';
+const APP_BUILD = 'v121';
+const APP_CACHE_NAME = 'spevnik-v121';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -8929,7 +8929,52 @@ function updateQuickMsgButton(){
   if (b) b.style.display = (typeof isAdmin !== 'undefined' && isAdmin) ? 'flex' : 'none';
 }
 
-function openQuickMsgPicker(){
+// ===== Pás s hláškami dole (v121, možnosť A) =====
+const LS_QMSG_USAGE = 'qmsg_usage_v1';
+function _qmsgUsage(){ try { const o = JSON.parse(localStorage.getItem(LS_QMSG_USAGE) || '{}'); return (o && typeof o === 'object') ? o : {}; } catch(e) { return {}; } }
+function _qmsgCountUse(code){
+  try { const u = _qmsgUsage(); u[code] = (Number(u[code])||0) + 1; localStorage.setItem(LS_QMSG_USAGE, JSON.stringify(u)); } catch(e) {}
+}
+function toggleQuickMsgStrip(){
+  const st = document.getElementById('qmsg-strip');
+  if (st && st.style.display === 'flex') closeQuickMsgStrip(); else openQuickMsgStrip();
+}
+function openQuickMsgStrip(){
+  if (!isAdmin) return;
+  let st = document.getElementById('qmsg-strip');
+  if (!st){
+    st = document.createElement('div');
+    st.id = 'qmsg-strip';
+    st.setAttribute('role', 'toolbar');
+    st.setAttribute('aria-label', 'Hlášky');
+    document.body.appendChild(st);
+  }
+  // najpoužívanejšie hlášky na začiatok (pri rovnakom počte pôvodné poradie)
+  const usage = _qmsgUsage();
+  const all = [];
+  QUICK_MSG_GROUPS.forEach(g => g.items.forEach(it => { if (it.c !== 'goto') all.push(it); }));
+  const order = all.map((it, i) => ({ it, i, n: Number(usage[it.c]) || 0 }))
+                   .sort((a, b) => (b.n - a.n) || (a.i - b.i)).map(x => x.it);
+  const song = (currentSong && document.getElementById('song-detail')?.style.display === 'block') ? currentSong : null;
+  st.innerHTML =
+    `<button type="button" class="qs-close" aria-label="Zavrieť" onclick="closeQuickMsgStrip()">✕</button>` +
+    `<div class="qs-scroll">` +
+      order.map(it => `<button type="button" class="qs-chip${it.c.startsWith('d_') ? ' qs-dohra' : ''}" onclick="sendQuickMsg('${it.c}')">${escapeHtml(it.t)}</button>`).join('') +
+      (song ? `<button type="button" class="qs-chip qs-goto" onclick="sendQuickMsg('goto')">${escapeHtml('Ideme na pieseň ' + song.displayId + '.')}</button>` : '') +
+      `<button type="button" class="qs-chip qs-more" onclick="closeQuickMsgStrip(); openQuickMsgPicker()">Viac…</button>` +
+      `<button type="button" class="qs-chip qs-custom" onclick="closeQuickMsgStrip(); openQuickMsgPicker(true)">✎ Vlastný text</button>` +
+    `</div>`;
+  st.style.display = 'flex';
+  const sc = st.querySelector('.qs-scroll'); if (sc) sc.scrollLeft = 0;
+  document.body.classList.add('qmsg-strip-open');
+}
+function closeQuickMsgStrip(){
+  const st = document.getElementById('qmsg-strip');
+  if (st) st.style.display = 'none';
+  document.body.classList.remove('qmsg-strip-open');
+}
+
+function openQuickMsgPicker(focusCustom){
   if (!isAdmin) return;
   const body = document.getElementById('qmsg-body');
   if (!body) return;
@@ -8961,6 +9006,7 @@ function openQuickMsgPicker(){
     `<div class="modal-hint">Hlášku uvidí každý, kto má spevník práve otvorený (do ~1 s).</div>`;
   const m = document.getElementById('qmsg-modal');
   if (m) m.style.display = 'flex';
+  if (focusCustom === true){ setTimeout(() => { const i = document.getElementById('qmsg-custom-input'); if (i) i.focus(); }, 50); }
 }
 function closeQuickMsgPicker(){
   const m = document.getElementById('qmsg-modal');
@@ -8991,6 +9037,8 @@ async function sendQuickMsg(code, customText){
     msg.st = `${currentSong.displayId}. ${currentSong.title}`;
   }
   closeQuickMsgPicker();
+  closeQuickMsgStrip();
+  if (code !== 'txt' && code !== 'goto') _qmsgCountUse(code);
   if (!navigator.onLine){ showToast('Si offline – hláška sa neodoslala.', false, 2200); return; }
   try{
     const res = await fetch(QMSG_BASE, { method:'POST', body: JSON.stringify(msg) });
