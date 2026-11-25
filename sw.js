@@ -1,5 +1,5 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
-const CACHE_NAME = "spevnik-v115";
+const CACHE_NAME = "spevnik-v116";
 
 const CORE_ASSETS = [
   './',
@@ -48,6 +48,9 @@ self.addEventListener('activate', (event) => {
 // For navigation, always fall back to cached index.html, so app opens even long time offline.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+
+  // Rýchle hlášky (ntfy.sh) – živé spojenie, nikdy necachovať ani neprechádzať cez SW
+  try { if (new URL(req.url).hostname === 'ntfy.sh') return; } catch (e) {}
 
 
 // Do not cache range/partial responses (e.g. media streaming). Cache API rejects 206.

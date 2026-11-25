@@ -5,16 +5,16 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>Mládežnícky spevník NIŽNÁ</title>
-<link href="manifest.json?v=115" rel="manifest"/>
+<link href="manifest.json?v=116" rel="manifest"/>
 <meta content="#00bfff" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Spevník" name="apple-mobile-web-app-title"/>
-<link href="icon.png?v=115" rel="apple-touch-icon"/>
-<link href="icon.png?v=115" rel="icon" type="image/png"/>
+<link href="icon.png?v=116" rel="apple-touch-icon"/>
+<link href="icon.png?v=116" rel="icon" type="image/png"/>
 <link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
-<link href="style.css?v=115" rel="stylesheet"/>
+<link href="style.css?v=116" rel="stylesheet"/>
 </head>
 <body>
 <div class="toast" id="toast" style="display:none;"></div>
@@ -306,6 +306,19 @@
 <button id="fab-diag-btn" onclick="openDiagnostics()">Diagnostika</button>
 </div>
 </div>
+<!-- RÝCHLE HLÁŠKY (v116) -->
+<button id="qmsg-btn" type="button" aria-label="Poslať hlášku" onclick="openQuickMsgPicker()" style="display:none;"><i class="fas fa-comment-dots"></i><span class="qmsg-btn-emoji">💬</span></button>
+<div id="qmsg-toast" role="status" aria-live="polite" onclick="onQuickMsgToastTap()" style="display:none;"></div>
+<div class="modal-overlay" id="qmsg-modal" style="display:none;" onclick="if(event.target===this) closeQuickMsgPicker()">
+<div aria-labelledby="qmsg-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
+<div class="modal-header">
+<button class="modal-close" onclick="closeQuickMsgPicker()" type="button"><i class="fas fa-times"></i></button>
+<div class="modal-title" id="qmsg-modal-title">Poslať hlášku</div>
+<div style="width:42px;"></div>
+</div>
+<div class="modal-body" id="qmsg-body"></div>
+</div>
+</div>
 <!-- PREZENTAČNÝ REŽIM: OVERLAY OVLÁDANIE -->
 <div aria-hidden="true" id="presentControls">
 <button aria-label="Pomalšie" id="psSlower" onclick="presentSlower()"><i class="fas fa-minus"></i></button>
@@ -314,7 +327,7 @@
 <span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
 <button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-<script src="script.js?v=115"></script>
+<script src="script.js?v=116"></script>
 <!-- FORM EDITOR MODAL -->
 <div class="modal-overlay" id="form-modal" style="display:none;">
 <div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">

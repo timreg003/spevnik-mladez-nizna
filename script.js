@@ -309,8 +309,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v115';
-const APP_CACHE_NAME = 'spevnik-v115';
+const APP_BUILD = 'v116';
+const APP_CACHE_NAME = 'spevnik-v116';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -693,6 +693,7 @@ async function authWithPwd(pwd){
 function applyPermsToUI(){
   const logged = !!adminSession;
   isAdmin = logged;
+  try { updateQuickMsgButton(); } catch(e) {}
   const t = document.getElementById('admin-toggle-text');
   if (t) t.innerText = logged ? "ODHLÁSIŤ" : "PRIHLÁSIŤ";
 
@@ -8635,3 +8636,179 @@ async function keyHistoryClear(songId){
   }catch(e){ showToast('Zlyhalo.', false, 2000); }
 }
 
+
+/* ===== RÝCHLE HLÁŠKY (v116) =====
+   Prihlásený admin pošle predvolenú hlášku, všetci s otvorenou appkou ju do ~1 s uvidia dole.
+   Prenos: ntfy.sh (verejná služba, bez účtu) – kanál s náhodným menom, spojenie cez Server-Sent Events. */
+const QMSG_TOPIC = 'spevnik-nizna-477456ef969ac3b4';
+const QMSG_BASE = 'https://ntfy.sh/' + QMSG_TOPIC;
+const QMSG_MAX_AGE_S = 90;       // staršie hlášky (napr. po opätovnom pripojení) sa nezobrazia
+const QMSG_SHOW_MS = 6500;
+
+const QUICK_MSG_GROUPS = [
+  { title: 'Spev', items: [
+    { c:'rep_ref',   t:'Opakujeme refrén' },
+    { c:'next_sl',   t:'Ďalšia sloha' },
+    { c:'half1_end', t:'Spievame polovicu 1. slohy a končíme' },
+    { c:'end_ref',   t:'Končíme po refréne' },
+    { c:'end_sl',    t:'Končíme po tejto slohe' },
+    { c:'again_all', t:'Ešte raz celá pieseň' },
+  ]},
+  { title: 'Dohra (hudobníci)', items: [
+    { c:'d_chord',    t:'Dohra: iba posledný akord – držíme' },
+    { c:'d_1line',    t:'Dohra: prvý riadok' },
+    { c:'d_2lines',   t:'Dohra: prvé dva riadky' },
+    { c:'d_last_sl',  t:'Dohra: posledný riadok slohy' },
+    { c:'d_last_ref', t:'Dohra: posledný riadok refrénu' },
+    { c:'d_half_sl',  t:'Dohra: polovica slohy' },
+    { c:'d_full_sl',  t:'Dohra: celá sloha' },
+    { c:'d_half_ref', t:'Dohra: polovica refrénu' },
+    { c:'d_full_ref', t:'Dohra: celý refrén' },
+  ]},
+  { title: 'Tempo a hlasitosť', items: [
+    { c:'slower',  t:'Pomalšie' },
+    { c:'faster',  t:'Rýchlejšie' },
+    { c:'quieter', t:'Tichšie' },
+    { c:'louder',  t:'Hlasnejšie' },
+  ]},
+  { title: 'Ostatné', items: [
+    { c:'music_only', t:'Iba hudba (bez spevu)' },
+    { c:'next_song',  t:'Ďalšia pieseň' },
+    { c:'goto',       t:'Ideme na pieseň…' },
+  ]},
+];
+const QUICK_MSG_TEXT = {};
+QUICK_MSG_GROUPS.forEach(g => g.items.forEach(it => { QUICK_MSG_TEXT[it.c] = it.t; }));
+
+function _qmsgDeviceId(){
+  try{
+    let id = localStorage.getItem('qmsg_device_id');
+    if (!id){ id = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('qmsg_device_id', id); }
+    return id;
+  }catch(e){ return 'x'; }
+}
+
+// --- UI tlačidla 💬 (len pre prihlásených) ---
+function updateQuickMsgButton(){
+  const b = document.getElementById('qmsg-btn');
+  if (b) b.style.display = (typeof isAdmin !== 'undefined' && isAdmin) ? 'flex' : 'none';
+}
+
+function openQuickMsgPicker(){
+  if (!isAdmin) return;
+  const body = document.getElementById('qmsg-body');
+  if (!body) return;
+  const song = (currentSong && document.getElementById('song-detail')?.style.display === 'block') ? currentSong : null;
+  body.innerHTML = QUICK_MSG_GROUPS.map(g => `
+    <div class="modal-block">
+      <div class="modal-label">${escapeHtml(g.title)}</div>
+      <div class="qmsg-grid">
+        ${g.items.map(it => {
+          if (it.c === 'goto'){
+            const lab = song ? `Ideme na pieseň ${song.displayId}. ${song.title}` : 'Ideme na pieseň… (najprv otvor pieseň)';
+            return `<button type="button" class="qmsg-chip qmsg-goto" ${song ? '' : 'disabled'} onclick="sendQuickMsg('goto')">${escapeHtml(lab)}</button>`;
+          }
+          return `<button type="button" class="qmsg-chip${it.c.startsWith('d_') ? ' qmsg-dohra' : ''}" onclick="sendQuickMsg('${it.c}')">${escapeHtml(it.t)}</button>`;
+        }).join('')}
+      </div>
+    </div>`).join('') +
+    `<div class="modal-hint">Hlášku uvidí každý, kto má spevník práve otvorený (do ~1 s).</div>`;
+  const m = document.getElementById('qmsg-modal');
+  if (m) m.style.display = 'flex';
+}
+function closeQuickMsgPicker(){
+  const m = document.getElementById('qmsg-modal');
+  if (m) m.style.display = 'none';
+}
+
+// --- odoslanie ---
+let __qmsgLastSendAt = 0;
+async function sendQuickMsg(code){
+  if (!isAdmin) return;
+  if (Date.now() - __qmsgLastSendAt < 1200) return; // dvojité ťuknutie
+  __qmsgLastSendAt = Date.now();
+  const msg = { v:1, c:String(code), from:(adminSession && adminSession.name) ? String(adminSession.name) : 'Admin', dev:_qmsgDeviceId(), id: Math.random().toString(36).slice(2,10) };
+  if (code === 'goto'){
+    if (!currentSong) return;
+    msg.s = String(currentSong.id);
+    msg.st = `${currentSong.displayId}. ${currentSong.title}`;
+  }
+  closeQuickMsgPicker();
+  if (!navigator.onLine){ showToast('Si offline – hláška sa neodoslala.', false, 2200); return; }
+  try{
+    const res = await fetch(QMSG_BASE, { method:'POST', body: JSON.stringify(msg) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    showToast('Odoslané ✓ ' + _qmsgText(msg), true, 1600);
+  }catch(e){
+    showToast('Hlášku sa nepodarilo odoslať.', false, 2400);
+  }
+}
+
+function _qmsgText(msg){
+  if (msg.c === 'goto') return 'Ideme na pieseň ' + (msg.st || '');
+  return QUICK_MSG_TEXT[msg.c] || '';
+}
+
+// --- príjem ---
+let __qmsgES = null, __qmsgSeen = new Set(), __qmsgToastTimer = null, __qmsgCurrent = null;
+
+function showQuickMsg(msg){
+  const box = document.getElementById('qmsg-toast');
+  if (!box) return;
+  const text = _qmsgText(msg);
+  if (!text) return;
+  __qmsgCurrent = msg;
+  box.innerHTML = `<div class="qmsg-from">${escapeHtml(msg.from || '')}</div><div class="qmsg-text">${escapeHtml(text)}</div>`
+    + (msg.c === 'goto' && msg.s ? `<div class="qmsg-tap">Ťukni pre otvorenie</div>` : '');
+  box.classList.toggle('qmsg-dohra', String(msg.c).startsWith('d_'));
+  box.style.display = 'block';
+  box.classList.remove('qmsg-in'); void box.offsetWidth; box.classList.add('qmsg-in');
+  try { if (navigator.vibrate) navigator.vibrate([60]); } catch(e) {}   // jemne (iPhone nevibruje)
+  if (__qmsgToastTimer) clearTimeout(__qmsgToastTimer);
+  __qmsgToastTimer = setTimeout(hideQuickMsg, msg.c === 'goto' ? QMSG_SHOW_MS + 3000 : QMSG_SHOW_MS);
+}
+function hideQuickMsg(){
+  const box = document.getElementById('qmsg-toast');
+  if (box) box.style.display = 'none';
+  __qmsgCurrent = null;
+}
+function onQuickMsgToastTap(){
+  const m = __qmsgCurrent;
+  hideQuickMsg();
+  if (m && m.c === 'goto' && m.s){
+    try { if (songs.some(x => String(x.id) === String(m.s))) openSongById(String(m.s), 'all'); } catch(e) {}
+  }
+}
+
+function _qmsgHandle(raw){
+  let ev; try { ev = JSON.parse(raw); } catch(e) { return; }
+  if (!ev || ev.event !== 'message' || !ev.message) return;
+  if (ev.time && (Date.now()/1000 - Number(ev.time)) > QMSG_MAX_AGE_S) return;
+  let msg; try { msg = JSON.parse(ev.message); } catch(e) { return; }
+  if (!msg || msg.v !== 1 || !msg.c) return;
+  const key = msg.id || ev.id;
+  if (__qmsgSeen.has(key)) return;
+  __qmsgSeen.add(key);
+  if (msg.dev && msg.dev === _qmsgDeviceId()) return; // vlastná hláška
+  showQuickMsg(msg);
+}
+
+function startQuickMsgListener(){
+  if (typeof EventSource === 'undefined') return;
+  if (__qmsgES && __qmsgES.readyState !== 2) return; // už pripojené / pripája sa
+  try{
+    __qmsgES = new EventSource(QMSG_BASE + '/sse');
+    __qmsgES.onmessage = (e) => _qmsgHandle(e.data);
+    // pri výpadku sa EventSource pripája znova sám; ak sa úplne zavrie, obnovíme pri návrate do appky
+  }catch(e){ __qmsgES = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) startQuickMsgListener();
+});
+window.addEventListener('online', () => {
+  try { if (__qmsgES) __qmsgES.close(); } catch(e) {}
+  __qmsgES = null;
+  startQuickMsgListener();
+});
+setTimeout(startQuickMsgListener, 1500);
+setTimeout(updateQuickMsgButton, 0);
