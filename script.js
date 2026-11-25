@@ -1,3 +1,6 @@
+// Prehliadač nesmie sám obnovovať posunutie stránky po načítaní (na iPhone to posúvalo vrch pod stavový riadok).
+try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch(e) {}
+
 /* ✅ ANTI PULL-TO-REFRESH (Android)
    Zablokuje refresh pri ťahu dole, keď je stránka úplne hore.
    Nezabíja scroll v listoch (editor-list, list-box, song-content).
@@ -310,8 +313,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v119';
-const APP_CACHE_NAME = 'spevnik-v119';
+const APP_BUILD = 'v120';
+const APP_CACHE_NAME = 'spevnik-v120';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -884,8 +887,9 @@ function updatePlaylistSaveEnabled(){
 
 function confirmDiscardEdits(){
   if (!isAdmin) return true;
-  // zoznam Piesne na dnes sa ukladá sám – ak čaká na uloženie, ulož hneď a nepýtaj sa
-  if (dnesDirty && hasPerm('A')){ try { saveDnesEditor(true); } catch(e) {} }
+  if (dnesDirty && hasPerm('A')){
+    return confirm('Zoznam Piesne na dnes nie je uložený. Odísť bez uloženia?');
+  }
   if (playlistDirty){
     return confirm('Máš neuložené zmeny v editore. Naozaj chceš pokračovať bez uloženia?');
   }
@@ -1599,6 +1603,7 @@ function openSongById(id, source) {
   window.scrollTo(0,0);
 }
 function closeSong() {
+  setTimeout(() => { try { updateDnesUnsavedUI(); } catch(e) {} }, 0);
   // používateľ sám zavrel pieseň → pozíciu zabudni (pri štarte appky je detail zavretý, vtedy nemaž)
   try { const d = document.getElementById('song-detail'); if (!__posRestoring && d && d.style.display === 'block') localStorage.removeItem(LS_LAST_POS); } catch(e) {}
   stopAutoscroll();
@@ -3391,6 +3396,7 @@ function openDnesEditor(silent=false) {
     renderDnesSelected();
   renderDnesAvailable();
   dnesDirty = false; // otvorenie editora nie je zmena
+  updateDnesUnsavedUI();
 }
 function filterDnesSearch(){ renderDnesAvailable(); }
 function renderDnesAvailable() {
@@ -3457,7 +3463,7 @@ function removeDnesAt(idx){
 }
 function clearDnesSelection(){
   if (!dnesSelectedIds.length) return;
-  if (!confirm('Vymazať celý zoznam Piesne na dnes? (Zmena sa uloží pre všetkých.)')) return;
+  if (!confirm('Vymazať celý zoznam Piesne na dnes?')) return;
   const snap = _dnesSnapshot();
   dnesSelectedIds=[];
   dnesItems=[];
@@ -3493,10 +3499,11 @@ async function saveDnesEditor(auto=false) {
     });
     await updateSeenMetaFromServer();
     dnesDirty = false;
+    updateDnesUnsavedUI();
     if (auto) setSaveStatus('Zoznam uložený ✓', 'ok', 1500);
     else { showToast("Uložené ✅", true); setButtonStateById('dnes-save-btn', false); }
   } catch(e) {
-    if (auto) { setSaveStatus('Zoznam sa nepodarilo uložiť – skúsim znova…', 'err', 3000); scheduleDnesAutosave(5000); }
+    if (auto) { setSaveStatus('Zoznam sa nepodarilo uložiť.', 'err', 3000); }
     else { showToast("Nepodarilo sa uložiť ❌", false); setButtonStateById('dnes-save-btn', false); }
   } finally {
     __dnesSaving = false;
@@ -3512,9 +3519,32 @@ function scheduleDnesAutosave(ms){
   __dnesAutoTimer = setTimeout(() => { __dnesAutoTimer = null; saveDnesEditor(true); }, (ms == null) ? 1500 : ms);
 }
 function markDnesChanged(){
+  // v120: bez automatického ukladania – len označ a pripomeň tlačidlom ULOŽIŤ
   dnesDirty = true;
-  scheduleDnesAutosave();
+  updateDnesUnsavedUI();
 }
+
+// Pripomienka „Zoznam nie je uložený“ (lišta dole na zozname + červené tlačidlo ULOŽIŤ)
+function updateDnesUnsavedUI(){
+  const show = !!(isAdmin && hasPerm('A') && dnesDirty);
+  let bar = document.getElementById('dnes-unsaved-bar');
+  if (!bar && show){
+    bar = document.createElement('div');
+    bar.id = 'dnes-unsaved-bar';
+    bar.innerHTML = '<span>⚠️ Zoznam <b>Piesne na dnes</b> nie je uložený</span><button type="button">ULOŽIŤ</button>';
+    bar.querySelector('button').addEventListener('click', () => saveDnesEditor(false));
+    document.body.appendChild(bar);
+  }
+  if (bar){
+    const onList = (document.getElementById('song-list')||{}).style?.display !== 'none';
+    bar.style.display = (show && onList) ? 'flex' : 'none';
+  }
+  const btn = document.getElementById('dnes-save-btn');
+  if (btn) btn.classList.toggle('needs-save', show);
+}
+window.addEventListener('beforeunload', (e) => {
+  if (isAdmin && dnesDirty){ e.preventDefault(); e.returnValue = ''; }
+});
 function _dnesSnapshot(){
   return { ids: [...dnesSelectedIds], items: JSON.parse(JSON.stringify(dnesItems||[])), title: (document.getElementById('dnes-name')||{}).value || '' };
 }
@@ -6326,8 +6356,8 @@ let __litInited = false;
 (function hookToggleSection(){
   const _toggle = window.toggleSection;
   if (typeof _toggle !== 'function') return;
-  window.toggleSection = function(name){
-    _toggle(name);
+  window.toggleSection = function(name, expand){
+    _toggle.apply(this, arguments); // v120: odovzdaj aj „expand“ (predtým sa strácal → zbalenie karty ju naopak rozbalilo)
     if (name === 'lit'){
       // sekcia sa práve otvorila
       if (!__litInited){
@@ -9070,15 +9100,42 @@ function _songDetailOpen(){
   const d = document.getElementById('song-detail');
   return !!(d && d.style.display === 'block' && currentSong);
 }
+// pamäť pre každú pieseň zvlášť: transpozícia + miesto v texte (platí 3 h, max. 40 piesní)
+const LS_SONG_POS = 'spevnik_song_pos_v1';
+function _songPosAll(){ try { const o = JSON.parse(localStorage.getItem(LS_SONG_POS) || '{}'); return (o && typeof o === 'object') ? o : {}; } catch(e) { return {}; } }
+function getSongPos(id){
+  const p = _songPosAll()[String(id)];
+  if (!p || (Date.now() - Number(p.ts||0)) > LAST_POS_MAX_AGE_MS) return null;
+  return p;
+}
 function saveLastPos(){
   if (__posRestoring || !_songDetailOpen()) return;
   try{
     const sc = document.getElementById('song-content');
-    localStorage.setItem(LS_LAST_POS, JSON.stringify({
-      id: String(currentSong.id), src: currentListSource || 'all', pl: playlistViewName || null,
-      t: Number(transposeStep) || 0, y: Math.round(window.scrollY || 0), sc: sc ? Math.round(sc.scrollTop) : 0, ts: Date.now()
-    }));
+    const entry = { t: Number(transposeStep) || 0, y: Math.round(window.scrollY || 0), sc: sc ? Math.round(sc.scrollTop) : 0, ts: Date.now() };
+    localStorage.setItem(LS_LAST_POS, JSON.stringify(Object.assign({
+      id: String(currentSong.id), src: currentListSource || 'all', pl: playlistViewName || null
+    }, entry)));
+    const all = _songPosAll();
+    all[String(currentSong.id)] = entry;
+    const keys = Object.keys(all).sort((a,b) => Number(all[b].ts||0) - Number(all[a].ts||0));
+    for (const k of keys.slice(40)) delete all[k];
+    for (const k of keys) if ((Date.now() - Number(all[k].ts||0)) > LAST_POS_MAX_AGE_MS) delete all[k];
+    localStorage.setItem(LS_SONG_POS, JSON.stringify(all));
   }catch(e){}
+}
+function _applySongPos(p){
+  if (!p) return;
+  transposeStep = Number(p.t) || 0;
+  const tv = document.getElementById('transpose-val');
+  if (tv) tv.innerText = (transposeStep>0?"+":"") + transposeStep;
+  renderSong();
+  const go = () => {
+    try { window.scrollTo(0, Number(p.y)||0); } catch(e) {}
+    const sc = document.getElementById('song-content');
+    if (sc) sc.scrollTop = Number(p.sc)||0;
+  };
+  requestAnimationFrame(() => { go(); setTimeout(go, 150); });
 }
 function restoreLastPosOnce(){
   if (__posRestoreDone) return;
@@ -9115,5 +9172,38 @@ window.addEventListener('pagehide', saveLastPos);
 
 (function(){
   const _orig = openSongById;
-  openSongById = function(id, source){ const r = _orig.apply(this, arguments); setTimeout(saveLastPos, 50); return r; };
+  openSongById = function(id, source){
+    const r = _orig.apply(this, arguments);
+    try { updateDnesUnsavedUI(); } catch(e) {}
+    // pieseň, ktorú si mal nedávno otvorenú → rovnaká transpozícia aj miesto v texte
+    try { if (!__posRestoring) { const p = getSongPos(id); if (p){ __posRestoring = true; _applySongPos(p); setTimeout(() => { __posRestoring = false; saveLastPos(); }, 400); return r; } } } catch(e) {}
+    setTimeout(saveLastPos, 50);
+    return r;
+  };
 })();
+
+/* ===== Zbalené karty pri otvorení appky (v120) =====
+   Pri štarte sa karty zbalia (DOMContentLoaded). Keď mobil appku neukončí, ale vráti ju z pozadia
+   po viac ako 10 minútach (alebo ju obnoví prehliadač zo zálohy), správa sa to ako nové otvorenie:
+   ak nemáš otvorenú pieseň, karty sa zbalia a stránka ide hore. Otvorenú pieseň to nezatvorí. */
+const COLLAPSE_AFTER_BG_MS = 10 * 60 * 1000;
+let __hiddenAt = 0;
+function collapseSectionsIfOnList(){
+  if (_songDetailOpen()) return;
+  if (isAdmin && (dnesDirty || playlistDirty)) return; // rozpracovaný editor nezbaľuj
+  try{
+    ['dnes','playlists','all','lit','history'].forEach(id => {
+      const c = document.getElementById(id + '-section-wrapper');
+      const ch = document.getElementById(id + '-chevron');
+      if (c) c.style.display = 'none';
+      if (ch) ch.className = 'fas fa-chevron-down section-chevron';
+    });
+    window.scrollTo(0, 0);
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ __hiddenAt = Date.now(); return; }
+  if (__hiddenAt && (Date.now() - __hiddenAt) > COLLAPSE_AFTER_BG_MS) collapseSectionsIfOnList();
+  __hiddenAt = 0;
+});
+window.addEventListener('pageshow', (e) => { if (e && e.persisted) collapseSectionsIfOnList(); });
