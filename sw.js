@@ -1,5 +1,5 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
-const CACHE_NAME = "spevnik-v117";
+const CACHE_NAME = "spevnik-v119";
 
 const CORE_ASSETS = [
   './',
@@ -10,13 +10,16 @@ const CORE_ASSETS = [
   './icon.png',
   './icon-192.png',
   './icon-512.png',
-  './keepawake.mp4'
+  './keepawake.mp4',
+  './fonts/icons.css',
+  './fonts/fa-solid-subset.woff'
 ];
 
 const OPTIONAL_ASSETS = [
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap'
 ];
+// Písmo Inter z Google Fonts sa môže uložiť do cache (aby bolo aj offline)
+const CACHEABLE_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -87,7 +90,8 @@ try {
     caches.match(req, { ignoreSearch: true }).then(cached => cached || fetch(req).then(resp => {
       try {
         const url = new URL(req.url);
-        if (req.method === 'GET' && url.origin === self.location.origin && resp && resp.ok && resp.status !== 206 && !req.headers.has('range')) {
+        const okOrigin = (url.origin === self.location.origin) || CACHEABLE_HOSTS.includes(url.hostname);
+        if (req.method === 'GET' && okOrigin && resp && resp.ok && resp.status !== 206 && !req.headers.has('range')) {
           const copy = resp.clone();
           caches.open(CACHE_NAME).then(cache => { try { cache.put(req, copy); } catch(e) {} });
         }

@@ -8,6 +8,7 @@
 
   function isScrollableTarget(el){
     if (!el) return false;
+    if (!el.closest) return false;
     return !!(el.closest('.editor-list') || el.closest('.list-box') || el.closest('#song-content'));
   }
 
@@ -309,8 +310,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v117';
-const APP_CACHE_NAME = 'spevnik-v117';
+const APP_BUILD = 'v119';
+const APP_CACHE_NAME = 'spevnik-v119';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -883,7 +884,9 @@ function updatePlaylistSaveEnabled(){
 
 function confirmDiscardEdits(){
   if (!isAdmin) return true;
-  if (dnesDirty || playlistDirty){
+  // zoznam Piesne na dnes sa ukladá sám – ak čaká na uloženie, ulož hneď a nepýtaj sa
+  if (dnesDirty && hasPerm('A')){ try { saveDnesEditor(true); } catch(e) {} }
+  if (playlistDirty){
     return confirm('Máš neuložené zmeny v editore. Naozaj chceš pokračovať bez uloženia?');
   }
   return true;
@@ -1404,6 +1407,7 @@ function processXML(xmlText, opts = null) {
             let t = ((transposeStep - shift) % 12 + 12) % 12;
             if (t > 6) t -= 12;
             transposeStep = t;
+            setTimeout(saveLastPos, 0);
             const tv = document.getElementById('transpose-val');
             if (tv) tv.innerText = (transposeStep>0?"+":"") + transposeStep;
             const lab = document.getElementById('original-key-label');
@@ -1423,6 +1427,9 @@ function processXML(xmlText, opts = null) {
   loadDnesCacheFirst(false);
   loadPlaylistsCacheFirst(false);
   loadHistoryCacheFirst(false);
+
+  // po štarte vráť používateľa tam, kde bol (max. 3 h)
+  try { restoreLastPosOnce(); } catch(e) {}
 
   // then refresh (max. raz za 20 s – predtým sa pri každom spracovaní exportu sťahovalo všetko znova)
   if (Date.now() - __sideLoadsAt > 20000){
@@ -1592,6 +1599,8 @@ function openSongById(id, source) {
   window.scrollTo(0,0);
 }
 function closeSong() {
+  // používateľ sám zavrel pieseň → pozíciu zabudni (pri štarte appky je detail zavretý, vtedy nemaž)
+  try { const d = document.getElementById('song-detail'); if (!__posRestoring && d && d.style.display === 'block') localStorage.removeItem(LS_LAST_POS); } catch(e) {}
   stopAutoscroll();
   document.getElementById('song-detail').style.display = 'none';
   document.getElementById('song-list').style.display = 'block';
@@ -2810,8 +2819,8 @@ function detectSongKeyShift(oldText, newText){
   return 0;
 }
 
-function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep; renderSong(); }
-function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); }
+function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep; renderSong(); saveLastPos(); }
+function resetTranspose() { transposeStep = 0; document.getElementById('transpose-val').innerText = "0"; renderSong(); saveLastPos(); }
 function toggleChords() { chordsVisible = !chordsVisible; renderSong(); }
 function changeFontSize(d) { applySongFontSize(fontSize + d); }
 
@@ -3365,6 +3374,7 @@ function saveFormModal(){
   setFormModalSaving(true);
   dnesItems[formModalIdx].order = joinOrderTokens(formModalOrder);
   renderDnesSelected();
+  markDnesChanged();
   closeFormModal();
   setFormModalSaving(false);
 }
@@ -3375,11 +3385,12 @@ function openDnesEditor(silent=false) {
   dnesSelectedIds = [...payload.ids];
   dnesItems = (payload.items && payload.items.length) ? payload.items.map(x=>({ songId:String(x.songId), order:(x.order||'') })) : dnesSelectedIds.map(id=>({ songId:id, order:'' }));
   const __dn=document.getElementById('dnes-name');
-  if (__dn) __dn.oninput = () => { dnesDirty = true; };
+  if (__dn) __dn.oninput = () => { markDnesChanged(); };
   __dn.value = (payload.ids.length === 0 && (payload.title || DNES_DEFAULT_TITLE) === DNES_DEFAULT_TITLE) ? '' : (payload.title || DNES_DEFAULT_TITLE);
   dnesDirty = true;
     renderDnesSelected();
   renderDnesAvailable();
+  dnesDirty = false; // otvorenie editora nie je zmena
 }
 function filterDnesSearch(){ renderDnesAvailable(); }
 function renderDnesAvailable() {
@@ -3402,7 +3413,7 @@ function addToDnesSelection(id) {
   if (!dnesSelectedIds.includes(id)) {
     dnesSelectedIds.push(id);
     dnesItems.push({ songId:id, order:'' });
-    dnesDirty = true;
+    markDnesChanged();
     renderDnesSelected();
     const __s = document.getElementById('dnes-search');
     if (__s && __s.value) { __s.value = ''; renderDnesAvailable(); }
@@ -3420,12 +3431,7 @@ function renderDnesSelected() {
     const left = s ? `${s.displayId}.` : id;
     const right = s ? s.title : '';
     return `
-      <div class="draggable-item"
-           draggable="true"
-           data-idx="${idx}"
-           ondragstart="onDragStart(event,'dnes')"
-           ondragover="onDragOver(event)"
-           ondrop="onDrop(event,'dnes')">
+      <div class="draggable-item" data-idx="${idx}">
         <div style="display:flex; gap:10px; align-items:center; flex:1;">
           <div style="color:#00bfff; font-weight:900; min-width:78px; text-align:right; white-space:nowrap;">${escapeHtml(left)}</div>
           <div style="flex:1; overflow-wrap:anywhere;">${escapeHtml(right)}</div>
@@ -3440,24 +3446,35 @@ function renderDnesSelected() {
   enableTouchReorder(box, 'dnes');
 }
 function removeDnesAt(idx){
+  const snap = _dnesSnapshot();
+  const sid = dnesSelectedIds[idx];
+  const s0 = songs.find(x => x.id === sid);
   dnesSelectedIds.splice(idx,1);
   if (Array.isArray(dnesItems)) dnesItems.splice(idx,1);
-  dnesDirty = true;
+  markDnesChanged();
   renderDnesSelected();
+  showUndoBar('Odstránené: ' + (s0 ? `${s0.displayId}. ${s0.title}` : 'pieseň'), () => _dnesRestore(snap));
 }
 function clearDnesSelection(){
+  if (!dnesSelectedIds.length) return;
+  if (!confirm('Vymazať celý zoznam Piesne na dnes? (Zmena sa uloží pre všetkých.)')) return;
+  const snap = _dnesSnapshot();
   dnesSelectedIds=[];
   dnesItems=[];
-  dnesDirty = true;
+  markDnesChanged();
+  setTimeout(() => showUndoBar('Zoznam vymazaný', () => _dnesRestore(snap)), 0);
   const inp = document.getElementById('dnes-name');
   // keep section title as default, but editor input should be empty so admin doesn't need to delete it
   if (inp) inp.value = '';
   setDnesTitle(DNES_DEFAULT_TITLE);
   renderDnesSelected();
 }
-async function saveDnesEditor() {
-  setButtonStateById('dnes-save-btn', true, '<i class="fas fa-check"></i>');
-  showToast('Ukladám…', true);
+async function saveDnesEditor(auto=false) {
+  if (__dnesAutoTimer){ clearTimeout(__dnesAutoTimer); __dnesAutoTimer = null; }
+  if (__dnesSaving){ __dnesSaveAgain = true; return; }
+  __dnesSaving = true;
+  if (auto) setSaveStatus('Ukladám zoznam…', 'warn', 0);
+  else { setButtonStateById('dnes-save-btn', true, '<i class="fas fa-check"></i>'); showToast('Ukladám…', true); }
   const title = (document.getElementById('dnes-name').value || DNES_DEFAULT_TITLE).trim();
   // build items with order
   const items = dnesSelectedIds.map((id, idx) => ({ songId: id, order: (dnesItems[idx]?.order || '') }));
@@ -3468,7 +3485,7 @@ async function saveDnesEditor() {
   loadDnesCacheFirst(true);
 
   try {
-    await jsonpSave({
+    await gasPost({
       action: 'save',
       name: 'PiesneNaDnes',
       pwd: getAuthPwd(),
@@ -3476,12 +3493,66 @@ async function saveDnesEditor() {
     });
     await updateSeenMetaFromServer();
     dnesDirty = false;
-    showToast("Uložené ✅", true);
-    setButtonStateById('dnes-save-btn', false);
+    if (auto) setSaveStatus('Zoznam uložený ✓', 'ok', 1500);
+    else { showToast("Uložené ✅", true); setButtonStateById('dnes-save-btn', false); }
   } catch(e) {
-    showToast("Nepodarilo sa uložiť ❌", false);
-    setButtonStateById('dnes-save-btn', false);
+    if (auto) { setSaveStatus('Zoznam sa nepodarilo uložiť – skúsim znova…', 'err', 3000); scheduleDnesAutosave(5000); }
+    else { showToast("Nepodarilo sa uložiť ❌", false); setButtonStateById('dnes-save-btn', false); }
+  } finally {
+    __dnesSaving = false;
+    if (__dnesSaveAgain){ __dnesSaveAgain = false; scheduleDnesAutosave(300); }
   }
+}
+
+// ===== Automatické ukladanie „Piesne na dnes“ (v119) =====
+let __dnesAutoTimer = null, __dnesSaving = false, __dnesSaveAgain = false;
+function scheduleDnesAutosave(ms){
+  if (!isAdmin || !hasPerm('A')) return;
+  if (__dnesAutoTimer) clearTimeout(__dnesAutoTimer);
+  __dnesAutoTimer = setTimeout(() => { __dnesAutoTimer = null; saveDnesEditor(true); }, (ms == null) ? 1500 : ms);
+}
+function markDnesChanged(){
+  dnesDirty = true;
+  scheduleDnesAutosave();
+}
+function _dnesSnapshot(){
+  return { ids: [...dnesSelectedIds], items: JSON.parse(JSON.stringify(dnesItems||[])), title: (document.getElementById('dnes-name')||{}).value || '' };
+}
+function _dnesRestore(snap){
+  dnesSelectedIds = [...snap.ids];
+  dnesItems = JSON.parse(JSON.stringify(snap.items));
+  const inp = document.getElementById('dnes-name');
+  if (inp) inp.value = snap.title;
+  renderDnesSelected();
+  try { renderDnesAvailable(); } catch(e) {}
+  markDnesChanged();
+}
+
+// Lišta „… · Späť“ (10 s)
+let __undoTimer = null, __undoFn = null;
+function showUndoBar(text, undoFn){
+  let bar = document.getElementById('undo-bar');
+  if (!bar){
+    bar = document.createElement('div');
+    bar.id = 'undo-bar';
+    bar.innerHTML = '<span class="undo-text"></span><button type="button" class="undo-btn">Späť</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('.undo-btn').addEventListener('click', () => {
+      const fn = __undoFn; hideUndoBar();
+      if (fn) { try { fn(); showToast('Vrátené ✓', true, 1400); } catch(e) {} }
+    });
+  }
+  bar.querySelector('.undo-text').textContent = text;
+  __undoFn = undoFn;
+  bar.style.display = 'flex';
+  if (__undoTimer) clearTimeout(__undoTimer);
+  __undoTimer = setTimeout(hideUndoBar, 10000);
+}
+function hideUndoBar(){
+  const bar = document.getElementById('undo-bar');
+  if (bar) bar.style.display = 'none';
+  __undoFn = null;
+  if (__undoTimer){ clearTimeout(__undoTimer); __undoTimer = null; }
 }
 
 
@@ -3801,12 +3872,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
     }
 
     return `
-      <div class="draggable-item"
-           draggable="true"
-           data-idx="${idx}"
-           ondragstart="onDragStart(event,'plist')"
-           ondragover="onDragOver(event)"
-           ondrop="onDrop(event,'plist')">
+      <div class="draggable-item" data-idx="${idx}">
         <div style="display:flex; gap:10px; align-items:center; flex:1; cursor:pointer;" onclick="openPlaylist('${encodeURIComponent(name)}')">
           <div style="min-width:78px; text-align:right; color:#00bfff;"><i class="fas fa-music"></i></div>
           <div style="flex:1; overflow-wrap:anywhere;">${safe}</div>
@@ -3818,7 +3884,7 @@ function renderPlaylistsUI(showEmptyAllowed=true) {
       </div>`;
   }).join('');
 
-  if (hasPerm('B')) enableTouchReorder(sect, 'plist');
+  if (hasPerm('B')) enableTouchReorder(sect, 'plist', { rowGrab:false });
 }
 
 
@@ -3978,12 +4044,7 @@ function renderPlaylistSelection(){
     const left = s ? `${s.displayId}.` : id;
     const right = s ? s.title : '';
     return `
-      <div class="draggable-item"
-           draggable="true"
-           data-idx="${idx}"
-           ondragstart="onDragStart(event,'plsel')"
-           ondragover="onDragOver(event)"
-           ondrop="onDrop(event,'plsel')">
+      <div class="draggable-item" data-idx="${idx}">
         <div style="display:flex; gap:10px; align-items:center; flex:1;">
           <div style="color:#00bfff; font-weight:900; min-width:78px; text-align:right; white-space:nowrap;">${escapeHtml(left)}</div>
           <div style="flex:1; overflow-wrap:anywhere;">${escapeHtml(right)}</div>
@@ -4076,11 +4137,11 @@ const newName = rawName;
   newPlaylist();
   // persist to Drive
   try {
-    await jsonpSave({ action:'save', name:newName, pwd:getAuthPwd(), content: payload });
-    await jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
+    await gasPost({ action:'save', name:newName, pwd:getAuthPwd(), content: payload });
+    await gasPost({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
     // best-effort delete old name on backend if renamed
     if (oldName && newName !== oldName) {
-      try { await jsonpSave({ action:'delete', name: oldName, pwd:getAuthPwd() }); } catch(e) {}
+      try { await gasPost({ action:'delete', name: oldName, pwd:getAuthPwd() }); } catch(e) {}
     }
     await updateSeenMetaFromServer();
     playlistDirty = false;
@@ -4139,8 +4200,8 @@ async function deletePlaylist(nameEnc){
   renderPlaylistsUI(true);
 
   try {
-    try { await jsonpSave({ action:'delete', name:name, pwd:getAuthPwd() }); } catch(e) {}
-    await jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
+    try { await gasPost({ action:'delete', name:name, pwd:getAuthPwd() }); } catch(e) {}
+    await gasPost({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) });
     await updateSeenMetaFromServer();
     showToast('Vymazané ✅', true);
   } catch(e) {
@@ -4171,6 +4232,7 @@ function applyReorder(ctx, from, to) {
     moveInArray(dnesSelectedIds, from, to);
     moveInArray(dnesItems, from, to);
     renderDnesSelected();
+    markDnesChanged();
     const __s = document.getElementById('dnes-search');
     if (__s && __s.value) { __s.value = ''; renderDnesAvailable(); }
   }
@@ -4180,7 +4242,7 @@ function applyReorder(ctx, from, to) {
     renderPlaylistsUI(true);
     // best-effort persist order
     if (isAdmin) {
-      try { jsonpSave({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) }).then(updateSeenMetaFromServer).catch(()=>{}); } catch(e) {}
+      try { gasPost({ action:'save', name:'PlaylistOrder', pwd:getAuthPwd(), content: JSON.stringify(playlistOrder) }).then(updateSeenMetaFromServer).catch(()=>{}); } catch(e) {}
     }
   }
   else if (ctx === 'plsel') {
@@ -4191,74 +4253,196 @@ function applyReorder(ctx, from, to) {
   }
 }
 
-// Touch/pointer reordering pre mobile (iOS/Android) – HTML5 drag&drop tam býva nespoľahlivé.
-function enableTouchReorder(container, ctx) {
+// ===== Presúvanie poradia (v118) =====
+// - chytíš za úchytku ≡ (hneď) alebo za názov (podržať ~0,3 s, mobil jemne zavibruje)
+// - položka sa "zdvihne" a ide za prstom, na mieste, kam padne, je modrý rámik „Sem“
+// - ostatné položky sa plynulo odsúvajú, pri okraji sa zoznam sám posúva
+// - rowGrab:false = len za úchytku (napr. zoznam playlistov, kde ťuk na názov otvára playlist)
+function enableTouchReorder(container, ctx, opts) {
   if (!container || container.__touchReorderEnabled) return;
   container.__touchReorderEnabled = true;
+  const rowGrab = !(opts && opts.rowGrab === false);
+  const LONG_PRESS_MS = 300, MOVE_CANCEL_PX = 10;
 
-  let draggingItem = null;
-  let fromIdx = -1;
-  let lastX = 0, lastY = 0;
+  let pending = null;   // čakanie na dlhé podržanie
+  let drag = null;      // prebiehajúce ťahanie
+  let suppressClick = false;
 
-  function getPoint(ev) {
-    if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
-    if (ev.changedTouches && ev.changedTouches[0]) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
-    return { x: ev.clientX, y: ev.clientY };
-  }
-
-  function start(ev) {
-    const handle = ev.target.closest('.drag-handle');
-    if (!handle) return;
-    const item = handle.closest('.draggable-item');
-    if (!item || !container.contains(item)) return;
-
-    draggingItem = item;
-    fromIdx = parseInt(item.getAttribute('data-idx'), 10);
-    if (isNaN(fromIdx)) {
-      const items = Array.from(container.querySelectorAll('.draggable-item'));
-      fromIdx = items.indexOf(item);
+  const isInteractive = (el) => !!(el && el.closest && el.closest('button, a, input, select, textarea, .small-del, .small-plus'));
+  const items = () => Array.from(container.querySelectorAll('.draggable-item'));
+  const pt = (ev) => {
+    const t = (ev.touches && ev.touches[0]) || (ev.changedTouches && ev.changedTouches[0]);
+    return t ? { x:t.clientX, y:t.clientY } : { x:ev.clientX, y:ev.clientY };
+  };
+  const scrollParent = (() => {
+    let el = container;
+    while (el && el !== document.body){
+      const st = getComputedStyle(el);
+      if (/(auto|scroll)/.test(st.overflowY) && el.scrollHeight > el.clientHeight) return el;
+      el = el.parentElement;
     }
-    const p = getPoint(ev);
-    lastX = p.x; lastY = p.y;
-    draggingItem.classList.add('touch-dragging');
+    return null;
+  });
+
+  function onStart(ev){
+    if (drag || pending) return;
+    if (ev.type === 'mousedown' && ev.button !== 0) return;
+    const item = ev.target.closest && ev.target.closest('.draggable-item');
+    if (!item || !container.contains(item) || isInteractive(ev.target)) return;
+    const onHandle = !!ev.target.closest('.drag-handle');
+    if (!onHandle && !rowGrab) return;
+    const p = pt(ev);
+    const isTouch = ev.type === 'touchstart';
+    if (onHandle){
+      ev.preventDefault();
+      begin(item, p, isTouch);
+    } else {
+      pending = { item, x:p.x, y:p.y, isTouch,
+        timer: setTimeout(() => { const pd = pending; pending = null; if (pd) begin(pd.item, { x:pd.x, y:pd.y }, pd.isTouch); }, isTouch ? LONG_PRESS_MS : 0) };
+      if (!isTouch){ clearTimeout(pending.timer); pending.mouse = true; } // myš: začni až po pohnutí
+    }
+    attachMoveEnd(isTouch);
+  }
+
+  function attachMoveEnd(isTouch){
+    if (isTouch){
+      window.addEventListener('touchmove', onMove, { passive:false });
+      window.addEventListener('touchend', onEnd, { passive:false });
+      window.addEventListener('touchcancel', onEnd, { passive:false });
+    } else {
+      window.addEventListener('mousemove', onMove, { passive:false });
+      window.addEventListener('mouseup', onEnd, { passive:false });
+    }
+  }
+  function detachMoveEnd(){
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', onEnd);
+    window.removeEventListener('touchcancel', onEnd);
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onEnd);
+  }
+
+  function begin(item, p, isTouch){
+    const r = item.getBoundingClientRect();
+    const ph = document.createElement('div');
+    ph.className = 'reorder-placeholder';
+    ph.style.height = r.height + 'px';
+    ph.innerHTML = '<span>Sem</span>';
+    item.parentNode.insertBefore(ph, item);
+    const list = items();
+    drag = { item, ph, isTouch, offY: p.y - r.top, lastY: p.y, from: list.indexOf(item), sp: scrollParent(), raf: 0 };
+    item.classList.add('reorder-lifted');
+    Object.assign(item.style, { position:'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', zIndex: '1000005' });
+    document.body.classList.add('reorder-active');
+    updatePosBadge();
+    try { if (isTouch && navigator.vibrate) navigator.vibrate(15); } catch(e) {}
+    autoScrollLoop();
+  }
+
+  function onMove(ev){
+    const p = pt(ev);
+    if (pending){
+      if (pending.mouse){
+        if (Math.abs(p.y - pending.y) > 4 || Math.abs(p.x - pending.x) > 4){ const pd = pending; pending = null; begin(pd.item, { x:pd.x, y:pd.y }, false); }
+        else return;
+      } else if (Math.abs(p.y - pending.y) > MOVE_CANCEL_PX || Math.abs(p.x - pending.x) > MOVE_CANCEL_PX){
+        // posúva stránku → nie je to ťahanie
+        clearTimeout(pending.timer); pending = null; detachMoveEnd();
+        return;
+      } else return;
+    }
+    if (!drag) return;
     ev.preventDefault();
-
-    window.addEventListener('pointermove', move, { passive:false });
-    window.addEventListener('pointerup', end, { passive:false, once:true });
-    window.addEventListener('touchmove', move, { passive:false });
-    window.addEventListener('touchend', end, { passive:false, once:true });
+    drag.lastY = p.y;
+    drag.item.style.top = (p.y - drag.offY) + 'px';
+    placePlaceholder(p.y);
   }
 
-  function move(ev) {
-    if (!draggingItem) return;
-    const p = getPoint(ev);
-    lastX = p.x; lastY = p.y;
-    ev.preventDefault();
+  function placePlaceholder(y){
+    const others = items().filter(el => el !== drag.item);
+    let before = null;
+    for (const el of others){
+      const r = el.getBoundingClientRect();
+      if (y < r.top + r.height / 2){ before = el; break; }
+    }
+    const ph = drag.ph;
+    let nx = ph.nextElementSibling;
+    while (nx && nx === drag.item) nx = nx.nextElementSibling;
+    if (nx === before) { updatePosBadge(); return; } // rámik už je na správnom mieste
+    // plynulé odsunutie ostatných (FLIP)
+    const first = new Map(others.map(el => [el, el.getBoundingClientRect().top]));
+    if (before) container.insertBefore(ph, before); else container.appendChild(ph);
+    updatePosBadge();
+    for (const el of others){
+      const dy = first.get(el) - el.getBoundingClientRect().top;
+      if (!dy) continue;
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => { el.style.transition = 'transform 150ms ease'; el.style.transform = ''; });
+    }
   }
 
-  function end(ev) {
-    if (!draggingItem) return;
-    ev.preventDefault();
-    const el = document.elementFromPoint(lastX, lastY);
-    const over = el ? el.closest('.draggable-item') : null;
-    const items = Array.from(container.querySelectorAll('.draggable-item'));
-    const toIdx = over && container.contains(over) ? items.indexOf(over) : -1;
-    const f = fromIdx;
-    cleanup();
-    if (f >= 0 && toIdx >= 0 && f !== toIdx) applyReorder(ctx, f, toIdx);
+  // štítok na zdvihnutej piesni: na ktoré miesto padne
+  function updatePosBadge(){
+    if (!drag) return;
+    let pos = 1;
+    for (const el of Array.from(container.children)){
+      if (el === drag.ph) break;
+      if (el.classList && el.classList.contains('draggable-item') && el !== drag.item) pos++;
+    }
+    drag.item.setAttribute('data-pos', pos + '. miesto');
   }
 
-  function cleanup() {
-    if (draggingItem) draggingItem.classList.remove('touch-dragging');
-    draggingItem = null;
-    fromIdx = -1;
-    window.removeEventListener('pointermove', move);
-    window.removeEventListener('touchmove', move);
+  function autoScrollLoop(){
+    if (!drag) return;
+    const y = drag.lastY, edge = 70;
+    let dy = 0;
+    const sp = drag.sp;
+    const top = sp ? sp.getBoundingClientRect().top : 0;
+    const bottom = sp ? sp.getBoundingClientRect().bottom : window.innerHeight;
+    if (y < top + edge) dy = -Math.ceil((top + edge - y) / 6);
+    else if (y > bottom - edge) dy = Math.ceil((y - (bottom - edge)) / 6);
+    if (dy){
+      if (sp) sp.scrollTop += dy; else window.scrollBy(0, dy);
+      placePlaceholder(y);
+    }
+    drag.raf = requestAnimationFrame(autoScrollLoop);
   }
 
-  // pointerdown funguje na novších iOS aj Android; touchstart je fallback.
-  container.addEventListener('pointerdown', start, { passive:false });
-  container.addEventListener('touchstart', start, { passive:false });
+  function onEnd(ev){
+    detachMoveEnd();
+    if (pending){ clearTimeout(pending.timer); pending = null; return; }
+    if (!drag) return;
+    if (ev && ev.cancelable) ev.preventDefault();
+    const d = drag; drag = null;
+    cancelAnimationFrame(d.raf);
+    const list = items().filter(el => el !== d.item);
+    // index = počet položiek pred rámikom
+    let to = 0;
+    for (const el of Array.from(container.children)){
+      if (el === d.ph) break;
+      if (el.classList && el.classList.contains('draggable-item') && el !== d.item) to++;
+    }
+    // dopad na miesto rámika
+    const pr = d.ph.getBoundingClientRect();
+    d.item.style.transition = 'top 120ms ease, transform 120ms ease';
+    d.item.style.top = pr.top + 'px';
+    suppressClick = true; setTimeout(() => { suppressClick = false; }, 350);
+    setTimeout(() => {
+      d.ph.remove();
+      d.item.classList.remove('reorder-lifted');
+      d.item.removeAttribute('data-pos');
+      ['position','left','top','width','zIndex','transition'].forEach(k => d.item.style[k] = '');
+      document.body.classList.remove('reorder-active');
+      list.forEach(el => { el.style.transition = ''; el.style.transform = ''; });
+      if (d.from >= 0 && to !== d.from) applyReorder(ctx, d.from, to);
+    }, 130);
+  }
+
+  container.addEventListener('touchstart', onStart, { passive:false });
+  container.addEventListener('mousedown', onStart);
+  container.addEventListener('click', (ev) => { if (suppressClick){ ev.stopPropagation(); ev.preventDefault(); } }, true);
+  container.addEventListener('contextmenu', (ev) => { if (drag || pending) ev.preventDefault(); });
 }
 
 /* Update app (offline blocked) */
@@ -4476,10 +4660,8 @@ document.addEventListener('gesturechange', (e) => {
 
 // Pri niektorých prehliadačoch (najmä mobil + bfcache) sa po refreshi obnoví rozbalený stav.
 // Toto ho vždy zresetuje na zbalené sekcie.
-window.addEventListener('pageshow', () => {
-  try { forceInitialCollapsed(); } catch(e) {}
-  try { setTimeout(()=>{ try{ forceInitialCollapsed(); } catch(e){} }, 0); } catch(e) {}
-});
+// v119: pageshow prichádza až po úplnom načítaní (ikony, písmo, video) – predtým to po pár sekundách
+// zavrelo otvorenú pieseň a zbalilo sekcie. Zbalenie pri štarte rieši DOMContentLoaded, tu už nič nemeníme.
 document.addEventListener('DOMContentLoaded', () => {
   // restore session (clears automatically when tab is closed)
   try { const s = loadAdminSession(); if (s) { adminSession = s; applyPermsToUI(); } } catch(e) {}
@@ -4741,19 +4923,19 @@ async function saveLitOverridesToDrive(opts){
       if (!key) return false;
 
       if (opts && opts.del){
-        const res = await jsonpSave({ action:'litOverrideDelete', pwd:getAuthPwd(), key });
+        const res = await gasPost({ action:'litOverrideDelete', pwd:getAuthPwd(), key });
         return !!(res && res.ok);
       }
 
       const payloadObj = (opts && opts.payload) ? opts.payload : {};
-      const res = await jsonpSave({ action:'litOverrideSave', pwd:getAuthPwd(), key, payload: JSON.stringify(payloadObj) });
+      const res = await gasPost({ action:'litOverrideSave', pwd:getAuthPwd(), key, payload: JSON.stringify(payloadObj) });
       return !!(res && res.ok);
     }
 
     // Owner: save full overrides file (system file) in one write
     const obj = getLitOverrides();
     obj.updatedAt = Date.now();
-    const res = await jsonpSave({ action:'save', pwd:getAuthPwd(), name: LIT_OVERRIDES_FILE, content: JSON.stringify(obj) });
+    const res = await gasPost({ action:'save', pwd:getAuthPwd(), name: LIT_OVERRIDES_FILE, content: JSON.stringify(obj) });
     if (res && res.ok){
       __litOverrides = obj;
       try { localStorage.setItem(LIT_OVERRIDES_CACHE_KEY, JSON.stringify(obj)); } catch(e){}
@@ -7053,6 +7235,7 @@ if (on){
   const db = document.getElementById('song-delete-block');
   if (db) db.style.display = (isOwner() && !seIsNew) ? 'block' : 'none';
   try { initNumberUiOnOpen(); } catch(e) {}
+  try { setTimeout(() => { __seSnapshot = _seCurrentValues(); }, 0); } catch(e) {}
 
   // editor chord transpose (owner + E)
   const tr = document.getElementById('editor-transpose-row');
@@ -7118,10 +7301,19 @@ if (on){
   }
 }
 
+let __seSnapshot = null;
+function _seCurrentValues(){
+  const g = (id) => String((document.getElementById(id)||{}).value || '');
+  return g('se-number') + '\u0001' + g('se-title') + '\u0001' + g('se-text');
+}
+function songEditorIsDirty(){
+  return __seSnapshot != null && _seCurrentValues() !== __seSnapshot;
+}
 function closeSongEditor(forceDiscard){
-  if (!forceDiscard){
-    // allow closing without prompts (we save explicitly)
+  if (!forceDiscard && songEditorIsDirty()){
+    if (!confirm('V piesni máš neuložené zmeny. Zahodiť ich?')) return;
   }
+  __seSnapshot = null;
   showSongEditorModal(false);
 }
 
@@ -7241,13 +7433,15 @@ async function gasPost(params){
     });
     if (t) clearTimeout(t);
     const data = await res.json();
-    if (data && data.ok) return data;
+    if (data && data.ok){ qmsgPingSync(params && params.action); return data; }
     const err = new Error((data && data.error) ? String(data.error) : 'save_failed');
     err.server = true;
     throw err;
   }catch(e){
     if (e && e.server) throw e;              // server odpovedal chybou → neskúšaj znova inou cestou
-    return await jsonpSave(params);          // sieť/CORS → záložná cesta
+    const r = await jsonpSave(params);       // sieť/CORS → záložná cesta
+    qmsgPingSync(params && params.action);
+    return r;
   }
 }
 
@@ -8777,6 +8971,18 @@ async function sendQuickMsg(code, customText){
   }
 }
 
+// krátky signál „niečo sa zmenilo“ (ostatní si zmeny stiahnu hneď, nie až o 15 s)
+const QMSG_SYNC_ACTIONS = ['save','delete','songSave','songDeletePermanent','litOverrideSave','litOverrideDelete'];
+let __qmsgSyncTimer = null;
+function qmsgPingSync(action){
+  if (!action || QMSG_SYNC_ACTIONS.indexOf(String(action)) < 0) return;
+  if (__qmsgSyncTimer) clearTimeout(__qmsgSyncTimer);
+  __qmsgSyncTimer = setTimeout(() => {
+    __qmsgSyncTimer = null;
+    try { fetch(QMSG_BASE, { method:'POST', body: JSON.stringify({ v:1, c:'sync', dev:_qmsgDeviceId(), id: Math.random().toString(36).slice(2,10) }) }).catch(()=>{}); } catch(e) {}
+  }, 800);
+}
+
 function _qmsgText(msg){
   if (msg.c === 'goto') return 'Ideme na pieseň ' + (msg.st || '');
   if (msg.c === 'txt') return String(msg.x || '').slice(0, QMSG_CUSTOM_MAX);
@@ -8820,6 +9026,11 @@ function _qmsgHandle(raw){
   if (ev.time && (Date.now()/1000 - Number(ev.time)) > QMSG_MAX_AGE_S) return;
   let msg; try { msg = JSON.parse(ev.message); } catch(e) { return; }
   if (!msg || msg.v !== 1 || !msg.c) return;
+  if (msg.c === 'sync'){
+    // niekto niečo uložil → hneď skontroluj zmeny (bez okienka)
+    if (msg.dev !== _qmsgDeviceId()) setTimeout(() => { try { checkMetaAndToggleBadge(); } catch(e) {} }, 500);
+    return;
+  }
   const key = msg.id || ev.id;
   if (__qmsgSeen.has(key)) return;
   __qmsgSeen.add(key);
@@ -8846,3 +9057,63 @@ window.addEventListener('online', () => {
 });
 setTimeout(startQuickMsgListener, 1500);
 setTimeout(updateQuickMsgButton, 0);
+
+
+/* ===== Zapamätanie pozície (v119) =====
+   Po znovuotvorení appky (do 3 hodín) sa vrátiš na pieseň, kde si bol: rovnaké miesto v texte aj transpozícia. */
+const LS_LAST_POS = 'spevnik_last_pos_v1';
+const LAST_POS_MAX_AGE_MS = 3 * 60 * 60 * 1000;
+let __posRestoreDone = false, __posRestoring = false, __userTouchedEarly = false;
+['pointerdown','touchstart','keydown'].forEach(t => document.addEventListener(t, () => { __userTouchedEarly = true; }, { capture:true, once:true }));
+
+function _songDetailOpen(){
+  const d = document.getElementById('song-detail');
+  return !!(d && d.style.display === 'block' && currentSong);
+}
+function saveLastPos(){
+  if (__posRestoring || !_songDetailOpen()) return;
+  try{
+    const sc = document.getElementById('song-content');
+    localStorage.setItem(LS_LAST_POS, JSON.stringify({
+      id: String(currentSong.id), src: currentListSource || 'all', pl: playlistViewName || null,
+      t: Number(transposeStep) || 0, y: Math.round(window.scrollY || 0), sc: sc ? Math.round(sc.scrollTop) : 0, ts: Date.now()
+    }));
+  }catch(e){}
+}
+function restoreLastPosOnce(){
+  if (__posRestoreDone) return;
+  __posRestoreDone = true;
+  let pos = null;
+  try { pos = JSON.parse(localStorage.getItem(LS_LAST_POS) || 'null'); } catch(e) {}
+  if (!pos || !pos.id || (Date.now() - Number(pos.ts||0)) > LAST_POS_MAX_AGE_MS) return;
+  if (_songDetailOpen() || __userTouchedEarly) return; // používateľ už medzitým niečo robí
+  if (!songs.some(x => String(x.id) === String(pos.id))) return;
+  __posRestoring = true;
+  try{
+    if (pos.src === 'playlist' && pos.pl) playlistViewName = pos.pl;
+    openSongById(String(pos.id), pos.src || 'all');
+    transposeStep = Number(pos.t) || 0;
+    const tv = document.getElementById('transpose-val');
+    if (tv) tv.innerText = (transposeStep>0?"+":"") + transposeStep;
+    renderSong();
+    const go = () => {
+      try { window.scrollTo(0, Number(pos.y)||0); } catch(e) {}
+      const sc = document.getElementById('song-content');
+      if (sc) sc.scrollTop = Number(pos.sc)||0;
+    };
+    requestAnimationFrame(() => { go(); setTimeout(go, 150); });
+  }catch(e){}
+  setTimeout(() => { __posRestoring = false; }, 400);
+}
+// priebežne ukladaj (otvorenie piesne, posúvanie, odchod z appky)
+let __posSaveTimer = null;
+function _schedulePosSave(){ if (__posSaveTimer) return; __posSaveTimer = setTimeout(() => { __posSaveTimer = null; saveLastPos(); }, 600); }
+window.addEventListener('scroll', _schedulePosSave, { passive:true });
+document.addEventListener('scroll', (e) => { if (e.target && e.target.id === 'song-content') _schedulePosSave(); }, { passive:true, capture:true });
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveLastPos(); });
+window.addEventListener('pagehide', saveLastPos);
+
+(function(){
+  const _orig = openSongById;
+  openSongById = function(id, source){ const r = _orig.apply(this, arguments); setTimeout(saveLastPos, 50); return r; };
+})();

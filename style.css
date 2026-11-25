@@ -10,7 +10,7 @@ html, body { overscroll-behavior-y: none; }
 *{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
 input, textarea{ -webkit-user-select:text !important; user-select:text !important; -webkit-touch-callout:default !important; }
 
-body { margin:0; font-family:'Inter',sans-serif; background:#121212; color:#e0e0e0; padding:15px; }
+body { margin:0; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:#121212; color:#e0e0e0; padding:15px; }
 .container { max-width:700px; margin:auto; }
 
 .toast{
@@ -1476,3 +1476,53 @@ body.present #qmsg-btn{ bottom: 150px; }
 .qmsg-send{ white-space:nowrap; padding: 0 14px; border-radius:12px; }
 .qmsg-chip.qmsg-recent{ border-style:dashed; }
 #qmsg-modal{ z-index: 1000004; }
+
+/* ===== v118: presúvanie poradia ===== */
+.draggable-item{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+#dnes-selected-editor .draggable-item, #selected-list-editor .draggable-item{ cursor: grab; }
+.draggable-item.reorder-lifted{
+  background:#173040 !important;
+  border:2px solid #00bfff !important;
+  border-radius:12px;
+  box-shadow:0 14px 36px rgba(0,0,0,0.7);
+  transform: scale(1.03);
+  opacity: 0.97;
+  cursor: grabbing;
+  pointer-events:none;
+}
+.reorder-placeholder{
+  border:2px dashed #00bfff;
+  border-radius:12px;
+  background: rgba(0,191,255,0.10);
+  margin:3px 0;
+  display:flex; align-items:center; justify-content:center;
+  color:#00bfff; font-weight:800; font-size:13px; letter-spacing:1px;
+  box-sizing:border-box;
+}
+body.reorder-active{ -webkit-user-select:none; user-select:none; }
+/* zoznamy v editore bez malého okna so scrollom – vidno celé poradie */
+#dnes-selected-editor, #selected-list-editor{ max-height:none; overflow:visible; }
+.draggable-item.reorder-lifted{ position:relative; }
+.draggable-item.reorder-lifted::before{
+  content: attr(data-pos);
+  position:absolute; top:-12px; left:12px;
+  background:#00bfff; color:#001018;
+  font-size:12px; font-weight:900;
+  padding:2px 8px; border-radius:999px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.5);
+}
+
+/* ===== v119: lišta Späť ===== */
+#undo-bar{
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(150px + env(safe-area-inset-bottom));
+  z-index: 1000006;
+  display: none; align-items: center; gap: 12px;
+  background: #1e1e1e; color: #fff;
+  border: 1px solid #444; border-radius: 12px;
+  padding: 10px 12px 10px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  max-width: calc(100% - 24px);
+}
+#undo-bar .undo-text{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#undo-bar .undo-btn{ background:#00bfff; color:#001018; border:0; border-radius:8px; padding:7px 14px; font-weight:900; }
