@@ -309,8 +309,8 @@ function syncRetryNow(){
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v114';
-const APP_CACHE_NAME = 'spevnik-v114';
+const APP_BUILD = 'v115';
+const APP_CACHE_NAME = 'spevnik-v115';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -4294,7 +4294,19 @@ async function hardResetApp() {
     return;
   }
 
+  const pendingN = (()=>{ try { return pendingSongSaveIds().length; } catch(e) { return 0; } })();
+  const msg = 'Tvrdý reset vymaže uložené dáta aplikácie v tomto zariadení a načíta ju nanovo.'
+    + (pendingN ? `\n\nPozor: ${pendingN} ${pendingN === 1 ? 'pieseň ešte nie je uložená' : 'piesne ešte nie sú uložené'} na serveri – skúsim ich najprv uložiť a ak to nepôjde, ostanú zachované.` : '')
+    + '\n\nPokračovať?';
+  if (!confirm(msg)) return;
+
   try { closeFabMenu(); } catch(e) {}
+
+  // neuložené úpravy piesní: skús uložiť, inak ich cez reset prenes
+  try { if (pendingN) await flushPendingSongSaves(); } catch(e) {}
+  const keepKeys = [LS_SONG_EDITS, LS_SONG_EDITS_LEGACY, LS_CHORD_MODE];
+  const kept = {};
+  for (const k of keepKeys){ try { const v = localStorage.getItem(k); if (v != null) kept[k] = v; } catch(e) {} }
 
   // lock UI + hláška pre hard reset
   _lockAppUpdateOverlay("Tvrdý reset…");
@@ -4306,6 +4318,7 @@ async function hardResetApp() {
   // 2) vymaž cache + localStorage
   try { _setSyncProgress(2,2,'Resetujem cache'); } catch(e) {}
   try{ localStorage.clear(); }catch(e){}
+  try{ for (const [k,v] of Object.entries(kept)) localStorage.setItem(k, v); }catch(e){}
   try{
     const keys = await caches.keys();
     for (const k of keys) await caches.delete(k);
@@ -7036,6 +7049,10 @@ if (on){
   const vb = document.getElementById('song-versions-block');
   if (vb) vb.style.display = (isOwner() && !seIsNew) ? 'block' : 'none';
 
+  const db = document.getElementById('song-delete-block');
+  if (db) db.style.display = (isOwner() && !seIsNew) ? 'block' : 'none';
+  try { initNumberUiOnOpen(); } catch(e) {}
+
   // editor chord transpose (owner + E)
   const tr = document.getElementById('editor-transpose-row');
   if (tr) tr.style.display = (isOwner() || hasPerm('E') || hasPerm('D')) ? 'flex' : 'none';
@@ -7126,6 +7143,9 @@ async function saveSongEditor(){
     showToast('Doplň číslo.', false, 2200);
     return;
   }
+  // duplicitné číslo (999 môže mať viac piesní)
+  const dupSong = findDuplicateSongNumber(originalId);
+  if (dupSong && !confirm(`Číslo ${originalId} už má pieseň\n„${dupSong.displayId}. ${dupSong.title}“.\n\nUložiť aj tak?`)) return;
 
   // D-mode: chords must not change, except when the change is a pure transposition
   // (admin D is allowed to transpose + edit lyrics outside brackets).
@@ -7312,35 +7332,155 @@ async function flushPendingSongSaves(){
 window.addEventListener('online', () => { setTimeout(flushPendingSongSaves, 1500); });
 setTimeout(() => { try { if (hasPendingSongSaves()) flushPendingSongSaves(); } catch(e) {} }, 4000);
 
+// ===== Čísla piesní (v115) =====
+// 999 = špeciálne číslo (Aleluja…), môže ho mať viac piesní. Mariánske majú tvar M07 → „Mariánska 7“.
+const SONG_NUM_ANY = '999';
+function parseSongNum(raw){
+  const r = String(raw||'').trim();
+  let m = r.match(/^M\s*0*(\d+)$/i);
+  if (m) return { marian:true, n:parseInt(m[1],10), digits:r.replace(/^M\s*/i,'') };
+  m = r.match(/^0*(\d+)$/);
+  if (m) return { marian:false, n:parseInt(m[1],10), digits:r };
+  return null;
+}
+function songNumKey(raw){
+  const p = parseSongNum(raw);
+  if (p) return (p.marian ? 'M' : '') + p.n;
+  return String(raw||'').trim().toUpperCase();
+}
+function _numPadWidth(marian){
+  // ak sa čísla v spevníku dopĺňajú nulami (napr. M07, 007), dodrž to isté
+  const lens = {};
+  for (const s0 of (songs||[])){
+    const p = parseSongNum(s0.originalId);
+    if (!p || p.marian !== marian) continue;
+    if (p.digits.length > 1 && p.digits[0] === '0') lens[p.digits.length] = (lens[p.digits.length]||0) + 1;
+  }
+  let best = 0, cnt = 0;
+  for (const [l,c] of Object.entries(lens)) if (c > cnt){ cnt = c; best = Number(l); }
+  return best;
+}
+function nextSongNumber(marian){
+  let max = 0;
+  for (const s0 of (songs||[])){
+    if (String(s0.id) === String(seEditingId||'')) continue;
+    const p = parseSongNum(s0.originalId);
+    if (!p || p.marian !== !!marian) continue;
+    if (!marian && String(p.n) === SONG_NUM_ANY) continue; // 999 nepočítaj do poradia
+    if (p.n > max) max = p.n;
+  }
+  let n = max + 1;
+  if (!marian && String(n) === SONG_NUM_ANY) n++;
+  let digits = String(n);
+  const w = _numPadWidth(!!marian);
+  if (w && digits.length < w) digits = digits.padStart(w, '0');
+  return (marian ? 'M' : '') + digits;
+}
+function findDuplicateSongNumber(raw){
+  const key = songNumKey(raw);
+  if (!key || key === SONG_NUM_ANY) return null;
+  return (songs||[]).find(x => String(x.id) !== String(seEditingId||'') && songNumKey(x.originalId) === key) || null;
+}
+function updateNumberHint(){
+  const num = document.getElementById('se-number');
+  const hint = document.getElementById('se-number-hint');
+  const cb = document.getElementById('se-marian');
+  const v = String(num ? num.value : '').trim();
+  const p = parseSongNum(v);
+  if (cb) cb.checked = !!(p && p.marian);
+  if (!hint) return;
+  if (!v){ hint.textContent = ''; return; }
+  const dup = findDuplicateSongNumber(v);
+  const shown = computeDisplayId(v);
+  if (dup){
+    hint.innerHTML = `⚠️ Číslo už má pieseň: <b>${escapeHtml(dup.displayId)}. ${escapeHtml(dup.title)}</b>`;
+    hint.style.color = '#ffb74d';
+  } else {
+    hint.textContent = (String(songNumKey(v)) === SONG_NUM_ANY)
+      ? 'Zobrazí sa ako: 999 (môže ho mať viac piesní)'
+      : 'Zobrazí sa ako: ' + shown;
+    hint.style.color = '';
+  }
+}
+function onMarianToggle(){
+  const num = document.getElementById('se-number');
+  const cb = document.getElementById('se-marian');
+  if (!num || !cb) return;
+  const p = parseSongNum(num.value);
+  if (cb.checked){
+    if (!(p && p.marian)) num.value = nextSongNumber(true);
+  } else {
+    if (!p || p.marian) num.value = nextSongNumber(false);
+  }
+  updateNumberHint();
+}
+function initNumberUiOnOpen(){
+  const num = document.getElementById('se-number');
+  if (num && seIsNew && !String(num.value||'').trim()) num.value = nextSongNumber(false);
+  updateNumberHint();
+}
+
 async function deleteSongEditor(){
-  if (__syncInFlight){
-    showToast('Počas synchronizácie nie je možné mazať. Skús znova o chvíľu.', false, 2600);
+  if (!isOwner()) return;
+  if (!seEditingId || seIsNew) return;
+  const id = String(seEditingId);
+  const s0 = (songs||[]).find(x => String(x.id) === id);
+  const label = s0 ? `${s0.displayId}. ${s0.title}` : 'túto pieseň';
+  if (!confirm(`Naozaj natrvalo vymazať pieseň\n„${label}“?\n\nZmizne pre všetkých.`)) return;
+
+  // pieseň, ktorá ešte nebola uložená na server (čaká v telefóne) → len lokálne
+  loadSongEdits();
+  const ed = songEdits[id];
+  if (ed && ed.pending && ed.isNew){
+    delete songEdits[id]; saveSongEditsLocal();
+    removeSongLocally(id);
+    showToast('Vymazané', true, 1500);
     return;
   }
-  if (!isOwner()) return;
-  if (!seEditingId) return;
-  if (!confirm('Naozaj natrvalo vymazať túto pieseň?')) return;
-
-  // local backup snapshot
-  try{ loadSongEdits(); delete songEdits[seEditingId]; saveSongEditsLocal(); }catch(e){}
 
   if (!navigator.onLine){
     showToast('Si offline – vymazanie nie je možné.', false, 2400);
     return;
   }
 
-  setSyncStatus("Aktualizujem…", "warn", 0);
-  showToast('Mažem...', true, 0);
-
+  const btn = document.getElementById('song-editor-delete-btn');
+  if (btn){ btn.disabled = true; btn.classList.add('disabled'); }
+  setSaveStatus('Mažem…', 'warn', 0);
   try{
-    await jsonpSave({ action:'songDeletePermanent', pwd:getAuthPwd(), id: String(seEditingId) });
-    await updateSeenMetaFromServer();
-    await runUpdateNow(true);
-    showToast('Vymazané', true, 1500);
-    closeSongEditor(true);
+    try{
+      await gasPost({ action:'songDeletePermanent', pwd:getAuthPwd(), id });
+    }catch(e){
+      // už neexistuje na serveri → stačí odstrániť lokálne
+      if (String(e && e.message || '') !== 'not_found') throw e;
+    }
+    if (songEdits[id]){ delete songEdits[id]; saveSongEditsLocal(); }
+    removeSongLocally(id);
+    setSaveStatus('Vymazané ✓', 'ok', 2000);
+    // aktuálny export do offline cache na pozadí
+    try { await parseXML(); } catch(e) {}
+    try { await updateSeenMetaFromServer(); } catch(e) {}
   }catch(e){
-    showToast('Zlyhalo.', false, 2000);
+    const code = String((e && e.message) ? e.message : e || '');
+    setSaveStatus('Vymazanie zlyhalo (' + _songSaveErrText(code) + ').', 'err', 3500);
+  }finally{
+    if (btn){ btn.disabled = false; btn.classList.remove('disabled'); }
   }
+}
+
+// odstráni pieseň z appky hneď (zoznam, otvorený detail, editor)
+function removeSongLocally(id){
+  const sid = String(id);
+  songs = (songs||[]).filter(x => String(x.id) !== sid);
+  currentModeList = (currentModeList||[]).filter(x => String(x.id) !== sid);
+  try { filterSongs(); } catch(e) { filteredSongs = [...songs]; renderAllSongs(); }
+  try { closeSongEditor(true); } catch(e) {}
+  try{
+    if (currentSong && String(currentSong.id||'') === sid){
+      const detail = document.getElementById('song-detail');
+      if (detail && detail.style.display === 'block') closeSong();
+      currentSong = null;
+    }
+  }catch(e){}
 }
 
 function triggerImportSongs(){

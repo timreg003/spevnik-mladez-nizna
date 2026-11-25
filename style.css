@@ -1413,3 +1413,5 @@ body.present #presentControls{ display:flex; }
   font-size: 15px;
 }
 #editor-del-btn{ touch-action: manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+.marian-check{ display:flex; align-items:center; gap:8px; margin-top:8px; font-size:14px; cursor:pointer; }
+.marian-check input{ width:18px; height:18px; }

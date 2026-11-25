@@ -5,16 +5,16 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>Mládežnícky spevník NIŽNÁ</title>
-<link href="manifest.json?v=114" rel="manifest"/>
+<link href="manifest.json?v=115" rel="manifest"/>
 <meta content="#00bfff" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="Spevník" name="apple-mobile-web-app-title"/>
-<link href="icon.png?v=114" rel="apple-touch-icon"/>
-<link href="icon.png?v=114" rel="icon" type="image/png"/>
+<link href="icon.png?v=115" rel="apple-touch-icon"/>
+<link href="icon.png?v=115" rel="icon" type="image/png"/>
 <link crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
-<link href="style.css?v=114" rel="stylesheet"/>
+<link href="style.css?v=115" rel="stylesheet"/>
 </head>
 <body>
 <div class="toast" id="toast" style="display:none;"></div>
@@ -314,7 +314,7 @@
 <span class="psSpeed" id="psSpeed">Rýchlosť: 1</span>
 <button aria-label="Ukončiť" id="psExit" onclick="exitPresentationMode()"><i class="fas fa-xmark"></i></button>
 </div>
-<script src="script.js?v=114"></script>
+<script src="script.js?v=115"></script>
 <!-- FORM EDITOR MODAL -->
 <div class="modal-overlay" id="form-modal" style="display:none;">
 <div aria-labelledby="form-modal-title" aria-modal="true" class="modal-sheet" role="dialog">
@@ -367,8 +367,10 @@
 <div class="modal-block">
 <div class="form-row">
 <div class="form-col">
-<div class="modal-label">Číslo (author)</div>
-<input class="text-input" id="se-number" maxlength="12" placeholder="napr. 125 alebo M07" type="text"/>
+<div class="modal-label">Číslo</div>
+<input class="text-input" id="se-number" maxlength="12" placeholder="napr. 125 alebo M07" type="text" oninput="updateNumberHint()"/>
+<label class="marian-check"><input id="se-marian" type="checkbox" onchange="onMarianToggle()"/> Mariánska pieseň</label>
+<div class="modal-hint" id="se-number-hint" style="margin-top:4px;"></div>
 </div>
 <div class="form-col" style="flex:2;">
 <div class="modal-label">Názov</div>
@@ -436,6 +438,10 @@
 Tip: Najprv vyber „Základ“, potom „Typ“ (napr. D + m → <b>[Dm]</b>).</div>
 </div>
 </div>
+<div class="modal-block" id="song-delete-block" style="display:none;">
+  <button class="btn-delete" id="song-editor-delete-btn" onclick="deleteSongEditor()" type="button" style="width:100%;"><i class="fas fa-trash"></i> Vymazať túto pieseň</button>
+  <div class="modal-hint">Pieseň sa odstráni pre všetkých. Posledné verzie ostanú v zálohách na Drive.</div>
+</div>
 <div class="modal-block" id="song-versions-block" style="display:none;">
   <div class="modal-label">Verzie (owner)</div>
   <div class="btn-row-2">
@@ -463,7 +469,6 @@ Tip: Najprv vyber „Základ“, potom „Typ“ (napr. D + m → <b>[Dm]</b>).<
     </div>
 
     <div class="btn-row-2" style="margin-top:8px;">
-      <button class="btn-delete" id="song-editor-delete-btn" onclick="deleteSongEditor()" type="button">Vymazať túto pieseň</button>
       <button class="btn-neutral" onclick="toggleBackupMore(false)" type="button">Zavrieť</button>
     </div>
 

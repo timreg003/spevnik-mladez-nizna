@@ -1,5 +1,5 @@
 // Service Worker – robust offline (app shell + cache-first) + non-blocking external assets
-const CACHE_NAME = "spevnik-v114";
+const CACHE_NAME = "spevnik-v115";
 
 const CORE_ASSETS = [
   './',
