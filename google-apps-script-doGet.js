@@ -1,4 +1,6 @@
-// ===== Spevník GAS backend (v99) =====
+// ===== Spevník GAS backend (v112) =====
+// v112: zámok pri zápisoch, pracovný export prepisovaný na mieste (bez mazania/vytvárania),
+//       rýchla meta z Script Properties, zálohy max. 1× za 30 min, prísnejšia kontrola práva D.
 // Execute as: Me, Access: Anyone
 // Owner login: password only (OWNER_PWD). Other admins: password only (stored hashed by password), owner may label them with a name.
 //
@@ -33,6 +35,12 @@ const LIT_OVERRIDES_FILE = "LiturgiaOverrides.json";
 const SONG_VERSION_KEEP = 10;
 const SONG_CHANGES_KEEP = 50;
 
+// v112
+const WORK_FILE_NAME = "Spevník export - aktuálny";   // pracovný export (prepisuje sa na mieste)
+const BACKUP_MIN_INTERVAL_MS = 30 * 60 * 1000;         // záloha celého exportu najviac raz za 30 min
+const WRITE_ACTIONS = ["save","delete","adminsUpsert","adminsDelete","songSave","songDeletePermanent",
+  "keyHistoryDelete","keyHistoryClear","changesSeenSet","litOverrideSave","litOverrideDelete"];
+
 function authorizeExternalRequests() {
   UrlFetchApp.fetch("https://lc.kbs.sk/?den=2026-02-01&offline=", { muteHttpExceptions: true });
 }
@@ -40,39 +48,51 @@ function authorizeExternalRequests() {
 function doGet(e) { return _handle_(e); }
 function doPost(e) { return _handle_(e); }
 
+function _outFor_(p, obj){
+  const callback = p.callback ? String(p.callback) : "";
+  const payload = JSON.stringify(obj);
+  if (callback){
+    return ContentService.createTextOutput(`${callback}(${payload});`).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Všetky zápisy idú cez zámok – dvaja admini naraz si už neprepíšu zmeny.
 function _handle_(e){
   const p = _mergeParams_(e);
   const action = p.action ? String(p.action) : "";
+  if (WRITE_ACTIONS.indexOf(action) >= 0){
+    // ochrana pred dvojitým uložením (klient pri timeoute skúša znova)
+    const reqId = p.reqId ? String(p.reqId) : "";
+    const cache = CacheService.getScriptCache();
+    if (reqId){
+      const prev = cache.get("req_" + reqId);
+      if (prev) return _outFor_(p, JSON.parse(prev));
+    }
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(25000)) return _outFor_(p, { ok:false, error:"busy" });
+    try{
+      const res = _handleInner_(e, p, (obj)=>{
+        if (reqId && obj && obj.ok){ try{ cache.put("req_" + reqId, JSON.stringify(obj), 600); }catch(_){} }
+        return _outFor_(p, obj);
+      });
+      return res;
+    } finally {
+      try{ lock.releaseLock(); }catch(_){}
+    }
+  }
+  return _handleInner_(e, p, (obj)=>_outFor_(p, obj));
+}
+
+function _handleInner_(e, p, outFn){
+  const action = p.action ? String(p.action) : "";
   const callback = p.callback ? String(p.callback) : "";
 
-  function out(obj){
-    const payload = JSON.stringify(obj);
-    if (callback){
-      return ContentService.createTextOutput(`${callback}(${payload});`).setMimeType(ContentService.MimeType.JAVASCRIPT);
-    }
-    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
-  }
+  function out(obj){ return outFn(obj); }
 
-  // --- META ---
+  // --- META --- (v112: z Script Properties – milisekundy namiesto čítania celého exportu)
   if (action === "meta"){
-    const folder = _getOrCreateFolder_();
-    const exportFile = _getActiveExportFile_();
-    const dnesFile = _newestFileByNameInFolder_("PiesneNaDnes", folder);
-    const orderFile = _newestFileByNameInFolder_("PlaylistOrder", folder);
-
-    // history file names may vary
-    const histCandidates = ["HistoryLog","History","Historia","PiesneNaDnesHistory","PiesneNaDnesHistoria"];
-    let historyM = 0;
-    for (const n of histCandidates){
-      historyM = Math.max(historyM, _safeMtime_(_newestFileByNameInFolder_(n, folder)));
-    }
-
-    return out({ ok:true, meta:{
-      export: _safeMtime_(exportFile),
-      dnes: _safeMtime_(dnesFile),
-      order: _safeMtime_(orderFile),
-      history: historyM
-    }});
+    return out({ ok:true, meta: _getMeta_() });
   }
 
   // --- DIAG ---
@@ -160,6 +180,8 @@ function _handle_(e){
 
     const folder = _getOrCreateFolder_();
     _replaceFileInFolder_(folder, name, content);
+    const mk = _metaKeyForName_(name);
+    if (mk) _bumpMeta_(mk);
     return out({ ok:true });
   }
 
@@ -187,6 +209,8 @@ function _handle_(e){
 
     const folder = _getOrCreateFolder_();
     _replaceFileInFolder_(folder, name, "deleted");
+    const mk = _metaKeyForName_(name);
+    if (mk) _bumpMeta_(mk);
     return out({ ok:true });
   }
 
@@ -291,21 +315,27 @@ function _handle_(e){
       existed = true;
       oldPlain = _songToPlain_(songEl, ns);
 
-      // save version before change
-      _saveSongVersion_(id, oldPlain, who);
-
-      // D guard (server-side): allow chord changes only when transposeStep provided
-      const isE = !!sess.perms.E;
+      // D guard (server-side): akordy sa môžu zmeniť len čistou transpozíciou o transposeStep
+      const isE = !!sess.perms.E || !!sess.isOwner;
       const isD = !!sess.perms.D && !isE;
-      if (isD && mode === "D"){
-        const oldCh = _extractChords_(String(oldPlain.songtext||""));
-        const newCh = _extractChords_(songtext);
-        if (oldCh !== newCh){
-          if (!(transposeStep != null && isFinite(transposeStep) && Math.abs(transposeStep) <= 11)){
-            return out({ ok:false, error:"chords_changed_in_D" });
+      if (isD){
+        const oldCh = _chordList_(String(oldPlain.songtext||""));
+        const newCh = _chordList_(songtext);
+        const same = (oldCh.join('|') === newCh.join('|'));
+        if (!same){
+          const st = Number(transposeStep);
+          let ok = (isFinite(st) && st !== 0 && Math.abs(st) <= 11 && oldCh.length === newCh.length);
+          if (ok){
+            for (let i=0;i<oldCh.length;i++){
+              if (_chordPitchSig_(_transposeChordGas_(oldCh[i], st)) !== _chordPitchSig_(newCh[i])){ ok = false; break; }
+            }
           }
+          if (!ok) return out({ ok:false, error:"chords_changed_in_D" });
         }
       }
+
+      // verziu ukladaj až keď je zmena povolená
+      _saveSongVersion_(id, oldPlain, who);
 
       // apply
       _setChildCdata_(songEl, ns, "author", num);
@@ -332,7 +362,7 @@ function _handle_(e){
 
     // publish
     const newXml = XmlService.getPrettyFormat().format(doc);
-    _publishExport_(newXml);
+    const pub = _publishExport_(newXml, xmlText);
 
     // key history + changes feed
     try{
@@ -342,7 +372,7 @@ function _handle_(e){
       _appendChanges_(id, num, title, who, { existed, oldPlain, newPlain:{id,num,title,songtext}, transposeStep });
     }catch(e){}
 
-    return out({ ok:true });
+    return out({ ok:true, ver: pub.ver, prevVer: pub.prevVer });
   }
 
   // --- SONG DELETE (owner, permanent) ---
@@ -382,7 +412,7 @@ function _handle_(e){
     }
 
     const newXml = XmlService.getPrettyFormat().format(doc);
-    _publishExport_(newXml);
+    _publishExport_(newXml, xmlText);
 
     // delete related metadata (versions, key history)
     try{
@@ -629,15 +659,25 @@ function _sha256Hex_(s){
 
 function _isDeletedMarker_(s){ return typeof s === 'string' && s.trim() === 'deleted'; }
 
-function _getOrCreateFolder_(){
-  const it = DriveApp.getFoldersByName(FOLDER_NAME);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
+// Priečinky: ID si pamätáme v Script Properties (hľadanie podľa mena je pomalé).
+function _cachedFolder_(propKey, name){
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty(propKey);
+  if (id){
+    try{
+      const f = DriveApp.getFolderById(id);
+      if (!f.isTrashed()) return f;
+    }catch(e){}
+  }
+  const it = DriveApp.getFoldersByName(name);
+  const f = it.hasNext() ? it.next() : DriveApp.createFolder(name);
+  props.setProperty(propKey, f.getId());
+  return f;
 }
 
-function _getOrCreateMainExportFolder_(){
-  const it = DriveApp.getFoldersByName(MAIN_EXPORT_FOLDER);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(MAIN_EXPORT_FOLDER);
-}
+function _getOrCreateFolder_(){ return _cachedFolder_("FOLDER_ID_MAIN", FOLDER_NAME); }
+
+function _getOrCreateMainExportFolder_(){ return _cachedFolder_("FOLDER_ID_EXPORT", MAIN_EXPORT_FOLDER); }
 
 function _getMainExportFile_(){
   // Prefer "Spevnik export" folder (main). Fallback to root if user has it there.
@@ -666,14 +706,151 @@ function _getNewestBackupExportFile_(){
   }catch(e){ return null; }
 }
 
-function _getActiveExportFile_(){
-  // Choose the newest between main export and newest backup.
+// Pôvodná logika: najnovší z hlavného exportu a záloh (používa sa na prvé spustenie
+// a na zistenie, či owner ručne nenahral nový export).
+function _legacyActiveExportFile_(){
   const main = _getMainExportFile_();
   const bak = _getNewestBackupExportFile_();
   const tm = main ? main.getLastUpdated().getTime() : 0;
   const tb = bak ? bak.getLastUpdated().getTime() : 0;
   if (tm === 0 && tb === 0) return null;
   return (tb > tm) ? bak : main;
+}
+
+// v112: pracovný export – jeden súbor, ID v Script Properties, obsah sa prepisuje na mieste.
+function _getActiveExportFile_(){
+  const props = PropertiesService.getScriptProperties();
+  let work = null;
+  const id = props.getProperty("WORK_EXPORT_ID");
+  if (id){
+    try{ work = DriveApp.getFileById(id); if (work.isTrashed()) work = null; }catch(e){ work = null; }
+  }
+
+  if (!work){
+    // prvé spustenie: skopíruj aktuálny export do pracovného súboru
+    const src = _legacyActiveExportFile_();
+    if (!src) return null;
+    const folder = _getOrCreateMainExportFolder_();
+    work = folder.createFile(WORK_FILE_NAME, src.getBlob().getDataAsString("UTF-8"), MimeType.PLAIN_TEXT);
+    props.setProperty("WORK_EXPORT_ID", work.getId());
+    props.setProperty("WORK_EXPORT_AT", String(Date.now()));
+    _bumpMeta_("export");
+    return work;
+  }
+
+  // max. raz za 2 min skontroluj, či owner ručne nenahral novší „Spevník export“
+  try{
+    const cache = CacheService.getScriptCache();
+    if (!cache.get("ext_export_check")){
+      cache.put("ext_export_check", "1", 120);
+      const legacy = _legacyActiveExportFile_();
+      const workAt = Number(props.getProperty("WORK_EXPORT_AT") || 0);
+      if (legacy && legacy.getId() !== work.getId() && legacy.getLastUpdated().getTime() > workAt + 60000){
+        work.setContent(legacy.getBlob().getDataAsString("UTF-8"));
+        props.setProperty("WORK_EXPORT_AT", String(Date.now()));
+        _bumpMeta_("export");
+      }
+    }
+  }catch(e){}
+
+  return work;
+}
+
+// Uloží nový export. oldXml = obsah pred zmenou (na zálohu). Vracia { ver, prevVer }.
+function _publishExport_(xmlText, oldXml){
+  const props = PropertiesService.getScriptProperties();
+  const prevVer = Number(props.getProperty("META_export") || 0);
+
+  // záloha predchádzajúceho stavu najviac raz za 30 min (verzie piesní sa ukladajú pri každej zmene)
+  try{
+    const lastB = Number(props.getProperty("LAST_EXPORT_BACKUP_AT") || 0);
+    if (oldXml && Date.now() - lastB > BACKUP_MIN_INTERVAL_MS){
+      _backupExport_(oldXml);
+      props.setProperty("LAST_EXPORT_BACKUP_AT", String(Date.now()));
+    }
+  }catch(e){}
+
+  const work = _getActiveExportFile_();
+  if (work){
+    work.setContent(xmlText);
+  } else {
+    const folder = _getOrCreateMainExportFolder_();
+    const f = folder.createFile(WORK_FILE_NAME, xmlText, MimeType.PLAIN_TEXT);
+    props.setProperty("WORK_EXPORT_ID", f.getId());
+  }
+  props.setProperty("WORK_EXPORT_AT", String(Date.now()));
+  const ver = _bumpMeta_("export");
+  return { ver, prevVer };
+}
+
+// --- META (verzie dát) ---
+function _bumpMeta_(key){
+  const props = PropertiesService.getScriptProperties();
+  const prev = Number(props.getProperty("META_" + key) || 0);
+  const t = Math.max(Date.now(), prev + 1);
+  props.setProperty("META_" + key, String(t));
+  return t;
+}
+
+function _metaKeyForName_(name){
+  const low = String(name||"").toLowerCase();
+  if (low === "piesnenadnes") return "dnes";
+  if (["historylog","history","historia","piesnenadneshistory","piesnenadneshistoria"].includes(low)) return "history";
+  const system = [ADMINS_FILE, SONG_VERSIONS_FILE, SONG_TRASH_FILE, SONG_CHANGES_FILE, OWNER_SEEN_CHANGES_FILE, SONG_KEY_HISTORY_FILE, LIT_OVERRIDES_FILE].map(x=>x.toLowerCase());
+  if (system.includes(low)) return "";
+  return "order"; // PlaylistOrder aj jednotlivé playlisty
+}
+
+function _getMeta_(){
+  const props = PropertiesService.getScriptProperties();
+  const all = props.getProperties();
+  const meta = {
+    export: Number(all.META_export || 0),
+    dnes: Number(all.META_dnes || 0),
+    order: Number(all.META_order || 0),
+    history: Number(all.META_history || 0)
+  };
+  // prvé spustenie: dopočítaj chýbajúce hodnoty starým spôsobom a ulož
+  if (!meta.export || !meta.dnes || !meta.order || !meta.history){
+    const folder = _getOrCreateFolder_();
+    if (!meta.export){ meta.export = _safeMtime_(_getActiveExportFile_()) || Date.now(); props.setProperty("META_export", String(meta.export)); }
+    if (!meta.dnes){ meta.dnes = _safeMtime_(_newestFileByNameInFolder_("PiesneNaDnes", folder)) || 1; props.setProperty("META_dnes", String(meta.dnes)); }
+    if (!meta.order){ meta.order = _safeMtime_(_newestFileByNameInFolder_("PlaylistOrder", folder)) || 1; props.setProperty("META_order", String(meta.order)); }
+    if (!meta.history){
+      let h = 0;
+      for (const n of ["HistoryLog","History","Historia","PiesneNaDnesHistory","PiesneNaDnesHistoria"]){
+        h = Math.max(h, _safeMtime_(_newestFileByNameInFolder_(n, folder)));
+      }
+      meta.history = h || 1; props.setProperty("META_history", String(meta.history));
+    }
+  }
+  return meta;
+}
+
+// --- transpozícia na serveri (kontrola práva D) ---
+function _chordList_(txt){
+  return (String(txt||"").match(/\[[^\]]*\]/g) || []).map(x => x.slice(1,-1).trim());
+}
+function _noteIdx_(note){
+  const map = { "C":0,"C#":1,"DB":1,"D":2,"D#":3,"EB":3,"E":4,"F":5,"F#":6,"GB":6,"G":7,"G#":8,"AB":8,"A":9,"A#":10,"BB":10,"B":10,"H":11 };
+  const v = map[String(note||"").toUpperCase()];
+  return (v == null) ? -1 : v;
+}
+function _transposeChordGas_(ch, step){
+  const out = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
+  const tr = (l, a) => {
+    const i = _noteIdx_(l + a);
+    if (i < 0) return l + a;
+    return out[(((i + step) % 12) + 12) % 12];
+  };
+  return String(ch||"").trim()
+    .replace(/^([A-Ha-h])([#b]?)/, (m0, l, a) => tr(l, a))
+    .replace(/\/([A-Ha-h])([#b]?)/, (m0, l, a) => "/" + tr(l, a));
+}
+function _chordPitchSig_(ch){
+  return String(ch||"").trim()
+    .replace(/^([A-Ha-h])([#b]?)/, (m0, l, a) => "<" + _noteIdx_(l + a) + ">")
+    .replace(/\/([A-Ha-h])([#b]?)/, (m0, l, a) => "/<" + _noteIdx_(l + a) + ">");
 }
 
 function _newestFileByNameInFolder_(name, folder){
@@ -716,15 +893,26 @@ function _readJsonFileInFolder_(folder, name){
 }
 
 function _writeJsonFileInFolder_(folder, name, obj){
-  const old = folder.getFilesByName(name);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(name, JSON.stringify(obj, null, 2), MimeType.PLAIN_TEXT);
+  _replaceFileInFolder_(folder, name, JSON.stringify(obj, null, 2));
 }
 
+// v112: prepíš obsah existujúceho súboru (nie zmaž + vytvor). Drive nový súbor v zozname
+// neukáže hneď, preto sa pri starom spôsobe občas čítala stará verzia a zmeny sa strácali.
 function _replaceFileInFolder_(folder, name, content){
-  const old = folder.getFilesByName(name);
-  while (old.hasNext()) old.next().setTrashed(true);
-  folder.createFile(name, String(content||""), MimeType.PLAIN_TEXT);
+  const text = String(content == null ? "" : content);
+  const it = folder.getFilesByName(name);
+  const files = [];
+  while (it.hasNext()){
+    const f = it.next();
+    if (!f.isTrashed()) files.push(f);
+  }
+  files.sort((a,b)=>b.getLastUpdated().getTime()-a.getLastUpdated().getTime());
+  if (files.length){
+    files[0].setContent(text);
+    for (let i=1;i<files.length;i++){ try{ files[i].setTrashed(true); }catch(e){} }
+  } else {
+    folder.createFile(name, text, MimeType.PLAIN_TEXT);
+  }
 }
 
 function _keepOnlyNewestRootExport_(){
@@ -768,8 +956,8 @@ function _backupExport_(xmlText){
   }catch(e){}
 }
 
-function _publishExport_(xmlText){
-  // Nikdy nemaž hlavný súbor „Spevník export“ v priečinku „Spevnik export“.
+function _legacyPublishExport_(xmlText){
+  // (v112: nepoužíva sa) Nikdy nemaž hlavný súbor „Spevník export“ v priečinku „Spevnik export“.
   // Zmeny vždy ukladaj ako backup, a aktívny export je „najnovší“ medzi main+backup.
   _backupExport_(xmlText);
   try{

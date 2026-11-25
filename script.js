@@ -117,10 +117,11 @@ async function jsonpSave(params){
 }
 // ===== GAS SAVE helpers (reliable error reporting) =====
 async function gasSaveFile(name, content){
-  return await jsonpSave({ action:'save', name:String(name||''), pwd:getAuthPwd(), content:String(content ?? '') });
+  // v112: POST (bez limitu dĺžky URL), pri probléme so sieťou automaticky JSONP
+  return await gasPost({ action:'save', name:String(name||''), pwd:getAuthPwd(), content:String(content ?? '') });
 }
 async function gasDeleteFile(name){
-  return await jsonpSave({ action:'delete', name:String(name||''), pwd:getAuthPwd() });
+  return await gasPost({ action:'delete', name:String(name||''), pwd:getAuthPwd() });
 }
 
 
@@ -161,11 +162,12 @@ async function checkMetaAndToggleBadge(){
     }
 
     const hasUpdate = metaIsNewer(remote, seen);
-    // Auto-update: when new data is available, update immediately (no manual wheel).
+    // Auto-update: stiahni len to, čo sa naozaj zmenilo.
     setUpdateBadgeVisible(false);
     if (hasUpdate && !autoUpdateInFlight && !document.hidden){
+      const changed = ['export','dnes','order','history'].filter(k => Number(remote[k]||0) > Number(seen[k]||0));
       autoUpdateInFlight = true;
-      try { await runUpdateNow(true); } catch(e) {} finally { autoUpdateInFlight = false; }
+      try { await runUpdateNow(true, changed); } catch(e) {} finally { autoUpdateInFlight = false; }
     }
   } catch(e) {
     // ignore – keep previous badge state
@@ -177,7 +179,8 @@ function startMetaPolling(){
   metaPollingStarted = true;
   // okamžite po štarte + každú minútu
   checkMetaAndToggleBadge();
-  setInterval(checkMetaAndToggleBadge, POLL_INTERVAL_MS);
+  // meta je po v112 lacná → kontroluj častejšie, ale len keď je appka na obrazovke
+  setInterval(() => { if (!document.hidden) checkMetaAndToggleBadge(); }, POLL_INTERVAL_MS);
   window.addEventListener('online', () => checkMetaAndToggleBadge());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMetaAndToggleBadge(); });
 }
@@ -199,7 +202,7 @@ let __lastSyncWasAuto = false;
 
 function _setDangerActionsEnabled(enabled){
   // Disable only actions that could race with incoming data.
-  const ids = ['song-new-btn-list','song-editor-save-btn','song-editor-delete-btn'];
+  const ids = ['song-editor-delete-btn'];
   for (const id of ids){
     const el = document.getElementById(id);
     if (!el) continue;
@@ -209,8 +212,11 @@ function _setDangerActionsEnabled(enabled){
   }
 }
 
-async function runUpdateNow(fromAuto=false){
+async function runUpdateNow(fromAuto=false, only=null){
   if (__syncInFlight) return;
+  // only = zoznam zmenených častí (export/dnes/order/history); null = všetko
+  const want = (k) => !only || only.indexOf(k) >= 0;
+  const quiet = !!(only && fromAuto); // automatická čiastočná aktualizácia – bez hlášok
   __syncInFlight = true;
   __lastSyncWasAuto = !!fromAuto;
   _showSyncRetry(false);
@@ -229,34 +235,57 @@ async function runUpdateNow(fromAuto=false){
   _setDangerActionsEnabled(false);
 
   try{
+    const metaBefore = only ? lastRemoteMeta : null;
+    __sideLoadsAt = Date.now(); // processXML nech znova nesťahuje dnes/playlisty/históriu
+
     // 1/4: export
-    _setSyncProgress(1,4,'Export');
-    try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
-    await parseXML();
+    if (want('export')){
+      if (!quiet) _setSyncProgress(1,4,'Export');
+      if (!only) { try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {} }
+      await parseXML();
+    }
 
     // 2/4: piesne na dnes
-    _setSyncProgress(2,4,'Piesne na dnes');
-    await loadDnesFromDrive();
+    if (want('dnes')){
+      if (!quiet) _setSyncProgress(2,4,'Piesne na dnes');
+      await loadDnesFromDrive();
+    }
 
     // 3/4: playlisty
-    _setSyncProgress(3,4,'Playlisty');
-    await loadPlaylistsFromDrive();
+    if (want('order')){
+      if (!quiet) _setSyncProgress(3,4,'Playlisty');
+      await loadPlaylistsFromDrive();
+    }
 
     // 4/4: história + zmeny + liturgia
-    _setSyncProgress(4,4,'História');
-    await Promise.allSettled([
-      loadHistoryFromDrive(),
-      (async()=>{ try{ if (typeof refreshLitOverridesFromDrive === 'function') await refreshLitOverridesFromDrive(); }catch(e){} })(),
-      (async()=>{ try{ if (isOwner()) await loadChangesList(); }catch(e){} })()
-    ]);
+    if (want('history') || !only){
+      if (!quiet) _setSyncProgress(4,4,'História');
+      await Promise.allSettled([
+        loadHistoryFromDrive(),
+        (async()=>{ try{ if (!only && typeof refreshLitOverridesFromDrive === 'function') await refreshLitOverridesFromDrive(); }catch(e){} })(),
+        (async()=>{ try{ if (isOwner()) await loadChangesList(); }catch(e){} })()
+      ]);
+    } else if (want('export') && isOwner()){
+      try { await loadChangesList(); } catch(e) {}
+    }
 
-    try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
-    if (lastRemoteMeta) setSeenMeta(lastRemoteMeta);
+    if (metaBefore){
+      // čiastočná aktualizácia: označ ako videné presne to, čo sme mali v meta pri kontrole
+      setSeenMeta(metaBefore);
+    } else {
+      try { lastRemoteMeta = await fetchRemoteMeta(); } catch(e) {}
+      if (lastRemoteMeta) setSeenMeta(lastRemoteMeta);
+    }
 
-    setSyncStatus("Aktualizované", "ok", 2000);
-    showToast("Aktualizované", true, 2000);
+    if (quiet){
+      setSyncStatus("", "", 0);
+    } else {
+      setSyncStatus("Aktualizované", "ok", 2000);
+      showToast("Aktualizované", true, 2000);
+    }
   }catch(err){
     console.error('runUpdateNow failed', err);
+    if (quiet){ __syncInFlight = false; _setDangerActionsEnabled(true); return; }
     setSyncStatus("Chyba synchronizácie", "err", 0);
     _showSyncRetry(true);
     showToast("Chyba synchronizácie", false, 2500);
@@ -274,13 +303,14 @@ async function syncDataManual(closeDiag=false){
 
 function syncRetryNow(){
   _showSyncRetry(false);
+  if (hasPendingSongSaves()) return flushPendingSongSaves();
   return runUpdateNow(__lastSyncWasAuto);
 }
 
 
 // Build info (for diagnostics)
-const APP_BUILD = 'v112';
-const APP_CACHE_NAME = 'spevnik-v112';
+const APP_BUILD = 'v113';
+const APP_CACHE_NAME = 'spevnik-v113';
 
 function _buildNum(){
   // APP_BUILD is like "v111"
@@ -289,7 +319,7 @@ function _buildNum(){
 }
 
 // Polling interval for checking updates / overrides (30s = svižné, no bez zbytočného zaťaženia)
-const POLL_INTERVAL_MS = 30 * 1000;
+const POLL_INTERVAL_MS = 15 * 1000;
 
 // ===== LITURGIA OVERRIDES POLLING (without GAS meta support) =====
 // We poll LiturgiaOverrides.json via GAS action=litOverrideGet and auto-apply changes.
@@ -536,9 +566,26 @@ const keyHistOpen = {};  // songId -> bool
 const LS_SONG_EDITS = 'spevnik_song_edits_v1'; // local overrides + local-only songs
 let songEdits = {}; // { [songId]: { id, title, originalId, origText, updatedAt, localOnly } }
 
+const LS_SONG_EDITS_LEGACY = 'spevnik_song_edits_legacy_v1';
 function loadSongEdits(){
   try { songEdits = JSON.parse(localStorage.getItem(LS_SONG_EDITS) || '{}') || {}; } catch(e) { songEdits = {}; }
   if (typeof songEdits !== 'object' || Array.isArray(songEdits)) songEdits = {};
+  // v112: staré lokálne kópie (bez príznaku pending) sa už neprikladajú cez dáta zo servera –
+  // práve tie spôsobovali, že admin videl svoju verziu a ostatní nie. Odložíme ich bokom (záloha).
+  try{
+    let moved = 0;
+    let legacy = {};
+    try { legacy = JSON.parse(localStorage.getItem(LS_SONG_EDITS_LEGACY) || '{}') || {}; } catch(e) { legacy = {}; }
+    for (const [id, ed] of Object.entries(songEdits)){
+      if (ed && typeof ed === 'object' && !ed.pending){
+        legacy[id] = ed; delete songEdits[id]; moved++;
+      }
+    }
+    if (moved){
+      localStorage.setItem(LS_SONG_EDITS_LEGACY, JSON.stringify(legacy));
+      localStorage.setItem(LS_SONG_EDITS, JSON.stringify(songEdits));
+    }
+  }catch(e){}
 }
 function saveSongEditsLocal(){
   try { localStorage.setItem(LS_SONG_EDITS, JSON.stringify(songEdits || {})); } catch(e) {}
@@ -575,7 +622,7 @@ function applySongEditsToSongs(){
         if (ed.origText != null) target.origText = String(ed.origText);
         target.displayId = computeDisplayId(target.originalId);
         target.searchHaystack = computeSearchHaystack(target.displayId, target.title, target.origText);
-      } else if (ed.localOnly){
+      } else if (ed.localOnly || ed.isNew){
         // local-only song not present in remote export
         const obj = {
           id: sid,
@@ -1334,6 +1381,59 @@ function processXML(xmlText, opts = null) {
   // apply local edits / local-only songs (editor)
   applySongEditsToSongs();
 
+  sortSongsInPlace();
+
+  filteredSongs = [...songs];
+  renderAllSongs();
+
+  // refresh open song after data update (so changed chords/lyrics show immediately)
+  try{
+    const detail = document.getElementById('song-detail');
+    if (detail && detail.style.display === 'block' && currentSong){
+      const sc = document.getElementById('song-content');
+      const prevScroll = sc ? sc.scrollTop : 0;
+      const cid = String(currentSong.id||'');
+      const updated = songs.find(x => String(x.id) === cid);
+      if (updated){
+        // Keď owner v editore zmení tóninu, nech sa otvorená pieseň u ostatných "nepohne":
+        // posunieme ich transpozíciu opačne, takže hrajú stále tie isté akordy.
+        try{
+          const shift = detectSongKeyShift(currentSong.origText, updated.origText);
+          if (shift){
+            let t = ((transposeStep - shift) % 12 + 12) % 12;
+            if (t > 6) t -= 12;
+            transposeStep = t;
+            const tv = document.getElementById('transpose-val');
+            if (tv) tv.innerText = (transposeStep>0?"+":"") + transposeStep;
+            const lab = document.getElementById('original-key-label');
+            const k2 = firstChordKeyText(updated.origText);
+            if (lab) lab.innerText = "Pôvodná tónina: " + (k2 || "-");
+            showToast('Tónina piesne sa zmenila – akordy ti ostali rovnaké.', true, 2600);
+          }
+        }catch(e){}
+        currentSong = updated;
+      }
+      renderSong();
+      if (sc) sc.scrollTop = prevScroll;
+    }
+  }catch(e){}
+
+  // cache-first (no flicker)
+  loadDnesCacheFirst(false);
+  loadPlaylistsCacheFirst(false);
+  loadHistoryCacheFirst(false);
+
+  // then refresh (max. raz za 20 s – predtým sa pri každom spracovaní exportu sťahovalo všetko znova)
+  if (Date.now() - __sideLoadsAt > 20000){
+    __sideLoadsAt = Date.now();
+    loadDnesFromDrive();
+    loadPlaylistsFromDrive();
+    loadHistoryFromDrive();
+  }
+}
+var __sideLoadsAt = 0;
+
+function sortSongsInPlace(){
   songs.sort((a, b) => {
     const idA = a.originalId.toUpperCase(), idB = b.originalId.toUpperCase();
     const isNumA = /^\d+$/.test(idA), isNumB = /^\d+$/.test(idB);
@@ -1349,33 +1449,6 @@ function processXML(xmlText, opts = null) {
 
     return a.title.localeCompare(b.title, 'sk');
   });
-
-  filteredSongs = [...songs];
-  renderAllSongs();
-
-  // refresh open song after data update (so changed chords/lyrics show immediately)
-  try{
-    const detail = document.getElementById('song-detail');
-    if (detail && detail.style.display === 'block' && currentSong){
-      const sc = document.getElementById('song-content');
-      const prevScroll = sc ? sc.scrollTop : 0;
-      const cid = String(currentSong.id||'');
-      const updated = songs.find(x => String(x.id) === cid);
-      if (updated) currentSong = updated;
-      renderSong();
-      if (sc) sc.scrollTop = prevScroll;
-    }
-  }catch(e){}
-
-  // cache-first (no flicker)
-  loadDnesCacheFirst(false);
-  loadPlaylistsCacheFirst(false);
-  loadHistoryCacheFirst(false);
-
-  // then refresh
-  loadDnesFromDrive();
-  loadPlaylistsFromDrive();
-  loadHistoryFromDrive();
 }
 
 /* ===== SONG LIST ===== */
@@ -2703,36 +2776,37 @@ function renderSong() {
 }
 
 function transposeChord(c, step) {
-  // Robust transposition:
-  // - Supports sharps and flats (C#, Db, Bb...)
-  // - Keeps Slovak/German note naming: B (Bb) and H
-  const map = {
-    "C":0, "C#":1, "DB":1,
-    "D":2, "D#":3, "EB":3,
-    "E":4,
-    "F":5, "F#":6, "GB":6,
-    "G":7, "G#":8, "AB":8,
-    "A":9, "A#":10, "BB":10,
-    "B":10, // in this app: B = Bb
-    "H":11
-  };
-  const outSharp = ["C","C#","D","D#","E","F","F#","G","G#","A","B","H"];
-  const outFlat  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","B","H"];
+  // Transponuje len základný tón akordu a bas za lomkou (C#m7/G#).
+  // Predtým sa menili všetky písmená A–H aj v príponách: Cadd9 → DHEE9, Ebmaj7 → FmHj7, Bdim → CEim.
+  return _transposeChordStrict(c, step);
+}
 
-  // replace every root note occurrence (A-H with optional #/b)
-  return String(c||"").replace(/([A-Ha-h])([#b]?)/g, (m0, ltr, acc) => {
-    const key = (String(ltr).toUpperCase() + String(acc||"")).replace(/b/i,"b");
-    const normKey = key.toUpperCase(); // DB, EB, ...
-    const idx = map[normKey];
-    if (idx == null) return m0;
-
-    let newIdx = (idx + step) % 12;
-    while (newIdx < 0) newIdx += 12;
-
-    const useFlat = (String(acc||"").toLowerCase() === "b") && String(ltr).toUpperCase() !== "B";
-    const out = (useFlat ? outFlat : outSharp)[newIdx];
-    return out;
-  });
+// Ak sa v editore zmenila tónina piesne (čistá transpozícia akordov), vráti o koľko poltónov.
+// 0 = nezmenila sa / nedá sa spoľahlivo určiť.
+function _chordPitchSig(ch){
+  return String(ch||'').trim().replace(/^([A-Ha-h])([#b]?)/, (m0,l,a)=>'<'+_transposeRoot((l+a).toUpperCase(),0)+'>')
+    .replace(/\/([A-Ha-h])([#b]?)/, (m0,l,a)=>'/<'+_transposeRoot((l+a).toUpperCase(),0)+'>');
+}
+function detectSongKeyShift(oldText, newText){
+  const A = (String(oldText||'').match(CHORD_TOKEN_RE_G) || []).map(x=>x.slice(1,-1));
+  const B = (String(newText||'').match(CHORD_TOKEN_RE_G) || []).map(x=>x.slice(1,-1));
+  if (!A.length || A.length !== B.length) return 0;
+  const sigB = B.map(_chordPitchSig);
+  // nezmenené akordy → bez posunu
+  let same = 0;
+  for (let i=0;i<A.length;i++) if (_chordPitchSig(A[i]) === sigB[i]) same++;
+  if (same === A.length) return 0;
+  let best = 0, bestHits = 0;
+  for (let d=1; d<12; d++){
+    let hits = 0;
+    for (let i=0;i<A.length;i++){
+      if (_chordPitchSig(_transposeChordStrict(A[i], d)) === sigB[i]) hits++;
+    }
+    if (hits > bestHits){ bestHits = hits; best = d; }
+  }
+  // tolerancia: owner mohol pri transpozícii opraviť aj pár akordov
+  if (bestHits >= Math.ceil(A.length * 0.8)) return best > 6 ? best - 12 : best;
+  return 0;
 }
 
 function transposeSong(d) { transposeStep += d; document.getElementById('transpose-val').innerText = (transposeStep>0?"+":"")+transposeStep; renderSong(); }
@@ -6994,6 +7068,7 @@ if (on){
       }
     });
   }catch(e){}
+  try { initChordKbdNoBlur(); initChordModeOnOpen(); } catch(e) {}
 }
   document.body.classList.toggle('modal-open', !!on);
 
@@ -7033,10 +7108,6 @@ function closeSongEditor(forceDiscard){
 }
 
 async function saveSongEditor(){
-  if (__syncInFlight){
-    showToast('Počas synchronizácie nie je možné ukladať. Skús znova o chvíľu.', false, 2600);
-    return;
-  }
   if (!(hasPerm('D') || hasPerm('E'))) return;
 
   const num = document.getElementById('se-number');
@@ -7084,53 +7155,162 @@ async function saveSongEditor(){
     }catch(e){}
   }
 
-  // Save local backup snapshot (disk autosave)
+  const id = String(seEditingId||'');
+  const cleanTxt = String(txt||'').trim();
+  const payload = { id, author: originalId, title: ttl, songtext: txt, mode: mode, isNew: !!seIsNew, transposeStep: Number(__editorTransposeTotalStep||0) };
+
+  // 1) Okamžite: ulož ako "čakajúce" (prežije aj zatvorenie appky / offline) a ukáž zmenu hneď
   try{
     loadSongEdits();
-    songEdits[seEditingId] = { id: seEditingId, title: ttl, originalId, origText: txt, updatedAt: Date.now(), localOnly: false };
+    songEdits[id] = { id, title: ttl, originalId, origText: cleanTxt, updatedAt: Date.now(), pending: true, isNew: !!seIsNew, payload, reqId: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,8) };
     saveSongEditsLocal();
   }catch(e){}
+  applyLocalSongChange(id, ttl, originalId, cleanTxt);
+  closeSongEditor(true);
 
   if (!navigator.onLine){
-    showToast('Si offline – úprava sa uložila lokálne. Keď bude internet, ulož ešte raz.', false, 3200);
-    closeSongEditor(true);
+    setSaveStatus('Si offline – pieseň sa uloží automaticky, keď bude internet.', 'warn', 0);
     return;
   }
 
-  setSyncStatus("Aktualizujem…", "warn", 0);
-  showToast('Ukladám...', true, 0);
-
-  const payload = { id: String(seEditingId||''), author: originalId, title: ttl, songtext: txt, mode: mode, isNew: !!seIsNew, transposeStep: Number(__editorTransposeTotalStep||0) };
-
-  try{
-    await jsonpSave({ action:'songSave', pwd:getAuthPwd(), payload: JSON.stringify(payload) });
-    await updateSeenMetaFromServer();
-    // Refresh from server so EVERYONE sees it and we keep exact export structure
-    const beforeMeta = getSeenMeta();
-    await runUpdateNow(true);
-    const afterMeta = getSeenMeta();
-
-    // If song detail is open for this song, refresh currentSong + header immediately
-    try{
-      if (currentSong && String(currentSong.id||'') === String(seEditingId||'')){
-        const fresh = (songs||[]).find(x => String(x.id||'') === String(seEditingId||''));
-        if (fresh){
-          currentSong = JSON.parse(JSON.stringify(fresh));
-          const k2 = firstChordKeyText(currentSong.origText);
-          const lab = document.getElementById('original-key-label');
-          if (lab) lab.innerText = "Pôvodná tónina: " + (k2 || "-");
-          try{ renderSong(); }catch(e){}
-        }
-      }
-    }catch(e){}
-
-    setSaveStatus('Uložené', 'ok', 2000);
-  }catch(e){
-    setSaveStatus('Uloženie zlyhalo (skontroluj heslo / pripojenie).', 'err', 2600);
-  }
-
-  closeSongEditor(true);
+  // 2) Na pozadí: odošli na server
+  flushPendingSongSaves();
 }
+
+// Zmena piesne v pamäti appky (bez čakania na server)
+function applyLocalSongChange(id, title, originalId, text){
+  try{
+    let s0 = (songs||[]).find(x => String(x.id) === String(id));
+    if (!s0){
+      s0 = { id: String(id) };
+      songs.push(s0);
+    }
+    s0.title = String(title||'');
+    s0.originalId = String(originalId||'');
+    s0.origText = String(text||'');
+    s0.displayId = computeDisplayId(s0.originalId);
+    s0.searchHaystack = computeSearchHaystack(s0.displayId, s0.title, s0.origText);
+    sortSongsInPlace();
+    try { filterSongs(); } catch(e) { filteredSongs = [...songs]; renderAllSongs(); }
+
+    if (currentSong && String(currentSong.id||'') === String(id)){
+      currentSong = JSON.parse(JSON.stringify(s0));
+      const k2 = firstChordKeyText(currentSong.origText);
+      const lab = document.getElementById('original-key-label');
+      if (lab) lab.innerText = "Pôvodná tónina: " + (k2 || "-");
+      const rt = document.getElementById('render-title');
+      if (rt) rt.innerText = `${currentSong.displayId}. ${currentSong.title}`;
+      try{ renderSong(); }catch(e){}
+    }
+  }catch(e){}
+}
+
+// POST na Apps Script (text piesne už nejde v URL – žiadny limit dĺžky).
+// Ak POST z nejakého dôvodu nejde, skúsi starý JSONP spôsob.
+async function gasPost(params){
+  try{
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const t = ctrl ? setTimeout(()=>ctrl.abort(), 45000) : null;
+    const res = await fetch(SCRIPT_URL_POST, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // "simple request" – bez CORS preflightu
+      body: JSON.stringify(params),
+      redirect: 'follow',
+      signal: ctrl ? ctrl.signal : undefined
+    });
+    if (t) clearTimeout(t);
+    const data = await res.json();
+    if (data && data.ok) return data;
+    const err = new Error((data && data.error) ? String(data.error) : 'save_failed');
+    err.server = true;
+    throw err;
+  }catch(e){
+    if (e && e.server) throw e;              // server odpovedal chybou → neskúšaj znova inou cestou
+    return await jsonpSave(params);          // sieť/CORS → záložná cesta
+  }
+}
+
+let __songSaveFlushing = false;
+function pendingSongSaveIds(){
+  loadSongEdits();
+  return Object.keys(songEdits||{}).filter(id => songEdits[id] && songEdits[id].pending);
+}
+function hasPendingSongSaves(){ return pendingSongSaveIds().length > 0; }
+
+function _songSaveErrText(code){
+  const c = String(code||'');
+  if (c === 'unauthorized') return 'nemáš oprávnenie – prihlás sa znova';
+  if (c === 'chords_changed_in_D') return 'v režime D sa akordy nesmú meniť';
+  if (c === 'busy') return 'server je zaneprázdnený';
+  if (c.includes('timeout') || c.includes('load_failed') || c.includes('Failed to fetch')) return 'problém s pripojením';
+  return c || 'neznáma chyba';
+}
+
+async function flushPendingSongSaves(){
+  if (__songSaveFlushing) return;
+  if (!navigator.onLine) return;
+  const ids = pendingSongSaveIds();
+  if (!ids.length) return;
+  if (!getAuthPwd()){
+    setSaveStatus('Neuložené úpravy piesní – prihlás sa, uložia sa automaticky.', 'warn', 0);
+    return;
+  }
+  __songSaveFlushing = true;
+  _showSyncRetry(false);
+  setSaveStatus(ids.length > 1 ? `Ukladám ${ids.length} piesne…` : 'Ukladám…', 'warn', 0);
+
+  let okCount = 0, failMsg = '', needRefresh = false, lastVer = 0;
+  for (const id of ids){
+    const ed = songEdits[id];
+    if (!ed || !ed.payload) { delete songEdits[id]; continue; }
+    try{
+      const res = await gasPost({ action:'songSave', pwd:getAuthPwd(), reqId: ed.reqId || '', payload: JSON.stringify(ed.payload) });
+      okCount++;
+      // uložené → lokálna kópia už nie je potrebná (inak by prekrývala neskoršie zmeny od iných)
+      loadSongEdits();
+      if (songEdits[id] && songEdits[id].reqId === ed.reqId) delete songEdits[id];
+      saveSongEditsLocal();
+      const seen = getSeenMeta() || {};
+      if (res && res.ver){
+        lastVer = Math.max(lastVer, Number(res.ver)||0);
+        // niekto iný medzitým zmenil export → stiahni ho
+        if (Number(res.prevVer||0) !== Number(seen.export||0)) needRefresh = true;
+        else setSeenMeta(Object.assign({}, seen, { export: Number(res.ver) }));
+      } else {
+        needRefresh = true; // starý backend bez verzií
+      }
+    }catch(e){
+      const code = String((e && e.message) ? e.message : e || '');
+      failMsg = _songSaveErrText(code);
+      // trvalá chyba (práva) → neopakuj donekonečna, vráť serverovú verziu
+      if (code === 'chords_changed_in_D'){
+        loadSongEdits(); delete songEdits[id]; saveSongEditsLocal();
+        needRefresh = true;
+      }
+    }
+  }
+  __songSaveFlushing = false;
+
+  if (failMsg){
+    const left = pendingSongSaveIds().length;
+    setSaveStatus(`Neuložené (${failMsg}).` + (left ? ' Ťukni „Skúsiť znova“.' : ''), 'err', 0);
+    if (left) _showSyncRetry(true);
+  } else {
+    setSaveStatus('Uložené ✓ – ostatní to uvidia o pár sekúnd', 'ok', 2500);
+  }
+  // aktuálny export do offline cache (a prípadné zmeny od iných) – na pozadí, nič neblokuje
+  if (okCount || needRefresh){
+    try{ await parseXML(); }catch(e){}
+    if (lastVer){
+      const seen = getSeenMeta() || {};
+      if (Number(seen.export||0) < lastVer) setSeenMeta(Object.assign({}, seen, { export: lastVer }));
+    }
+  }
+}
+
+// automatické dorovnanie neuložených úprav (po štarte, po návrate internetu)
+window.addEventListener('online', () => { setTimeout(flushPendingSongSaves, 1500); });
+setTimeout(() => { try { if (hasPendingSongSaves()) flushPendingSongSaves(); } catch(e) {} }, 4000);
 
 async function deleteSongEditor(){
   if (__syncInFlight){
@@ -7249,6 +7429,7 @@ function getSongsBackupPayload(){
     appBuild: APP_BUILD,
     exportedAt: new Date().toISOString(),
     songEdits: songEdits || {},
+    songEditsLegacy: (()=>{ try { return JSON.parse(localStorage.getItem(LS_SONG_EDITS_LEGACY) || '{}'); } catch(e) { return {}; } })(),
     localStorage: _collectLocalStorageSubset()
   };
 }
@@ -7410,14 +7591,14 @@ function initSongEditor(){
   if (rWrap && !rWrap.dataset.inited){
     rWrap.dataset.inited = '1';
     roots.forEach(r=>{
-      rWrap.appendChild(mkBtn(r, ()=>{ chordRoot = r; highlightChordButtons(); updateChordPreview(); }));
+      rWrap.appendChild(mkBtn(r, ()=>{ chordRoot = r; chordQual = ''; highlightChordButtons(); updateChordPreview(); if (__chordModeOn) chordQuickRoot(r); }));
     });
   }
   if (qWrap && !qWrap.dataset.inited){
     qWrap.dataset.inited = '1';
     quals.forEach(q=>{
       const lab = q==='' ? 'dur' : q;
-      qWrap.appendChild(mkBtn(lab, ()=>{ chordQual = q; highlightChordButtons(); updateChordPreview(); }));
+      qWrap.appendChild(mkBtn(lab, ()=>{ chordQual = q; highlightChordButtons(); updateChordPreview(); if (__chordModeOn) chordQuickQual(q); }));
     });
   }
   // Bas (UI) odstránený
@@ -7487,18 +7668,125 @@ function insertTextAtCaret(txt, focus){
       txt = `\n${label}\n`;
     }
   }catch(e){}
+
+  // Zapamätaj si scroll textarey aj okna editora – po vložení sa NIČ nesmie posunúť.
+  const body = ta.closest('.modal-body');
+  const taTop = ta.scrollTop;
+  const bodyTop = body ? body.scrollTop : 0;
+  let pos = 0;
   try{
     const start = ta.selectionStart ?? ta.value.length;
     const end = ta.selectionEnd ?? ta.value.length;
-    const before = ta.value.slice(0, start);
-    const after = ta.value.slice(end);
-    ta.value = before + txt + after;
-    const pos = start + txt.length;
+    if (typeof ta.setRangeText === 'function'){
+      ta.setRangeText(txt, start, end, 'end');
+    } else {
+      ta.value = ta.value.slice(0, start) + txt + ta.value.slice(end);
+    }
+    pos = start + String(txt).length;
     ta.selectionStart = ta.selectionEnd = pos;
-    if (focus) ta.focus();
+    if (focus && document.activeElement !== ta){
+      try { ta.focus({ preventScroll: true }); } catch(e) { ta.focus(); }
+    }
   }catch(e){
     ta.value += txt;
+    pos = ta.value.length;
   }
+  ta.scrollTop = taTop;
+  if (body) body.scrollTop = bodyTop;
+  // ešte raz po vykreslení (niektoré mobily posúvajú až neskôr)
+  requestAnimationFrame(()=>{ ta.scrollTop = taTop; if (body) body.scrollTop = bodyTop; });
+  return pos;
+}
+
+// ===== Režim akordov =====
+// Klávesnica sa skryje (inputmode=none), panel akordov ostane prilepený dole,
+// ťuknutie do textu len presunie kurzor a ťuknutie na akord ho hneď vloží.
+const LS_CHORD_MODE = 'se_chord_mode_v1';
+let __chordModeOn = false;
+let __lastQuickChord = null; // { start, end, root } – posledný rýchlo vložený akord
+
+function chordModeAllowed(){
+  return !__dChordLockEnabled; // admin D akordy nemení
+}
+function applyChordMode(on){
+  const m = document.getElementById('song-editor-modal');
+  const ta = document.getElementById('se-text');
+  const btn = document.getElementById('chord-mode-btn');
+  const lab = document.getElementById('chord-mode-label');
+  const hint = document.getElementById('chord-mode-hint');
+  const allowed = chordModeAllowed();
+  __chordModeOn = !!on && allowed;
+  if (btn) btn.style.display = allowed ? '' : 'none';
+  if (m) m.classList.toggle('chord-mode', __chordModeOn);
+  if (ta){
+    ta.inputMode = __chordModeOn ? 'none' : '';
+    if (!__chordModeOn) ta.removeAttribute('inputmode');
+  }
+  if (lab) lab.textContent = __chordModeOn ? 'Režim akordov: ZAP' : 'Režim akordov: VYP';
+  if (btn) btn.classList.toggle('active', __chordModeOn);
+  if (hint) hint.style.display = __chordModeOn ? 'block' : 'none';
+  __lastQuickChord = null;
+}
+function toggleChordMode(){
+  const next = !__chordModeOn;
+  try { localStorage.setItem(LS_CHORD_MODE, next ? '1' : '0'); } catch(e) {}
+  applyChordMode(next);
+  // posuň editor tak, aby bol text hore a pod ním panel akordov
+  if (next){
+    try{
+      const ta0 = document.getElementById('se-text');
+      const body = ta0 && ta0.closest('.modal-body');
+      const head = document.querySelector('#song-editor-modal .se-text-head');
+      if (body && head) body.scrollTop += head.getBoundingClientRect().top - body.getBoundingClientRect().top - 6;
+    }catch(e){}
+  }
+  // ak bola otvorená klávesnica, zatvor ju / otvor podľa režimu
+  const ta = document.getElementById('se-text');
+  if (ta && document.activeElement === ta){ ta.blur(); if (!next) setTimeout(()=>{ try{ ta.focus({preventScroll:true}); }catch(e){} }, 50); }
+}
+function initChordModeOnOpen(){
+  let saved = false;
+  try { saved = localStorage.getItem(LS_CHORD_MODE) === '1'; } catch(e) {}
+  applyChordMode(saved);
+}
+
+// Rýchle vloženie: ťuk na základ = hneď vloží [X]; ťuk na typ hneď potom = zmení ho na [Xm] atď.
+function chordQuickRoot(root){
+  const ta = document.getElementById('se-text');
+  if (!ta) return false;
+  const start = ta.selectionStart ?? ta.value.length;
+  const token = '[' + root + ']';
+  const end = insertTextAtCaret(token, true);
+  __lastQuickChord = { start, end, root };
+  return true;
+}
+function chordQuickQual(qual){
+  const ta = document.getElementById('se-text');
+  const q = __lastQuickChord;
+  if (!ta || !q) return false;
+  // len ak kurzor stále stojí hneď za naposledy vloženým akordom
+  if ((ta.selectionStart ?? -1) !== q.end) { __lastQuickChord = null; return false; }
+  const cur = ta.value.slice(q.start, q.end);
+  if (!/^\[[^\]]*\]$/.test(cur)) { __lastQuickChord = null; return false; }
+  ta.selectionStart = q.start; ta.selectionEnd = q.end;
+  const token = '[' + q.root + (qual||'') + ']';
+  const end = insertTextAtCaret(token, true);
+  __lastQuickChord = { start: q.start, end, root: q.root };
+  return true;
+}
+
+// Tlačidlá v paneli akordov nesmú textareu odfokusovať (inak skáče obrazovka a stratí sa kurzor).
+function initChordKbdNoBlur(){
+  const kbd = document.querySelector('#song-editor-modal .chord-kbd');
+  if (!kbd || kbd.dataset.noblur) return;
+  kbd.dataset.noblur = '1';
+  const keep = (ev)=>{
+    const ta = document.getElementById('se-text');
+    if (!ta || document.activeElement !== ta) return;
+    if (ev.target && ev.target.closest && ev.target.closest('button')) ev.preventDefault();
+  };
+  kbd.addEventListener('pointerdown', keep);
+  kbd.addEventListener('mousedown', keep);
 }
 
 // ===== File backup (File System Access API) =====

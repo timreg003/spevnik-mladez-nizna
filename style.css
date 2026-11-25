@@ -1358,3 +1358,40 @@ body.present #presentControls{ display:flex; }
   cursor: pointer;
   user-select: none;
 }
+
+/* ===== v112: Režim akordov v editore ===== */
+.se-text-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+#chord-mode-btn.active{
+  background: rgba(0,191,255,0.25);
+  border-color: rgba(0,191,255,0.7);
+  color:#fff;
+}
+/* v režime akordov: text menší, panel akordov prilepený dole – vidno oboje naraz */
+#song-editor-modal.chord-mode #se-text{
+  min-height: 0 !important;
+  height: 34vh;
+}
+#song-editor-modal.chord-mode .chord-kbd{
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: #0f0f0f;
+  max-height: 46vh;
+  overflow: auto;
+  box-shadow: 0 -10px 24px rgba(0,0,0,0.65);
+}
+/* v režime akordov sú šablóny a pomocné riadky zbytočné – viac miesta pre akordy */
+#song-editor-modal.chord-mode .chord-kbd .template-kbd,
+#song-editor-modal.chord-mode .chord-kbd > .modal-label{
+  display:none;
+}
+#song-editor-modal.chord-mode .chord-btn{
+  padding: 8px 12px;
+  font-size: 15px;
+}
+#song-editor-modal.chord-mode .chord-kbd .modal-hint,
+#song-editor-modal.chord-mode .chord-kbd .chord-preview{
+  display:none;
+}
